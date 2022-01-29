@@ -62,7 +62,9 @@ extern "C" {
 #    define SSIZE_MAX LLONG_MAX
 #  endif
 #  if defined(_MSC_VER)
-#    define MAGICKCORE_SIZEOF_SSIZE_T 8
+#    if !defined(MAGICKCORE_SIZEOF_SSIZE_T)
+#      define MAGICKCORE_SIZEOF_SSIZE_T 8
+#    endif
 #  endif
 #else
 #  if !defined(SSIZE_MAX)
