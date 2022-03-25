@@ -18,7 +18,7 @@
 %                                 June 2007                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2007 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -2464,8 +2464,8 @@ MagickExport Image *DistortImage(const Image *image, DistortMethod method,
     status=MagickTrue;
     progress=0;
     GetPixelInfo(distort_image,&zero);
-    resample_filter=AcquireResampleFilterThreadSet(image,
-      UndefinedVirtualPixelMethod,MagickFalse,exception);
+    resample_filter=AcquireResampleFilterTLS(image,UndefinedVirtualPixelMethod,
+      MagickFalse,exception);
     distort_view=AcquireAuthenticCacheView(distort_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
     #pragma omp parallel for schedule(static) shared(progress,status) \
@@ -2895,7 +2895,7 @@ if ( d.x == 0.5 && d.y == 0.5 ) {
         }
     }
     distort_view=DestroyCacheView(distort_view);
-    resample_filter=DestroyResampleFilterThreadSet(resample_filter);
+    resample_filter=DestroyResampleFilterTLS(resample_filter);
 
     if (status == MagickFalse)
       distort_image=DestroyImage(distort_image);

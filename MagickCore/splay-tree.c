@@ -23,7 +23,7 @@
 %                               December 2002                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2002 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -316,7 +316,7 @@ static void BalanceSplayTree(SplayTreeInfo *splay_tree)
 %  The format of the CloneSplayTree method is:
 %
 %      SplayTreeInfo *CloneSplayTree(SplayTreeInfo *splay_tree,
-%        void *(*clone_key)(void *),void *(*cline_value)(void *))
+%        void *(*clone_key)(void *),void *(*clone_value)(void *))
 %
 %  A description of each parameter follows:
 %

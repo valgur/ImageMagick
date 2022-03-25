@@ -17,7 +17,7 @@
 %                                March 2001                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2001 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1307,6 +1307,8 @@ static Image *ReadDPXImage(const ImageInfo *image_info,ExceptionInfo *exception)
             break;
           }
         image=SyncNextImageInList(image);
+        image->columns=dpx.image.pixels_per_line;
+        image->rows=dpx.image.lines_per_element;
         status=SetImageProgress(image,LoadImagesTag,TellBlob(image),
           GetBlobSize(image));
         if (status == MagickFalse)

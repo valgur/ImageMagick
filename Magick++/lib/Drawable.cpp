@@ -1,7 +1,9 @@
 // This may look like C code, but it is really -*- C++ -*-
 //
 // Copyright Bob Friesenhahn, 1999, 2000, 2001, 2002, 2003
-// Copyright Dirk Lemstra 2014-2017
+//
+// Copyright @ 2014 ImageMagick Studio LLC, a non-profit organization
+// dedicated to making software imaging solutions freely available.
 //
 // Implementation of Drawable (Graphic objects)
 //
@@ -2489,12 +2491,3 @@ Magick::VPathBase* Magick::PathMovetoRel::copy() const
 {
   return new PathMovetoRel(*this);
 }
-
-#if defined(EXPLICIT_TEMPLATE_INSTANTIATION)
-// template class std::vector<Magick::Coordinate>;
-// template class std::vector<const Magick::Drawable>;
-// template class std::vector<const Magick::PathArcArgs>;
-// template class std::vector<const Magick::PathCurvetoArgs>;
-// template class std::vector<const Magick::PathQuadraticCurvetoArgs>;
-// template class std::vector<const Magick::VPath>;
-#endif

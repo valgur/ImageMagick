@@ -18,7 +18,7 @@
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2022 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2022 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -719,7 +719,7 @@ static MagickBooleanType InitFx (FxInfo * pfx, const Image * img,
   pfx->Images = NULL;
   pfx->exception = exception;
   pfx->precision = GetMagickPrecision ();
-  pfx->random_infos = AcquireRandomInfoThreadSet ();
+  pfx->random_infos = AcquireRandomInfoTLS ();
   pfx->ContainsDebug = MagickFalse;
   pfx->runType = (CalcAllStats) ? rtEntireImage : rtCornerOnly;
   pfx->Imgs = (ImgT *)AcquireQuantumMemory (pfx->ImgListLen, sizeof (ImgT));
@@ -770,7 +770,7 @@ static MagickBooleanType DeInitFx (FxInfo * pfx)
     }
     pfx->Imgs=(ImgT *) RelinquishMagickMemory (pfx->Imgs);
   }
-  pfx->random_infos = DestroyRandomInfoThreadSet (pfx->random_infos);
+  pfx->random_infos = DestroyRandomInfoTLS (pfx->random_infos);
 
   if (pfx->statistics) {
     for (i = (ssize_t)GetImageListLength(pfx->image); i > 0; i--) {
@@ -1787,6 +1787,13 @@ static MagickBooleanType GetFunction (FxInfo * pfx, FunctionE fe)
     }
     switch (FndArgs) {
       case 1:
+        if (ndx1 != NULL_ADDRESS) {
+          (void) ThrowMagickException (
+            pfx->exception, GetMagickModule(), OptionError,
+            "For function", "'%s' required argument is missing at '%s'",
+            funStr, SetShortExp(pfx));
+          return MagickFalse;
+        }
         ndx1 = pfx->usedElements;
         if (fe==fWhile) {
           (void) AddAddressingElement (pfx, rIfZeroGoto, NULL_ADDRESS); /* address will be ndx2+1 */
@@ -1800,6 +1807,13 @@ static MagickBooleanType GetFunction (FxInfo * pfx, FunctionE fe)
         }
         break;
       case 2:
+        if (ndx2 != NULL_ADDRESS) {
+          (void) ThrowMagickException (
+            pfx->exception, GetMagickModule(), OptionError,
+            "For function", "'%s' required argument is missing at '%s'",
+            funStr, SetShortExp(pfx));
+          return MagickFalse;
+        }
         ndx2 = pfx->usedElements;
         if (fe==fWhile) {
           pfx->Elements[pfx->usedElements-1].DoPush = MagickFalse;
@@ -1816,6 +1830,13 @@ static MagickBooleanType GetFunction (FxInfo * pfx, FunctionE fe)
         }
         break;
       case 3:
+        if (ndx3 != NULL_ADDRESS) {
+          (void) ThrowMagickException (
+            pfx->exception, GetMagickModule(), OptionError,
+            "For function", "'%s' required argument is missing at '%s'",
+            funStr, SetShortExp(pfx));
+          return MagickFalse;
+        }
         if (fe==fFor) {
           pfx->Elements[pfx->usedElements-1].DoPush = MagickFalse;
           (void) AddAddressingElement (pfx, rGoto, ndx1);
@@ -2312,6 +2333,8 @@ static MagickBooleanType inline ProcessTernaryOpr (FxInfo * pfx, TernaryT * pter
    returns false iff we have exception
 */
 {
+  if (pfx->usedOprStack == 0)
+    return MagickFalse;
   if (pfx->OperatorStack[pfx->usedOprStack-1] == oQuery) {
     if (ptern->addrQuery != NULL_ADDRESS) {
       (void) ThrowMagickException (
@@ -2641,12 +2664,26 @@ static MagickBooleanType TranslateExpression (
     pfx->usedOprStack--;
     (void) AddElement (pfx, (fxFltType) 0, op);
     if (op == oAssign) {
+      if (UserSymNdx0 < 0) {
+        (void) ThrowMagickException (
+          pfx->exception, GetMagickModule(), OptionError,
+          "Assignment to unknown user symbol at", "'%s'",
+          SetShortExp(pfx));
+        return MagickFalse;
+      }
       /* Adjust last element, by deletion and add.
       */
       pfx->usedElements--;
       (void) AddAddressingElement (pfx, rCopyTo, UserSymNdx0);
       break;
     } else if (OprInPlace (op)) {
+      if (UserSymNdx0 < 0) {
+        (void) ThrowMagickException (
+          pfx->exception, GetMagickModule(), OptionError,
+          "Operator-in-place to unknown user symbol at", "'%s'",
+          SetShortExp(pfx));
+        return MagickFalse;
+      }
       /* Modify latest element.
       */
       pfx->Elements[pfx->usedElements-1].EleNdx = UserSymNdx0;
@@ -3799,18 +3836,23 @@ static MagickBooleanType ExecuteRPN (FxInfo * pfx, fxRtT * pfxrt, fxFltType *res
           break;
 
         case rGoto:
+          assert (pel->EleNdx >= 0);
           i = pel->EleNdx-1; /* -1 because 'for' loop will increment. */
           break;
         case rIfZeroGoto:
+          assert (pel->EleNdx >= 0);
           if (fabs((double) regA) < MagickEpsilon) i = pel->EleNdx-1;
           break;
         case rIfNotZeroGoto:
+          assert (pel->EleNdx >= 0);
           if (fabs((double) regA) > MagickEpsilon) i = pel->EleNdx-1;
           break;
         case rCopyFrom:
+          assert (pel->EleNdx >= 0);
           regA = pfxrt->UserSymVals[pel->EleNdx];
           break;
         case rCopyTo:
+          assert (pel->EleNdx >= 0);
           pfxrt->UserSymVals[pel->EleNdx] = regA;
           break;
         case rZerStk:
@@ -4148,7 +4190,7 @@ MagickExport Image *FxImage (const Image *image, const char *expression,
 
         if (!ExecuteRPN (pfx, &pfx->fxrts[id], &result, channel, x, y)) {
           status=MagickFalse;
-          continue;
+          break;
         }
 
         q[i] = ClampToQuantum ((MagickRealType) (QuantumRange*result));

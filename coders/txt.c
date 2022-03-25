@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -565,18 +565,18 @@ static Image *ReadTXTImage(const ImageInfo *image_info,ExceptionInfo *exception)
             green+=(range+1)/2.0;
             blue+=(range+1)/2.0;
           }
-        pixel.red=(MagickRealType) ScaleAnyToQuantum((QuantumAny)
-          MagickMax(red+0.5,0.0),range);
-        pixel.green=(MagickRealType) ScaleAnyToQuantum((QuantumAny)
-          MagickMax(green+0.5,0.0),range);
-        pixel.blue=(MagickRealType) ScaleAnyToQuantum((QuantumAny)
-          MagickMax(blue+0.5,0.0),range);
-        pixel.black=(MagickRealType) ScaleAnyToQuantum((QuantumAny)
-          MagickMax(black+0.5,0.0),range);
-        pixel.alpha=(MagickRealType) ScaleAnyToQuantum((QuantumAny)
-          MagickMax(alpha+0.5,0.0),range);
-        q=GetAuthenticPixels(image,CastDoubleToLong(x_offset),
-          CastDoubleToLong(y_offset),1,1,exception);
+        pixel.red=(MagickRealType) ScaleAnyToQuantum(CastDoubleToQuantumAny(
+          red),range);
+        pixel.green=(MagickRealType) ScaleAnyToQuantum(CastDoubleToQuantumAny(
+          green),range);
+        pixel.blue=(MagickRealType) ScaleAnyToQuantum(CastDoubleToQuantumAny(
+          blue),range);
+        pixel.black=(MagickRealType) ScaleAnyToQuantum(CastDoubleToQuantumAny(
+          black),range);
+        pixel.alpha=(MagickRealType) ScaleAnyToQuantum(CastDoubleToQuantumAny(
+          alpha),range);
+        q=GetAuthenticPixels(image,CastDoubleToLong(x_offset),CastDoubleToLong(
+          y_offset),1,1,exception);
         if (q == (Quantum *) NULL)
           {
             status=MagickFalse;

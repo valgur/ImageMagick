@@ -17,7 +17,7 @@
 %                                 July 1999                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -105,15 +105,6 @@ static MagickBooleanType
 %    o length: Specifies the length of the magick string.
 %
 */
-
-static MagickBooleanType IsAVI(const unsigned char *magick,const size_t length)
-{
-  if (length < 4)
-    return(MagickFalse);
-  if (memcmp(magick,"RIFF",4) == 0)
-    return(MagickTrue);
-  return(MagickFalse);
-}
 
 static MagickBooleanType IsPNG(const unsigned char *magick,const size_t length)
 {
@@ -341,7 +332,6 @@ ModuleExport size_t RegisterVIDEOImage(void)
   (void) RegisterMagickInfo(entry);
   entry=AcquireMagickInfo("VIDEO","AVI","Microsoft Audio/Visual Interleaved");
   entry->decoder=(DecodeImageHandler *) ReadVIDEOImage;
-  entry->magick=(IsImageFormatHandler *) IsAVI;
   entry->flags^=CoderBlobSupportFlag;
   (void) RegisterMagickInfo(entry);
   entry=AcquireMagickInfo("VIDEO","FLV","Flash Video Stream");

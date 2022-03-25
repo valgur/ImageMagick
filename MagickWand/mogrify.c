@@ -17,7 +17,7 @@
 %                                March 2000                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2000 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1802,6 +1802,13 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
             (void) FunctionImage(*image,function,number_parameters,parameters,
               exception);
             parameters=(double *) RelinquishMagickMemory(parameters);
+            break;
+          }
+        if (LocaleCompare("fx",option+1) == 0)
+          {
+            (void) SyncImageSettings(mogrify_info,*image,exception);
+            (void) ParseGeometry(argv[i+1],&geometry_info);
+            mogrify_image=FxImage(*image,argv[i+1],exception);
             break;
           }
         break;
@@ -5167,8 +5174,6 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
           }
         if (LocaleCompare("fx",option+1) == 0)
           {
-            if (*option == '+')
-              break;
             i++;
             if (i == (ssize_t) argc)
               ThrowMogrifyException(OptionError,"MissingArgument",option);

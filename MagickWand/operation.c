@@ -17,7 +17,7 @@
 %                               September 2011                                %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2011 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -992,7 +992,7 @@ WandPrivate void CLISettingOptionInfo(MagickCLI *cli_wand,
       if (LocaleCompare("intent",option+1) == 0)
         {
           /* Only used by coders: MIFF, MPC, BMP, PNG
-             and for image profile call to AcquireTransformThreadSet()
+             and for image profile call to AcquireTransformTLS()
              SyncImageSettings() used to set per-image attribute.
           */
           arg1 = ArgOption("undefined");
@@ -2448,6 +2448,11 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
           (void) FunctionImage(_image,(MagickFunction)parse,(size_t) count,args,
                _exception);
           args=(double *) RelinquishMagickMemory(args);
+          break;
+        }
+      if (LocaleCompare("fx",option+1) == 0)
+        {
+          new_image=FxImage(_image,arg1,_exception);
           break;
         }
       CLIWandExceptionBreak(OptionError,"UnrecognizedOption",option);

@@ -17,7 +17,7 @@
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2022 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2021 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -112,9 +112,9 @@ static MagickBooleanType
 */
 static MagickBooleanType IsFTXT(const unsigned char *magick,const size_t length)
 {
-  if (length < 10)
+  if (length < 7)
     return(MagickFalse);
-  if (LocaleNCompare((char *) magick,"id=ftxt",10) == 0)
+  if (LocaleNCompare((char *) magick,"id=ftxt",7) == 0)
     return(MagickTrue);
   return(MagickFalse);
 }
@@ -978,7 +978,8 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
                     FormatLocaleString(buffer,MaxTextExtent,"%s#%Lx",sSep,
                       (signed long long)(((long double)p[i])+0.5));
                   else if (fltHexFmt)
-                    FormatLocaleString(buffer,MaxTextExtent,"%s%a",sSep,p[i]);
+                    FormatLocaleString(buffer,MaxTextExtent,"%s%a",sSep,
+                      (double) p[i]);
                   else
                     FormatLocaleString(buffer,MaxTextExtent,"%s%.*Lg%s",sSep,
                       precision,p[i]*valMult,sSuff);

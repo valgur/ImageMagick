@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -560,10 +560,7 @@ static MagickBooleanType ReadProfile(Image *image,const char *name,
       image->filename);
   status=SetImageProfile(image,name,profile,exception);
   profile=DestroyStringInfo(profile);
-  if (status == MagickFalse)
-    ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
-      image->filename);
-  return(MagickTrue);
+  return(status);
 }
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -1241,21 +1238,21 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
     method;
 
   uint16
-    compress_tag,
-    bits_per_sample,
-    endian,
-    extra_samples,
-    interlace,
-    max_sample_value,
-    min_sample_value,
-    orientation,
-    pages,
-    photometric,
-    *sample_info,
-    sample_format,
-    samples_per_pixel,
-    units,
-    value;
+    compress_tag = 0,
+    bits_per_sample = 0,
+    endian = 0,
+    extra_samples = 0,
+    interlace = 0,
+    max_sample_value = 0,
+    min_sample_value = 0,
+    orientation = 0,
+    pages = 0,
+    photometric = 0,
+    *sample_info = NULL,
+    sample_format = 0,
+    samples_per_pixel = 0,
+    units = 0,
+    value = 0;
 
   uint32
     height,
@@ -1266,7 +1263,7 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
     *pixels;
 
   void
-    *sans[5] = { NULL, NULL, NULL, NULL, NULL };
+    *sans[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
   /*
     Open image.
@@ -1291,6 +1288,8 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
     TIFFUnmapBlob);
   if (tiff == (TIFF *) NULL)
     {
+      if (exception->severity == UndefinedException)
+        ThrowReaderException(CorruptImageError,"UnableToReadImageData");
       image=DestroyImageList(image);
       return((Image *) NULL);
     }
@@ -1988,7 +1987,7 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
         number_pixels=(MagickSizeType) columns*rows;
         if (HeapOverflowSanityCheck(rows,sizeof(*tile_pixels)) != MagickFalse)
           ThrowTIFFException(ResourceLimitError,"MemoryAllocationFailed");
-        extent=MagickMax(rows*TIFFTileRowSize(tiff),TIFFTileSize(tiff));
+        extent=4*MagickMax(rows*TIFFTileRowSize(tiff),TIFFTileSize(tiff));
 #if defined(TIFF_VERSION_BIG)
         extent+=image->columns*sizeof(uint64);
 #else
@@ -2938,15 +2937,11 @@ static MagickBooleanType GetTIFFInfo(const ImageInfo *image_info,
 static tmsize_t TIFFWritePixels(TIFF *tiff,TIFFInfo *tiff_info,ssize_t row,
   tsample_t sample,Image *image)
 {
-  tmsize_t
-    status;
-
   ssize_t
     i;
 
-  unsigned char
-    *p,
-    *q;
+  tmsize_t
+    status;
 
   size_t
     number_tiles,
@@ -2957,6 +2952,10 @@ static tmsize_t TIFFWritePixels(TIFF *tiff,TIFFInfo *tiff_info,ssize_t row,
     j,
     k,
     l;
+
+  unsigned char
+    *p,
+    *q;
 
   if (TIFFIsTiled(tiff) == 0)
     return(TIFFWriteScanline(tiff,tiff_info->scanline,(uint32) row,sample));

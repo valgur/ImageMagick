@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -295,8 +295,8 @@ static Image *ReadPCLImage(const ImageInfo *image_info,ExceptionInfo *exception)
     /*
       Set PCL render geometry.
     */
-    width=(size_t) floor(bounds.x2-bounds.x1+0.5);
-    height=(size_t) floor(bounds.y2-bounds.y1+0.5);
+    width=(size_t)CastDoubleToLong(floor(bounds.x2-bounds.x1+0.5));
+    height=(size_t)CastDoubleToLong(floor(bounds.y2-bounds.y1+0.5));
     if (width > page.width)
       page.width=width;
     if (height > page.height)

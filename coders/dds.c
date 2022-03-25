@@ -19,7 +19,7 @@
 %                              September 2013                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 2008 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -4124,6 +4124,8 @@ static MagickBooleanType WriteDDSImage(const ImageInfo *image_info,
     {
        if (LocaleCompare(option,"dxt1") == 0)
          compression=FOURCC_DXT1;
+       if (LocaleCompare(option,"dxt5") == 0)
+         compression=FOURCC_DXT5;
        if (LocaleCompare(option,"none") == 0)
          pixelFormat=DDPF_RGB;
     }

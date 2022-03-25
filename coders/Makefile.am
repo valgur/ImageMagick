@@ -1,4 +1,4 @@
-#  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization
+#  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization
 #  dedicated to making software imaging solutions freely available.
 #
 #  You may not use this file except in compliance with the License.  You may
@@ -307,6 +307,8 @@ MAGICKCORE_CODER_SRCS = \
 	coders/sixel.h \
 	coders/stegano.c \
 	coders/stegano.h \
+	coders/strimg.c \
+	coders/strimg.h \
 	coders/sun.c \
 	coders/sun.h \
 	coders/svg.c \
@@ -359,8 +361,6 @@ MAGICKCORE_CODER_SRCS = \
 	coders/xpm.h \
 	coders/xps.c \
 	coders/xps.h \
-	coders/xtrn.c \
-	coders/xtrn.h \
 	coders/xwd.h \
 	coders/yaml.c \
 	coders/yaml.h \
@@ -498,6 +498,7 @@ CODERS_NOINST_HDRS = \
 	coders/sgi.h \
 	coders/sixel.h \
 	coders/stegano.h \
+	coders/strimg.h \
 	coders/sun.h \
 	coders/svg.h \
 	coders/tga.h \
@@ -526,7 +527,6 @@ CODERS_NOINST_HDRS = \
 	coders/x.h \
 	coders/xpm.h \
 	coders/xps.h \
-	coders/xtrn.h \
 	coders/xwd.h \
 	coders/yaml.h \
 	coders/ycbcr.h \
@@ -625,6 +625,7 @@ coders_LTLIBRARIES = \
 	coders/sgi.la \
 	coders/sixel.la \
 	coders/stegano.la \
+	coders/strimg.la \
 	coders/sun.la \
 	coders/svg.la \
 	coders/tga.la \
@@ -649,7 +650,6 @@ coders_LTLIBRARIES = \
 	coders/xcf.la \
 	coders/xpm.la \
 	coders/xps.la \
-	coders/xtrn.la \
 	coders/yaml.la \
 	coders/ycbcr.la \
 	coders/yuv.la \
@@ -1297,6 +1297,12 @@ coders_stegano_la_CPPFLAGS = $(MAGICK_CODER_CPPFLAGS)
 coders_stegano_la_LDFLAGS  = $(MODULECOMMONFLAGS)
 coders_stegano_la_LIBADD   = $(MAGICKCORE_LIBS)
 
+# STRIMG coder module
+coders_strimg_la_SOURCES      = coders/strimg.c
+coders_strimg_la_CPPFLAGS     = $(MAGICK_CODER_CPPFLAGS)
+coders_strimg_la_LDFLAGS      = $(MODULECOMMONFLAGS)
+coders_strimg_la_LIBADD       = $(MAGICKCORE_LIBS)
+
 # SUN coder module
 coders_sun_la_SOURCES      = coders/sun.c
 coders_sun_la_CPPFLAGS     = $(MAGICK_CODER_CPPFLAGS)
@@ -1470,12 +1476,6 @@ coders_xps_la_SOURCES      = coders/xps.c
 coders_xps_la_CPPFLAGS     = $(MAGICK_CODER_CPPFLAGS)
 coders_xps_la_LDFLAGS      = $(MODULECOMMONFLAGS)
 coders_xps_la_LIBADD       = $(MAGICKCORE_LIBS) $(MUPDF_LIBS) $(FREETYPE_LIBS) $(MATH_LIBS)
-
-# XPS coder module
-coders_xtrn_la_SOURCES     = coders/xtrn.c
-coders_xtrn_la_CPPFLAGS    = $(MAGICK_CODER_CPPFLAGS)
-coders_xtrn_la_LDFLAGS     = $(MODULECOMMONFLAGS)
-coders_xtrn_la_LIBADD      = $(MAGICKCORE_LIBS) $(OLE_LIBS)
 
 # XWD coder module
 coders_xwd_la_SOURCES      = coders/xwd.c

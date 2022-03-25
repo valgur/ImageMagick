@@ -17,7 +17,7 @@
 %                                 July 1992                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -53,6 +53,7 @@
 #include "MagickCore/image.h"
 #include "MagickCore/image-private.h"
 #include "MagickCore/list.h"
+#include "MagickCore/locale-private.h"
 #include "MagickCore/magick.h"
 #include "MagickCore/memory_.h"
 #include "MagickCore/module.h"
@@ -332,7 +333,7 @@ static Image *ReadFITSImage(const ImageInfo *image_info,
       {
         if (isspace((int) ((unsigned char) keyword[i])) != 0)
           break;
-        keyword[i]=LocaleLowercase((int) ((unsigned char) keyword[i]));
+        keyword[i]=LocaleToLowercase((int) ((unsigned char) keyword[i]));
       }
       keyword[i]='\0';
       count=ReadBlob(image,72,(unsigned char *) value);
@@ -425,7 +426,8 @@ static Image *ReadFITSImage(const ImageInfo *image_info,
       image->filename);
   number_pixels=(MagickSizeType) fits_info.columns*fits_info.rows;
   if ((fits_info.simple == MagickFalse) || (fits_info.number_axes < 1) ||
-      (fits_info.number_axes > 4) || (number_pixels == 0))
+      (fits_info.number_axes > 4) || (number_pixels == 0) ||
+      (fits_info.number_planes <= 0))
     ThrowReaderException(CorruptImageError,"ImageTypeNotSupported");
   for (scene=0; scene < (ssize_t) fits_info.number_planes; scene++)
   {

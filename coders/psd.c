@@ -20,7 +20,7 @@
 %                                December 2013                                %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1022,8 +1022,9 @@ static MagickBooleanType ReadPSDChannelPixels(Image *image,const ssize_t row,
           number_bits=8;
         for (bit = 0; bit < (ssize_t) number_bits; bit++)
         {
-          SetPSDPixel(image,channel,packet_size,(((unsigned char) pixel)
-            & (0x01 << (7-bit))) != 0 ? 0 : QuantumRange,q,exception);
+          SetPSDPixel(image,channel,packet_size,
+            (((unsigned char)((ssize_t) pixel)) & (0x01 << (7-bit))) != 0 ? 0 :
+            QuantumRange,q,exception);
           q+=GetPixelChannels(image);
           x++;
         }
