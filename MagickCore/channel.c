@@ -73,7 +73,7 @@
 %
 %  ChannelFxImage() applies a channel expression to the specified image.  The
 %  expression consists of one or more channels, either mnemonic or numeric (e.g.
-%  red, 1), separated by actions as follows:
+%  r, red, 0), separated by actions as follows:
 %
 %    <=>     exchange two channels (e.g. red<=>blue)
 %    =>      copy one channel to another channel (e.g. red=>green)
@@ -122,7 +122,7 @@ static MagickBooleanType ChannelImage(Image *destination_image,
     *destination_view;
 
   MagickBooleanType
-    status;
+    status = MagickTrue;
 
   size_t
     height,
@@ -131,11 +131,10 @@ static MagickBooleanType ChannelImage(Image *destination_image,
   ssize_t
     y;
 
-  status=MagickTrue;
-  source_view=AcquireVirtualCacheView(source_image,exception);
-  destination_view=AcquireAuthenticCacheView(destination_image,exception);
   height=MagickMin(source_image->rows,destination_image->rows);
   width=MagickMin(source_image->columns,destination_image->columns);
+  source_view=AcquireVirtualCacheView(source_image,exception);
+  destination_view=AcquireAuthenticCacheView(destination_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
   #pragma omp parallel for schedule(static) shared(status) \
     magick_number_threads(source_image,source_image,height,1)
@@ -196,13 +195,13 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
 #define ChannelFxImageTag  "ChannelFx/Image"
 
   ChannelFx
-    channel_op;
+    channel_op = ExtractChannelOp;
 
   ChannelType
     channel_mask;
 
   char
-    token[MagickPathExtent];
+    token[MagickPathExtent] = "";
 
   const char
     *p;
@@ -211,29 +210,30 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
     *source_image;
 
   double
-    pixel;
+    pixel = 0.0;
 
   Image
     *destination_image;
 
   MagickBooleanType
-    status;
+    status = MagickTrue;
 
   PixelChannel
     source_channel,
-    destination_channel;
+    destination_channel = RedPixelChannel;
 
   ssize_t
-    channels;
+    channels = 0;
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  p=expression;
   source_image=image;
-  destination_image=CloneImage(source_image,0,0,MagickTrue,exception);
+  destination_image=CloneImage(image,0,0,MagickTrue,exception);
   if (destination_image == (Image *) NULL)
     return((Image *) NULL);
   if (expression == (const char *) NULL)
@@ -244,13 +244,9 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
       destination_image=GetLastImageInList(destination_image);
       return((Image *) NULL);
     }
-  destination_channel=RedPixelChannel;
-  channel_mask=UndefinedChannel;
-  pixel=0.0;
-  p=(char *) expression;
+  channel_mask=destination_image->channel_mask;
   (void) GetNextToken(p,&p,MagickPathExtent,token);
-  channel_op=ExtractChannelOp;
-  for (channels=0; *token != '\0'; )
+  while (*token != '\0')
   {
     ssize_t
       i;
@@ -267,10 +263,9 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
       }
       case '|':
       {
+        source_image=GetFirstImageInList(source_image);
         if (GetNextImageInList(source_image) != (Image *) NULL)
           source_image=GetNextImageInList(source_image);
-        else
-          source_image=GetFirstImageInList(source_image);
         (void) GetNextToken(p,&p,MagickPathExtent,token);
         break;
       }
@@ -303,7 +298,7 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
         (void) GetNextToken(p,&p,MagickPathExtent,token);
         channels=0;
         destination_channel=RedPixelChannel;
-        channel_mask=UndefinedChannel;
+        channel_mask=destination_image->channel_mask;
         break;
       }
       default:
@@ -357,10 +352,6 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
               }
           }
         destination_channel=(PixelChannel) i;
-        if (i >= (ssize_t) GetPixelChannels(destination_image))
-          (void) SetPixelMetaChannels(destination_image,(size_t) (
-            destination_channel-GetPixelChannels(destination_image)+1),
-            exception);
         if (image->colorspace != UndefinedColorspace)
           switch (destination_channel)
           {
@@ -402,7 +393,8 @@ MagickExport Image *ChannelFxImage(const Image *image,const char *expression,
               break;
             }
           }
-        channel_mask=(ChannelType) (channel_mask | ParseChannelOption(token));
+        channel_mask=(ChannelType) (channel_mask |
+          (1UL << ParseChannelOption(token)));
         if (((channels >= 1)  || (destination_channel >= 1)) &&
             (IsGrayColorspace(destination_image->colorspace) != MagickFalse))
           (void) SetImageColorspace(destination_image,sRGBColorspace,exception);
@@ -512,7 +504,7 @@ MagickExport Image *CombineImages(const Image *image,
   */
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
@@ -670,7 +662,7 @@ MagickExport Image *CombineImages(const Image *image,
 MagickExport MagickBooleanType GetImageAlphaChannel(const Image *image)
 {
   assert(image != (const Image *) NULL);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(image->signature == MagickCoreSignature);
   return(image->alpha_trait != UndefinedPixelTrait ? MagickTrue : MagickFalse);
@@ -731,7 +723,7 @@ MagickExport Image *SeparateImage(const Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
@@ -856,7 +848,7 @@ MagickExport Image *SeparateImages(const Image *image,ExceptionInfo *exception)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   images=NewImageList();
   for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
@@ -909,8 +901,7 @@ MagickExport Image *SeparateImages(const Image *image,ExceptionInfo *exception)
 */
 
 static inline void FlattenPixelInfo(const Image *image,const PixelInfo *p,
-  const double alpha,const Quantum *q,const double beta,
-  Quantum *composite)
+  const double alpha,const Quantum *q,const double beta,Quantum *composite)
 {
   double
     Da,
@@ -983,7 +974,7 @@ MagickExport MagickBooleanType SetImageAlphaChannel(Image *image,
     y;
 
   assert(image != (Image *) NULL);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(image->signature == MagickCoreSignature);
   status=MagickTrue;

@@ -34,7 +34,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  Use the mogrify program to resize an image, blur, crop, despeckle, dither,
-%  draw on, flip, join, re-sample, and much more. This tool is similiar to
+%  draw on, flip, join, re-sample, and much more. This tool is similar to
 %  convert except that the original image file is overwritten (unless you
 %  change the file suffix with the -format option) with any changes you
 %  request.
@@ -75,236 +75,6 @@ static const char
   Define declarations.
 */
 #define UndefinedCompressionQuality  0UL
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%     M a g i c k C o m m a n d G e n e s i s                                 %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  MagickCommandGenesis() applies image processing options to an image as
-%  prescribed by command line options.
-%
-%  It wiil look for special options like "-debug", "-bench", and
-%  "-distribute-cache" that needs to be applied even before the main
-%  processing begins, and may completely overrule normal command processing.
-%  Such 'Genesis' Options can only be given on the CLI, (not in a script)
-%  and are typically ignored (as they have been handled) if seen later.
-%
-%  The format of the MagickCommandGenesis method is:
-%
-%      MagickBooleanType MagickCommandGenesis(ImageInfo *image_info,
-%        MagickCommand command,int argc,char **argv,char **metadata,
-%        ExceptionInfo *exception)
-%
-%  A description of each parameter follows:
-%
-%    o image_info: the image info.
-%
-%    o command: Choose from ConvertImageCommand, IdentifyImageCommand,
-%      MogrifyImageCommand, CompositeImageCommand, CompareImagesCommand,
-%      ConjureImageCommand, StreamImageCommand, ImportImageCommand,
-%      DisplayImageCommand, or AnimateImageCommand.
-%
-%    o argc: Specifies a pointer to an integer describing the number of
-%      elements in the argument vector.
-%
-%    o argv: Specifies a pointer to a text array containing the command line
-%      arguments.
-%
-%    o metadata: any metadata is returned here.
-%
-%    o exception: return any errors or warnings in this structure.
-%
-*/
-WandExport MagickBooleanType MagickCommandGenesis(ImageInfo *image_info,
-  MagickCommand command,int argc,char **argv,char **metadata,
-  ExceptionInfo *exception)
-{
-  char
-    client_name[MagickPathExtent],
-    *option;
-
-  double
-    duration,
-    serial;
-
-  MagickBooleanType
-    concurrent,
-    regard_warnings,
-    status;
-
-  ssize_t
-    i;
-
-  size_t
-    iterations,
-    number_threads;
-
-  ssize_t
-    n;
-
-  (void) setlocale(LC_ALL,"");
-  (void) setlocale(LC_NUMERIC,"C");
-  GetPathComponent(argv[0],TailPath,client_name);
-  (void) SetClientName(client_name);
-  concurrent=MagickFalse;
-  duration=(-1.0);
-  iterations=1;
-  status=MagickTrue;
-  regard_warnings=MagickFalse;
-  for (i=1; i < (ssize_t) (argc-1); i++)
-  {
-    option=argv[i];
-    if ((strlen(option) == 1) || ((*option != '-') && (*option != '+')))
-      continue;
-    if (LocaleCompare("-bench",option) == 0)
-      iterations=StringToUnsignedLong(argv[++i]);
-    if (LocaleCompare("-concurrent",option) == 0)
-      concurrent=MagickTrue;
-    if (LocaleCompare("-debug",option) == 0)
-      (void) SetLogEventMask(argv[++i]);
-    if (LocaleCompare("-distribute-cache",option) == 0)
-      {
-        DistributePixelCacheServer(StringToInteger(argv[++i]),exception);
-        exit(0);
-      }
-    if (LocaleCompare("-duration",option) == 0)
-      duration=StringToDouble(argv[++i],(char **) NULL);
-    if (LocaleCompare("-regard-warnings",option) == 0)
-      regard_warnings=MagickTrue;
-  }
-  if (iterations == 1)
-    {
-      char
-        *text;
-
-      text=(char *) NULL;
-      status=command(image_info,argc,argv,&text,exception);
-      if (exception->severity != UndefinedException)
-        {
-          if ((exception->severity > ErrorException) ||
-              (regard_warnings != MagickFalse))
-            status=MagickFalse;
-          CatchException(exception);
-        }
-      if (text != (char *) NULL)
-        {
-          if (metadata != (char **) NULL)
-            (void) ConcatenateString(&(*metadata),text);
-          text=DestroyString(text);
-        }
-      return(status);
-    }
-  number_threads=GetOpenMPMaximumThreads();
-  serial=0.0;
-  for (n=1; n <= (ssize_t) number_threads; n++)
-  {
-    double
-      e,
-      parallel,
-      user_time;
-
-    TimerInfo
-      *timer;
-
-    (void) SetMagickResourceLimit(ThreadResource,(MagickSizeType) n);
-    timer=AcquireTimerInfo();
-    if (concurrent == MagickFalse)
-      {
-        for (i=0; i < (ssize_t) iterations; i++)
-        {
-          char
-            *text;
-
-          text=(char *) NULL;
-          if (status == MagickFalse)
-            continue;
-          if (duration > 0)
-            {
-              if (GetElapsedTime(timer) > duration)
-                continue;
-              (void) ContinueTimer(timer);
-            }
-          status=command(image_info,argc,argv,&text,exception);
-          if (exception->severity != UndefinedException)
-            {
-              if ((exception->severity > ErrorException) ||
-                  (regard_warnings != MagickFalse))
-                status=MagickFalse;
-              CatchException(exception);
-            }
-          if (text != (char *) NULL)
-            {
-              if (metadata != (char **) NULL)
-                (void) ConcatenateString(&(*metadata),text);
-              text=DestroyString(text);
-            }
-          }
-      }
-    else
-      {
-        SetOpenMPNested(1);
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-        # pragma omp parallel for shared(status)
-#endif
-        for (i=0; i < (ssize_t) iterations; i++)
-        {
-          char
-            *text;
-
-          text=(char *) NULL;
-          if (status == MagickFalse)
-            continue;
-          if (duration > 0)
-            {
-              if (GetElapsedTime(timer) > duration)
-                continue;
-              (void) ContinueTimer(timer);
-            }
-          status=command(image_info,argc,argv,&text,exception);
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-          # pragma omp critical (MagickCore_MagickCommandGenesis)
-#endif
-          {
-            if (exception->severity != UndefinedException)
-              {
-                if ((exception->severity > ErrorException) ||
-                    (regard_warnings != MagickFalse))
-                  status=MagickFalse;
-                CatchException(exception);
-              }
-            if (text != (char *) NULL)
-              {
-                if (metadata != (char **) NULL)
-                  (void) ConcatenateString(&(*metadata),text);
-                text=DestroyString(text);
-              }
-          }
-        }
-      }
-    user_time=GetUserTime(timer);
-    parallel=GetElapsedTime(timer);
-    e=1.0;
-    if (n == 1)
-      serial=parallel;
-    else
-      e=((1.0/(1.0/((serial/(serial+parallel))+(1.0-(serial/(serial+parallel)))/
-        (double) n)))-(1.0/(double) n))/(1.0-1.0/(double) n);
-    (void) FormatLocaleFile(stderr,
-      "  Performance[%.20g]: %.20gi %0.3fips %0.6fe %0.6fu %lu:%02lu.%03lu\n",
-      (double) n,(double) iterations,(double) iterations/parallel,e,user_time,
-      (unsigned long) (parallel/60.0),(unsigned long) floor(fmod(parallel,
-      60.0)),(unsigned long) (1000.0*(parallel-floor(parallel))+0.5));
-    timer=DestroyTimerInfo(timer);
-  }
-  return(status);
-}
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -428,7 +198,8 @@ static MagickBooleanType MonitorProgress(const char *text,
     return(MagickTrue);
   if ((offset != (MagickOffsetType) (extent-1)) && ((offset % 50) != 0))
     return(MagickTrue);
-  (void) CopyMagickString(tag,text,MagickPathExtent);
+  (void) CopyMagickString(tag,text == (const char *) NULL ? "null" : text,
+     MagickPathExtent);
   p=strrchr(tag,'/');
   if (p != (char *) NULL)
     *p='\0';
@@ -439,11 +210,11 @@ static MagickBooleanType MonitorProgress(const char *text,
   if (p == (char *) NULL)
     (void) FormatLocaleFile(stderr,"%s: %ld of %lu, %02ld%% complete\r",
       locale_message,(long) offset,(unsigned long) extent,(long)
-      (100L*offset/(extent-1)));
+      (100.0*offset*PerceptibleReciprocal(extent-1.0)));
   else
     (void) FormatLocaleFile(stderr,"%s[%s]: %ld of %lu, %02ld%% complete\r",
       locale_message,p+1,(long) offset,(unsigned long) extent,(long)
-      (100L*offset/(extent-1)));
+      (100.0*offset*PerceptibleReciprocal(extent-1.0)));
   if (offset == (MagickOffsetType) (extent-1))
     (void) FormatLocaleFile(stderr,"\n");
   (void) fflush(stderr);
@@ -466,11 +237,11 @@ static Image *SparseColorOption(const Image *image,
   Image
     *sparse_image;
 
-  PixelInfo
-    color;
-
   MagickBooleanType
     error;
+
+  PixelInfo
+    color;
 
   size_t
     x;
@@ -482,16 +253,16 @@ static Image *SparseColorOption(const Image *image,
   /*
     SparseColorOption() parses the complex -sparse-color argument into an an
     array of floating point values then calls SparseColorImage().  Argument is
-    a complex mix of floating-point pixel coodinates, and color specifications
+    a complex mix of floating-point pixel coordinates, and color specifications
     (or direct floating point numbers).  The number of floats needed to
     represent a color varies depending on the current channel setting.
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Limit channels according to image - and add up number of color channel.
   */
@@ -751,7 +522,7 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image **) NULL);
   assert((*image)->signature == MagickCoreSignature);
-  if ((*image)->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",(*image)->filename);
   if (argc < 0)
     return(MagickTrue);
@@ -1924,8 +1695,7 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
                   exception);
                 break;
               }
-            text=InterpretImageProperties(mogrify_info,*image,format,
-              exception);
+            text=InterpretImageProperties(mogrify_info,*image,format,exception);
             if (text == (char *) NULL)
               break;
             (void) fputs(text,stdout);
@@ -2010,9 +1780,9 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
             (void) SyncImageSettings(mogrify_info,*image,exception);
             flags=ParseGeometry(argv[i+1],&geometry_info);
             if ((flags & SigmaValue) == 0)
-              geometry_info.sigma=100.0;
+              geometry_info.sigma=300.0;
             if ((flags & XiValue) == 0)
-              geometry_info.xi=0.01;
+              geometry_info.xi=0.0001;
             (void) KmeansImage(*image,(size_t) geometry_info.rho,
               (size_t) geometry_info.sigma,geometry_info.xi,exception);
             break;
@@ -3497,6 +3267,11 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
             mask=DestroyImage(mask);
             break;
           }
+        if (LocaleCompare("word-break",option+1) == 0)
+          {
+            (void) SetImageOption(image_info,option+1,argv[i+1]);
+            break;
+          }
         break;
       }
       default:
@@ -3873,6 +3648,7 @@ static MagickBooleanType MogrifyUsage(void)
       "                       virtual pixel access method\n"
       "  -weight type         render text with this font weight\n"
       "  -white-point point   chromaticity white point\n"
+      "  -word-break type     sets whether line breaks appear wherever the text would otherwise overflow"
       "  -write-mask filename associate a write mask with the image",
     stack_operators[] =
       "  -delete indexes      delete the image from the image sequence\n"
@@ -3974,7 +3750,7 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(exception != (ExceptionInfo *) NULL);
   if (argc == 2)
@@ -4066,6 +3842,8 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
           AppendImageFormat(format,images->filename);
         AppendImageStack(images);
         FinalizeImageSettings(image_info,image,MagickFalse);
+        if (image == (Image *) NULL)
+          continue;
         if (global_colormap != MagickFalse)
           {
             QuantizeInfo
@@ -4083,6 +3861,8 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
             char
               name[MagickPathExtent];
 
+            if (format != (char *) NULL)
+              (void) CopyMagickString(magic,format,MagickPathExtent);
             (void) FormatLocaleString(name,MagickPathExtent,"%s:%s",magic,
               image->filename);
             (void) CopyMagickString(image->filename,name,MagickPathExtent);
@@ -4763,6 +4543,11 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
             i++;
             if (i == (ssize_t) argc)
               ThrowMogrifyException(OptionError,"MissingArgument",option);
+            if (LocaleNCompare(argv[i],"registry:",9) == 0)
+              {
+                (void) DeleteImageRegistry(argv[i]+9);
+                break;
+              }
             if (IsGeometry(argv[i]) == MagickFalse)
               ThrowMogrifyInvalidArgumentException(option,argv[i]);
             break;
@@ -6687,6 +6472,22 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
               ThrowMogrifyException(OptionError,"MissingArgument",option);
             break;
           }
+        if (LocaleCompare("word-break",option+1) == 0)
+          {
+            ssize_t
+              word_break;
+
+            if (*option == '+')
+              break;
+            i++;
+            if (i == (ssize_t) argc)
+              ThrowMogrifyException(OptionError,"MissingArgument",option);
+            word_break=ParseCommandOption(MagickWordBreakOptions,MagickFalse,
+              argv[i]);
+            if (word_break < 0)
+              ThrowMogrifyException(OptionError,"UnrecognizedArgument",argv[i]);
+            break;
+          }
         if (LocaleCompare("white-balance",option+1) == 0)
           break;
         if (LocaleCompare("white-point",option+1) == 0)
@@ -6799,7 +6600,7 @@ WandExport MagickBooleanType MogrifyImageInfo(ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (argc < 0)
@@ -7841,6 +7642,16 @@ WandExport MagickBooleanType MogrifyImageInfo(ImageInfo *image_info,
               (void) SetImageOption(image_info,option+1,argv[i+1]);
             break;
           }
+        if (LocaleCompare("word-break",option+1) == 0)
+          {
+            if (*option == '+')
+              {
+                (void) SetImageOption(image_info,option+1,"undefined");
+                break;
+              }
+            (void) SetImageOption(image_info,option+1,argv[i+1]);
+            break;
+          }
         break;
       }
       default:
@@ -7918,7 +7729,7 @@ WandExport MagickBooleanType MogrifyImageList(ImageInfo *image_info,
   assert(images != (Image **) NULL);
   assert((*images)->previous == (Image *) NULL);
   assert((*images)->signature == MagickCoreSignature);
-  if ((*images)->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       (*images)->filename);
   if ((argc <= 0) || (*argv == (char *) NULL))
@@ -8243,6 +8054,8 @@ WandExport MagickBooleanType MogrifyImageList(ImageInfo *image_info,
                   {
                     status&=CompositeImage(source_image,mask_image,
                       CopyGreenCompositeOp,MagickTrue,0,0,exception);
+                    (void) SetImageColorspace(source_image,sRGBColorspace,
+                      exception);
                     status&=CompositeImage(new_images,source_image,compose,
                       clip_to_self,geometry.x,geometry.y,exception);
                     break;
@@ -8275,8 +8088,22 @@ WandExport MagickBooleanType MogrifyImageList(ImageInfo *image_info,
                     break;
                   }
                 }
-                status&=CompositeImage(canvas_image,new_images,OverCompositeOp,
-                  clip_to_self,0,0,exception);
+                switch (compose)
+                {
+                  case DisplaceCompositeOp:
+                  case DistortCompositeOp:
+                  { 
+                    status&=CompositeImage(canvas_image,new_images,
+                      CopyCompositeOp,clip_to_self,0,0,exception);
+                    break;
+                  }
+                  default:
+                  {
+                    status&=CompositeImage(canvas_image,new_images,
+                      OverCompositeOp,clip_to_self,0,0,exception);
+                    break;
+                  }
+                }
                 new_images=DestroyImageList(new_images);
                 new_images=canvas_image;
                 mask_image=DestroyImage(mask_image);
@@ -9157,7 +8984,7 @@ WandExport MagickBooleanType MogrifyImages(ImageInfo *image_info,
     return(MogrifyImage(image_info,argc,argv,images,exception));
   assert((*images)->previous == (Image *) NULL);
   assert((*images)->signature == MagickCoreSignature);
-  if ((*images)->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       (*images)->filename);
   if ((argc <= 0) || (*argv == (char *) NULL))

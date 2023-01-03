@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,26 +87,36 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="colorspace.html#GetImageColorspaceType">GetImageColorspaceType</a></li>
+  <li><a href="colorspace.html#SetImageColorspace">SetImageColorspace</a></li>
+  <li><a href="colorspace.html#SetImageGray">SetImageGray</a></li>
+  <li><a href="colorspace.html#SetImageMonochrome">SetImageMonochrome</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="colorspace.html#GetImageColorspaceType">GetImageColorspaceType</a> &#8226; <a href="colorspace.html#SetImageColorspace">SetImageColorspace</a> &#8226; <a href="colorspace.html#SetImageGray">SetImageGray</a> &#8226; <a href="colorspace.html#SetImageMonochrome">SetImageMonochrome</a> &#8226; <a href="colorspace.html#TransformImageColorspace">TransformImageColorspace</a></p>
-
 <h2><a href="../../api/MagickCore/colorspace_8c.html" id="GetImageColorspaceType">GetImageColorspaceType</a></h2>
 
 <p>GetImageColorspaceType() returns the potential type of image: sRGBColorspaceType, RGBColorspaceType, GRAYColorspaceType, etc.</p>
 
 <p>To ensure the image type matches its potential, use SetImageColorspaceType():</p>
 
-<pre class="text">
-    (void) SetImageColorspaceType(image,GetImageColorspaceType(image),
+<pre class="bg-light text-dark mx-4"><samp>    (void) SetImageColorspaceType(image,GetImageColorspaceType(image),
 exception);
-</pre>
+</samp></pre>
 
 <p>The format of the GetImageColorspaceType method is:</p>
 
-<pre class="text">
-ColorspaceType GetImageColorspaceType(const Image *image,
+<pre class="bg-light text-dark mx-4"><samp>ColorspaceType GetImageColorspaceType(const Image *image,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -133,10 +140,9 @@ ColorspaceType GetImageColorspaceType(const Image *image,
 
 <p>The format of the SetImageColorspace method is:</p>
 
-<pre class="text">
-MagickBooleanType SetImageColorspace(Image *image,
-  const ColorspaceType colorspace,ExceptiionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SetImageColorspace(Image *image,
+  const ColorspaceType colorspace,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -164,10 +170,9 @@ MagickBooleanType SetImageColorspace(Image *image,
 
 <p>The format of the SetImageGray method is:</p>
 
-<pre class="text">
-MagickBooleanType SetImageGray(const Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SetImageGray(const Image *image,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -191,10 +196,9 @@ MagickBooleanType SetImageGray(const Image *image,
 
 <p>The format of the SetImageMonochrome method is:</p>
 
-<pre class="text">
-MagickBooleanType SetImageMonochrome(Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SetImageMonochrome(Image *image,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -218,10 +222,9 @@ MagickBooleanType SetImageMonochrome(Image *image,
 
 <p>The format of the TransformImageColorspace method is:</p>
 
-<pre class="text">
-MagickBooleanType TransformImageColorspace(Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType TransformImageColorspace(Image *image,
   const ColorspaceType colorspace,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

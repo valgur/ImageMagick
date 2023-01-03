@@ -56,7 +56,7 @@
 #include "MagickCore/utility-private.h"
 
 /*
-  Typedef declaractions.
+  Typedef declarations.
 */
 struct _TokenInfo
 {
@@ -129,9 +129,10 @@ MagickExport TokenInfo *AcquireTokenInfo(void)
 */
 MagickExport TokenInfo *DestroyTokenInfo(TokenInfo *token_info)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(token_info != (TokenInfo *) NULL);
   assert(token_info->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   token_info->signature=(~MagickCoreSignature);
   token_info=(TokenInfo *) RelinquishMagickMemory(token_info);
   return(token_info);
@@ -354,6 +355,9 @@ MagickExport MagickBooleanType GlobExpression(
   const char *magick_restrict expression,const char *magick_restrict pattern,
   const MagickBooleanType case_insensitive)
 {
+  char
+    path[MagickPathExtent];
+
   MagickBooleanType
     done,
     match;
@@ -367,30 +371,9 @@ MagickExport MagickBooleanType GlobExpression(
     return(MagickTrue);
   if (LocaleCompare(pattern,"*") == 0)
     return(MagickTrue);
-  if ((GetUTFCode(pattern+strlen(pattern)-1) == ']') &&
-      (strchr(pattern,'[') != (char *) NULL))
-    {
-      ExceptionInfo
-        *exception;
-
-      ImageInfo
-        *image_info;
-
-      /*
-        Determine if pattern is a scene, i.e. img0001.pcd[2].
-      */
-      image_info=AcquireImageInfo();
-      (void) CopyMagickString(image_info->filename,pattern,MagickPathExtent);
-      exception=AcquireExceptionInfo();
-      (void) SetImageInfo(image_info,0,exception);
-      exception=DestroyExceptionInfo(exception);
-      if (LocaleCompare(image_info->filename,pattern) != 0)
-        {
-          image_info=DestroyImageInfo(image_info);
-          return(MagickFalse);
-        }
-      image_info=DestroyImageInfo(image_info);
-    }
+  GetPathComponent(pattern,SubimagePath,path);
+  if (*path != '\0')
+    return(MagickFalse);
   /*
     Evaluate glob expression.
   */

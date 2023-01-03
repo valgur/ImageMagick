@@ -64,7 +64,7 @@
 #include "coders/coders-private.h"
 
 /*
-  Define declaractions.
+  Define declarations.
 */
 #define VIPS_MAGIC_LSB 0x08f2a6b6U
 #define VIPS_MAGIC_MSB 0xb6a6f208U
@@ -173,7 +173,7 @@ static MagickBooleanType IsVIPS(const unsigned char *magick,const size_t length)
 %
 %  The format of the ReadVIPSImage method is:
 %
-%      Image *ReadVIPSmage(const ImageInfo *image_info,ExceptionInfo *exception)
+%      Image *ReadVIPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
 %
 %  A description of each parameter follows:
 %
@@ -392,11 +392,11 @@ static Image *ReadVIPSImage(const ImageInfo *image_info,
 
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -535,7 +535,7 @@ static Image *ReadVIPSImage(const ImageInfo *image_info,
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  RegisterVIPSmage() adds attributes for the VIPS image format to the list
+%  RegisterVIPSImage() adds attributes for the VIPS image format to the list
 %  of supported formats.  The attributes include the image format tag, a
 %  method to read and/or write the format, whether the format supports the
 %  saving of more than one frame to the same file or blob, whether the format
@@ -642,7 +642,7 @@ static MagickBooleanType WriteVIPSImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)

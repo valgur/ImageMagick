@@ -127,11 +127,11 @@ static Image *ReadAAIImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -328,30 +328,26 @@ ModuleExport void UnregisterAAIImage(void)
 static MagickBooleanType WriteAAIImage(const ImageInfo *image_info,Image *image,
   ExceptionInfo *exception)
 {
+  const Quantum
+    *magick_restrict p;
+
   MagickBooleanType
     status;
 
   MagickOffsetType
     scene;
 
-  const Quantum
-    *magick_restrict p;
-
-  ssize_t
-    x;
-
-  unsigned char
-    *magick_restrict q;
-
   size_t
-    imageListLength;
+    number_scenes;
 
   ssize_t
     count,
+    x,
     y;
 
   unsigned char
-    *pixels;
+    *pixels,
+    *magick_restrict q;
 
   /*
     Open output image file.
@@ -360,15 +356,15 @@ static MagickBooleanType WriteAAIImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     /*
@@ -421,7 +417,7 @@ static MagickBooleanType WriteAAIImage(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

@@ -190,11 +190,17 @@ static void *DestroyTypeNode(void *type_info)
 static SplayTreeInfo *AcquireTypeCache(const char *filename,
   ExceptionInfo *exception)
 {
+  MagickStatusType
+    status;
+
   SplayTreeInfo
     *cache;
 
   cache=NewSplayTree(CompareSplayTreeString,(void *(*)(void *)) NULL,
     DestroyTypeNode);
+  if (cache == (SplayTreeInfo *) NULL)
+    ThrowFatalException(ResourceLimitFatalError,"MemoryAllocationFailed");
+  status=MagickTrue;
 #if !MAGICKCORE_ZERO_CONFIGURATION_SUPPORT
   {
     char
@@ -213,7 +219,7 @@ static SplayTreeInfo *AcquireTypeCache(const char *filename,
     while (option != (const StringInfo *) NULL)
     {
       (void) CopyMagickString(path,GetStringInfoPath(option),MagickPathExtent);
-      (void) LoadTypeCache(cache,(const char *)
+      status&=LoadTypeCache(cache,(const char *)
         GetStringInfoDatum(option),GetStringInfoPath(option),0,exception);
       option=(const StringInfo *) GetNextValueInLinkedList(options);
     }
@@ -232,7 +238,7 @@ static SplayTreeInfo *AcquireTypeCache(const char *filename,
         xml=FileToString(path,~0UL,exception);
         if (xml != (void *) NULL)
           {
-            (void) LoadTypeCache(cache,xml,path,0,exception);
+            status&=LoadTypeCache(cache,xml,path,0,exception);
             xml=DestroyString(xml);
           }
         font_path=DestroyString(font_path);
@@ -242,7 +248,9 @@ static SplayTreeInfo *AcquireTypeCache(const char *filename,
   magick_unreferenced(filename);
 #endif
   if (GetNumberOfNodesInSplayTree(cache) == 0)
-    (void) LoadTypeCache(cache,TypeMap,"built-in",0,exception);
+    status&=LoadTypeCache(cache,TypeMap,"built-in",0,exception);
+  if (status == MagickFalse)
+    ;
   return(cache);
 }
 
@@ -563,8 +571,9 @@ MagickExport const TypeInfo **GetTypeInfoList(const char *pattern,
     Allocate type list.
   */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_fonts != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_fonts=0;
   p=GetTypeInfo("*",exception);
   if (p == (const TypeInfo *) NULL)
@@ -656,8 +665,9 @@ MagickExport char **GetTypeList(const char *pattern,size_t *number_fonts,
     Allocate type list.
   */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_fonts != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_fonts=0;
   p=GetTypeInfo("*",exception);
   if (p == (const TypeInfo *) NULL)
@@ -1084,8 +1094,9 @@ static MagickBooleanType LoadTypeCache(SplayTreeInfo *cache,const char *xml,
   /*
     Load the type map file.
   */
-  (void) LogMagickEvent(ConfigureEvent,GetMagickModule(),
-    "Loading type configure file \"%s\" ...",filename);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(ConfigureEvent,GetMagickModule(),
+      "Loading type configure file \"%s\" ...",filename);
   if (xml == (const char *) NULL)
     return(MagickFalse);
   status=MagickTrue;

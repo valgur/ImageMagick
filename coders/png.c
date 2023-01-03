@@ -880,7 +880,7 @@ LosslessReduceDepthOK(Image *image,ExceptionInfo *exception)
            QuantumToCharToQuantumEqQuantum(image->background_color.blue) ?
            MagickTrue : MagickFalse;
 
-        if (ok_to_reduce != MagickFalse && image->storage_class == PseudoClass)
+        if (ok_to_reduce != MagickFalse && image->storage_class == PseudoClass && image->colormap != NULL)
           {
             int indx;
 
@@ -937,7 +937,7 @@ LosslessReduceDepthOK(Image *image,ExceptionInfo *exception)
             }
           }
 
-        if (ok_to_reduce != MagickFalse)
+        if ((image->debug != MagickFalse) && (ok_to_reduce != MagickFalse))
           {
             (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                 "    OK to reduce PNG bit depth to 8 without loss of info");
@@ -1709,8 +1709,9 @@ static void MagickPNGErrorHandler(png_struct *ping,png_const_charp message)
   image=error_info->image;
   exception=error_info->exception;
 
-  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-    "  libpng-%s error: %s", png_get_libpng_ver(NULL),message);
+  if (image->debug != MagickFalse)
+    (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+      "  libpng-%s error: %s", png_get_libpng_ver(NULL),message);
 
   (void) ThrowMagickException(exception,GetMagickModule(),CoderError,message,
     "`%s'",image->filename);
@@ -1742,8 +1743,9 @@ static void MagickPNGWarningHandler(png_struct *ping,png_const_charp message)
   error_info=(PNGErrorInfo *) png_get_error_ptr(ping);
   image=error_info->image;
   exception=error_info->exception;
-  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-    "  libpng-%s warning: %s", png_get_libpng_ver(NULL),message);
+  if (image->debug != MagickFalse)
+    (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+      "  libpng-%s warning: %s", png_get_libpng_ver(NULL),message);
 
   (void) ThrowMagickException(exception,GetMagickModule(),CoderWarning,
     message,"`%s'",image->filename);
@@ -1832,8 +1834,9 @@ Magick_png_read_raw_profile(png_struct *ping,Image *image,
 
   length=StringToLong(sp);
 
-  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-       "      length: %lu",(unsigned long) length);
+  if (image->debug != MagickFalse)
+    (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+         "      length: %lu",(unsigned long) length);
 
   while ((*sp != ' ' && *sp != '\n') && extent--)
     sp++;
@@ -2012,9 +2015,10 @@ static int read_user_chunk_callback(png_struct *ping, png_unknown_chunkp chunk)
          return(n);  success
   */
 
-  (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-     "    read_user_chunk: found %c%c%c%c chunk",
-       chunk->name[0],chunk->name[1],chunk->name[2],chunk->name[3]);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+       "    read_user_chunk: found %c%c%c%c chunk",
+         chunk->name[0],chunk->name[1],chunk->name[2],chunk->name[3]);
 
   if ((chunk->name[0] == 101) &&
       ((chunk->name[1] == 88) || (chunk->name[1] == 120)) &&
@@ -2188,12 +2192,11 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
     unit_type = 0;
 
   MagickBooleanType
-    logging,
+    logging = MagickFalse,
     ping_found_cHRM,
     ping_found_gAMA,
     ping_found_iCCP,
     ping_found_sRGB,
-    ping_found_sRGB_cHRM,
     ping_preserve_iCCP,
     status;
 
@@ -2370,7 +2373,6 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
   ping_found_gAMA = MagickFalse;
   ping_found_iCCP = MagickFalse;
   ping_found_sRGB = MagickFalse;
-  ping_found_sRGB_cHRM = MagickFalse;
   ping_preserve_iCCP = MagickFalse;
 
 
@@ -2652,8 +2654,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
     {
       image->rendering_intent=UndefinedIntent;
       intent=Magick_RenderingIntent_to_PNG_RenderingIntent(UndefinedIntent);
-      (void) memset(&image->chromaticity,0,
-        sizeof(image->chromaticity));
+      (void) memset(&image->chromaticity,0,sizeof(image->chromaticity));
     }
 
   if (logging != MagickFalse)
@@ -2745,7 +2746,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
             (void) LogMagickEvent(CoderEvent,GetMagickModule(),
               "    Reading PNG iCCP chunk.");
 
-          profile=BlobToStringInfo(info,(const size_t) profile_length);
+          profile=BlobToStringInfo(info,(size_t) profile_length);
 
           if (profile == (StringInfo *) NULL)
           {
@@ -2775,22 +2776,25 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
                    {
                      if (got_crc == 0)
                      {
-                       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                         "    Got a %lu-byte ICC profile (potentially sRGB)",
-                         (unsigned long) profile_length);
+                       if (logging != MagickFalse)
+                         (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                           "    Got a %lu-byte ICC profile (potentially sRGB)",
+                           (unsigned long) profile_length);
 
                        data=GetStringInfoDatum(profile);
                        profile_crc=crc32(0,data,profile_length);
 
-                       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                       if (logging != MagickFalse)
+                         (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                            "      with crc=%8x",(unsigned int) profile_crc);
                        got_crc++;
                      }
 
                      if (profile_crc == sRGB_info[icheck].crc)
                      {
-                        (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                            "      It is sRGB with rendering intent = %s",
+                        if (logging != MagickFalse)
+                          (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                              "      It is sRGB with rendering intent = %s",
                         Magick_RenderingIntentString_from_PNG_RenderingIntent(
                              sRGB_info[icheck].intent));
                         if (image->rendering_intent==UndefinedIntent)
@@ -2805,9 +2809,10 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
                  }
                  if (sRGB_info[icheck].len == 0)
                  {
-                    (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                        "    Got %lu-byte ICC profile not recognized as sRGB",
-                        (unsigned long) profile_length);
+                    if (logging != MagickFalse)
+                      (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+                          "    Got %lu-byte ICC profile not recognized as sRGB",
+                          (unsigned long) profile_length);
                     (void) SetImageProfile(image,"icc",profile,exception);
                  }
             }
@@ -2893,43 +2898,6 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
         &image->chromaticity.blue_primary.y);
 
        ping_found_cHRM=MagickTrue;
-
-       if (image->chromaticity.red_primary.x>0.6399f &&
-           image->chromaticity.red_primary.x<0.6401f &&
-           image->chromaticity.red_primary.y>0.3299f &&
-           image->chromaticity.red_primary.y<0.3301f &&
-           image->chromaticity.green_primary.x>0.2999f &&
-           image->chromaticity.green_primary.x<0.3001f &&
-           image->chromaticity.green_primary.y>0.5999f &&
-           image->chromaticity.green_primary.y<0.6001f &&
-           image->chromaticity.blue_primary.x>0.1499f &&
-           image->chromaticity.blue_primary.x<0.1501f &&
-           image->chromaticity.blue_primary.y>0.0599f &&
-           image->chromaticity.blue_primary.y<0.0601f &&
-           image->chromaticity.white_point.x>0.3126f &&
-           image->chromaticity.white_point.x<0.3128f &&
-           image->chromaticity.white_point.y>0.3289f &&
-           image->chromaticity.white_point.y<0.3291f)
-          ping_found_sRGB_cHRM=MagickTrue;
-    }
-
-  if (image->rendering_intent != UndefinedIntent)
-    {
-      if (ping_found_sRGB != MagickTrue &&
-          (ping_found_gAMA != MagickTrue ||
-          (image->gamma > .45 && image->gamma < .46)) &&
-          (ping_found_cHRM != MagickTrue ||
-          ping_found_sRGB_cHRM != MagickFalse) &&
-          ping_found_iCCP != MagickTrue)
-      {
-         png_set_sRGB(ping,ping_info,
-            Magick_RenderingIntent_to_PNG_RenderingIntent
-            (image->rendering_intent));
-         file_gamma=0.45455f;
-         ping_found_sRGB=MagickTrue;
-         (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-           "    Setting sRGB as if in input");
-      }
     }
 
 #if defined(PNG_oFFs_SUPPORTED)
@@ -2940,9 +2908,10 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
 
       if (logging != MagickFalse)
         if (image->page.x || image->page.y)
-          (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-            "    Reading PNG oFFs chunk: x: %.20g, y: %.20g.",(double)
-            image->page.x,(double) image->page.y);
+          if (logging != MagickFalse)
+            (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+              "    Reading PNG oFFs chunk: x: %.20g, y: %.20g.",(double)
+              image->page.x,(double) image->page.y);
     }
 #endif
 #if defined(PNG_pHYs_SUPPORTED)
@@ -3020,7 +2989,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
                    png_get_valid(ping,ping_info,PNG_INFO_bKGD))
                     {
                       png_color_16
-                         background;
+                         background = { 0 };
 
 #ifndef PNG_READ_EMPTY_PLTE_SUPPORTED
                       if (mng_info->have_saved_bkgd_index)
@@ -3214,8 +3183,9 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
       double
         image_gamma = image->gamma;
 
-      (void)LogMagickEvent(CoderEvent,GetMagickModule(),
-         "    image->gamma=%f",(float) image_gamma);
+      if (logging != MagickFalse)
+        (void)LogMagickEvent(CoderEvent,GetMagickModule(),
+           "    image->gamma=%f",(float) image_gamma);
 
       if (image_gamma > 0.75)
         {
@@ -3243,8 +3213,9 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
       double
         image_gamma = image->gamma;
 
-      (void)LogMagickEvent(CoderEvent,GetMagickModule(),
-         "    image->gamma=%f",(float) image_gamma);
+      if (logging != MagickFalse)
+        (void)LogMagickEvent(CoderEvent,GetMagickModule(),
+           "    image->gamma=%f",(float) image_gamma);
 
       if (image_gamma > 0.75)
         {
@@ -3270,7 +3241,8 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
       image->gamma = image_gamma;
     }
 
-  (void)LogMagickEvent(CoderEvent,GetMagickModule(),
+  if (logging != MagickFalse)
+    (void)LogMagickEvent(CoderEvent,GetMagickModule(),
       "    image->colorspace=%d",(int) image->colorspace);
 
   if (((int) ping_color_type == PNG_COLOR_TYPE_PALETTE) ||
@@ -3968,6 +3940,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
                 (void) FormatLocaleString(key,MagickPathExtent,"%s",
                   text[i].key);
                 if ((LocaleCompare(key,"version") == 0) ||
+                    (LocaleCompare(key,"profile") == 0) ||
                     (LocaleCompare(key,"width") == 0))
                   (void) FormatLocaleString(key,MagickPathExtent,"png:%s",
                     text[i].key);
@@ -4238,7 +4211,7 @@ static Image *ReadOnePNGImage(MngInfo *mng_info,
   /* }  for navigation to beginning of SETJMP-protected block, revert to
    *    Throwing an Exception when an error occurs.
    */
-
+  image->depth=ping_file_depth;
   return(image);
 
 /* end of reading one PNG image */
@@ -4251,7 +4224,7 @@ static Image *ReadPNGImage(const ImageInfo *image_info,
     *image;
 
   MagickBooleanType
-    logging,
+    logging = MagickFalse,
     status;
 
   MngInfo
@@ -4268,15 +4241,14 @@ static Image *ReadPNGImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
-
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter ReadPNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
+  if (image->debug != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter ReadPNGImage()");
   mng_info=(MngInfo *) NULL;
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
 
@@ -4353,9 +4325,10 @@ static Image *ReadPNGImage(const ImageInfo *image_info,
            image->chromaticity.white_point.y>0.3289f &&
            image->chromaticity.white_point.y<0.3291f))
     {
-       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
+      if (logging != MagickFalse)
+        (void) LogMagickEvent(CoderEvent,GetMagickModule(),
           "SetImageColorspace to RGBColorspace");
-       SetImageColorspace(image,RGBColorspace,exception);
+      SetImageColorspace(image,RGBColorspace,exception);
     }
 
   if (logging != MagickFalse)
@@ -4450,7 +4423,7 @@ static Image *ReadOneJNGImage(MngInfo *mng_info,
     *color_image_info;
 
   MagickBooleanType
-    logging;
+    logging = MagickFalse;
 
   ssize_t
     y;
@@ -4502,8 +4475,9 @@ static Image *ReadOneJNGImage(MngInfo *mng_info,
   alpha_image_info=(ImageInfo *) NULL;
   color_image_info=(ImageInfo *) NULL;
 
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),
-    "  Enter ReadOneJNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),
+      "  Enter ReadOneJNGImage()");
 
   image=mng_info->image;
 
@@ -5154,8 +5128,12 @@ static Image *ReadOneJNGImage(MngInfo *mng_info,
           else
             for (x=(ssize_t) image->columns; x != 0; x--)
             {
-              SetPixelAlpha(image,GetPixelRed(jng_image,s),q);
-              if (GetPixelAlpha(image,q) != OpaqueAlpha)
+              Quantum
+                alpha;
+
+              alpha=GetPixelRed(jng_image,s);
+              SetPixelAlpha(image,alpha,q);
+              if (alpha != OpaqueAlpha)
                 image->alpha_trait=BlendPixelTrait;
               q+=GetPixelChannels(image);
               s+=GetPixelChannels(jng_image);
@@ -5246,21 +5224,20 @@ static Image *ReadOneJNGImage(MngInfo *mng_info,
 %
 */
 
-static Image *ReadJNGImage(const ImageInfo *image_info,
-                ExceptionInfo *exception)
+static Image *ReadJNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
 {
+  char
+    magic_number[MagickPathExtent];
+
   Image
     *image;
 
   MagickBooleanType
-    logging,
+    logging = MagickFalse,
     status;
 
   MngInfo
     *mng_info;
-
-  char
-    magic_number[MagickPathExtent];
 
   size_t
     count;
@@ -5270,12 +5247,14 @@ static Image *ReadJNGImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-     image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter ReadJNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+       image_info->filename);
   image=AcquireImage(image_info,exception);
+  if (image->debug != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter ReadJNGImage()");
   mng_info=(MngInfo *) NULL;
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
 
@@ -5376,9 +5355,6 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
     mng_background_color;
 #endif
 
-  unsigned char
-    *p;
-
   ssize_t
     i;
 
@@ -5387,6 +5363,9 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
 
   ssize_t
     loop_level;
+
+  unsigned char
+    *p;
 
   volatile short
     skipping_loop;
@@ -5512,32 +5491,18 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
 
         p=NULL;
         chunk=(unsigned char *) NULL;
-
         if (length != 0)
           {
             chunk=(unsigned char *) AcquireQuantumMemory(length,sizeof(*chunk));
-
             if (chunk == (unsigned char *) NULL)
               ThrowReaderException(ResourceLimitError,"MemoryAllocationFailed");
-
-            for (i=0; i < (ssize_t) length; i++)
-            {
-              int
-                c;
-
-              c=ReadBlobByte(image);
-              if (c == EOF)
-                {
-                  chunk=(unsigned char *) RelinquishMagickMemory(chunk);
-                  ThrowReaderException(CorruptImageError,
-                    "InsufficientImageDataInFile");
-                }
-              chunk[i]=(unsigned char) c;
-            }
-
+            if (ReadBlob(image,length,chunk) != (ssize_t) length)
+              {
+                chunk=(unsigned char *) RelinquishMagickMemory(chunk);
+                ThrowReaderException(CorruptImageError,"CorruptImage");
+              }
             p=chunk;
           }
-
         (void) ReadBlobMSBLong(image);  /* read crc word */
 
 #if !defined(JNG_SUPPORTED)
@@ -5778,15 +5743,12 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
 
             if (length > 5)
               {
-                mng_info->mng_global_bkgd.red=
-                  ScaleShortToQuantum((unsigned short) ((p[0] << 8) | p[1]));
-
-                mng_info->mng_global_bkgd.green=
-                  ScaleShortToQuantum((unsigned short) ((p[2] << 8) | p[3]));
-
-                mng_info->mng_global_bkgd.blue=
-                  ScaleShortToQuantum((unsigned short) ((p[4] << 8) | p[5]));
-
+                mng_info->mng_global_bkgd.red=ScaleShortToQuantum(
+                  (unsigned short) (((unsigned int) p[0] << 8) | p[1]));
+                mng_info->mng_global_bkgd.green=ScaleShortToQuantum(
+                  (unsigned short) (((unsigned int) p[2] << 8) | p[3]));
+                mng_info->mng_global_bkgd.blue=ScaleShortToQuantum(
+                  (unsigned short) (((unsigned int) p[4] << 8) | p[5]));
                 mng_info->have_global_bkgd=MagickTrue;
               }
 
@@ -5804,15 +5766,12 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
 
             if (mandatory_back && length > 5)
               {
-                mng_background_color.red=
-                    ScaleShortToQuantum((unsigned short) ((p[0] << 8) | p[1]));
-
-                mng_background_color.green=
-                    ScaleShortToQuantum((unsigned short) ((p[2] << 8) | p[3]));
-
-                mng_background_color.blue=
-                    ScaleShortToQuantum((unsigned short) ((p[4] << 8) | p[5]));
-
+                mng_background_color.red=ScaleShortToQuantum((unsigned short)
+                  (((unsigned int) p[0] << 8) | p[1]));
+                mng_background_color.green=ScaleShortToQuantum((unsigned short)
+                  (((unsigned int) p[2] << 8) | p[3]));
+                mng_background_color.blue=ScaleShortToQuantum((unsigned short)
+                  (((unsigned int) p[4] << 8) | p[5]));
                 mng_background_color.alpha=OpaqueAlpha;
               }
 
@@ -6287,7 +6246,7 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
                     if (loop_iters >= 2147483647L)
                       loop_iters=2147483647L;
                     if (image_info->number_scenes != 0)
-                      if (loop_iters > image_info->number_scenes)
+                      if (loop_iters > (ssize_t) image_info->number_scenes)
                         loop_iters=image_info->number_scenes;
                     mng_info->loop_jump[loop_level]=TellBlob(image);
                     mng_info->loop_count[loop_level]=loop_iters;
@@ -6847,7 +6806,6 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
         if (logging != MagickFalse)
           (void) LogMagickEvent(CoderEvent,GetMagickModule(),
             "exit ReadJNGImage() with error");
-
         return((Image *) NULL);
       }
 
@@ -7516,8 +7474,6 @@ static Image *ReadOneMNGImage(MngInfo* mng_info,const ImageInfo *image_info,
           image->depth=16;
         }
 
-      if (LosslessReduceDepthOK(image,exception) != MagickFalse)
-         image->depth = 8;
 #endif
 
       if (image_info->number_scenes != 0)
@@ -7781,7 +7737,7 @@ static Image *ReadMNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
     *image;
 
   MagickBooleanType
-    logging,
+    logging = MagickFalse,
     status;
 
   MngInfo
@@ -7791,12 +7747,14 @@ static Image *ReadMNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-     image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter ReadMNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+       image_info->filename);
   image=AcquireImage(image_info,exception);
+  if (image->debug != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter ReadMNGImage()");
   mng_info=(MngInfo *) NULL;
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
 
@@ -8254,7 +8212,7 @@ Magick_png_write_raw_profile(const ImageInfo *image_info,png_struct *ping,
    dp+=description_length;
    *dp++='\n';
    (void) FormatLocaleString(dp,allocated_length-
-     (png_size_t) (dp-text[0].text),"%8lu ",(unsigned long) length);
+     (png_size_t) (dp-text[0].text),"%8lu",(unsigned long) length);
    dp+=8;
 
    for (i=0; i < (ssize_t) length; i++)
@@ -8471,7 +8429,7 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
 
   MagickBooleanType
     image_matte,
-    logging,
+    logging = MagickFalse,
     matte,
 
     ping_have_blob,
@@ -10347,7 +10305,7 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
                 png_error(ping,"image has 0 colors");
            }
 
-           while ((int) (one << ping_bit_depth) < (ssize_t) image_colors)
+           while ((ping_bit_depth < 64) && (int) (one << ping_bit_depth) < (ssize_t) image_colors)
              ping_bit_depth <<= 1;
         }
 
@@ -10845,7 +10803,7 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
     Note that using the -quality option, not all combinations of
     PNG filter type, zlib compression level, and zlib compression
     strategy are possible.  This will be addressed soon in a
-    release that accomodates "-define png:compression-strategy", etc.
+    release that accommodates "-define png:compression-strategy", etc.
 
    */
 
@@ -11159,7 +11117,7 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
     {
       if (ping_exclude_gAMA == MagickFalse &&
           ping_have_iCCP == MagickFalse &&
-          ping_have_sRGB == MagickFalse &&
+          ping_have_sRGB != MagickFalse &&
           (ping_exclude_sRGB == MagickFalse ||
           (image->gamma < .45 || image->gamma > .46)))
       {
@@ -11167,7 +11125,6 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
         {
           /*
             Note image gamma.
-            To do: check for cHRM+gAMA == sRGB, and write sRGB instead.
           */
           if (logging != MagickFalse)
             (void) LogMagickEvent(CoderEvent,GetMagickModule(),
@@ -11184,7 +11141,6 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
             {
               /*
                 Note image chromaticity.
-                Note: if cHRM+gAMA == sRGB write sRGB instead.
               */
                PrimaryInfo
                  bp,
@@ -11435,7 +11391,7 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
   quantum_info=AcquireQuantumInfo(image_info,image);
   if (quantum_info == (QuantumInfo *) NULL)
     png_error(ping,"Memory allocation for quantum_info failed");
-  quantum_info->format=UndefinedQuantumFormat;
+  (void) SetQuantumFormat(image,quantum_info,UndefinedQuantumFormat);
   (void) SetQuantumDepth(image,quantum_info,image_depth);
   (void) SetQuantumEndian(image,quantum_info,MSBEndian);
   num_passes=png_set_interlace_handling(ping);
@@ -11600,8 +11556,7 @@ static MagickBooleanType WriteOnePNGImage(MngInfo *mng_info,
                 else if (ping_color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
                   {
                     (void) ExportQuantumPixels(image,(CacheView *) NULL,
-                      quantum_info,GrayAlphaQuantum,ping_pixels,
-                      exception);
+                      quantum_info,GrayAlphaQuantum,ping_pixels,exception);
 
                     if (logging != MagickFalse && y == 0)
                       (void) LogMagickEvent(CoderEvent,GetMagickModule(),
@@ -12113,7 +12068,7 @@ static MagickBooleanType WritePNGImage(const ImageInfo *image_info,
 {
   MagickBooleanType
     excluding,
-    logging,
+    logging = MagickFalse,
     status;
 
   MngInfo
@@ -12132,8 +12087,11 @@ static MagickBooleanType WritePNGImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter WritePNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
+  if (image->debug != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),
+      "Enter WritePNGImage()");
   /*
     Allocate a MngInfo structure.
   */
@@ -12264,9 +12222,10 @@ static MagickBooleanType WritePNGImage(const ImageInfo *image_info,
       mng_info->write_png_colortype = /* 6 */  7;
       mng_info->write_png_depth = 8;
       image->depth = 8;
-      image->alpha_trait = BlendPixelTrait;
-
-      (void) SetImageType(image,TrueColorAlphaType,exception);
+      if (image->alpha_trait != UndefinedPixelTrait)
+        (void) SetImageType(image,TrueColorAlphaType,exception);
+      else
+        (void) SetImageType(image,TrueColorType,exception);
       (void) SyncImage(image,exception);
     }
 
@@ -12275,13 +12234,10 @@ static MagickBooleanType WritePNGImage(const ImageInfo *image_info,
       mng_info->write_png_colortype = /* 2 */ 3;
       mng_info->write_png_depth = 16;
       image->depth = 16;
-
       if (image->alpha_trait != UndefinedPixelTrait)
         (void) SetImageType(image,TrueColorAlphaType,exception);
-
       else
         (void) SetImageType(image,TrueColorType,exception);
-
       (void) SyncImage(image,exception);
     }
 
@@ -12290,9 +12246,10 @@ static MagickBooleanType WritePNGImage(const ImageInfo *image_info,
       mng_info->write_png_colortype = /* 6 */  7;
       mng_info->write_png_depth = 16;
       image->depth = 16;
-      image->alpha_trait = BlendPixelTrait;
-
-      (void) SetImageType(image,TrueColorAlphaType,exception);
+      if (image->alpha_trait != UndefinedPixelTrait)
+        (void) SetImageType(image,TrueColorAlphaType,exception);
+      else
+        (void) SetImageType(image,TrueColorType,exception);
       (void) SyncImage(image,exception);
     }
 
@@ -12812,7 +12769,7 @@ static MagickBooleanType WriteOneJNGImage(MngInfo *mng_info,
     *jpeg_image_info;
 
   MagickBooleanType
-    logging,
+    logging = MagickFalse,
     status;
 
   size_t
@@ -12984,10 +12941,8 @@ static MagickBooleanType WriteOneJNGImage(MngInfo *mng_info,
             &length,exception);
           if (blob == (unsigned char *) NULL)
             {
-              if (jpeg_image != (Image *)NULL)
-                jpeg_image=DestroyImage(jpeg_image);
-              if (jpeg_image_info != (ImageInfo *)NULL)
-                jpeg_image_info=DestroyImageInfo(jpeg_image_info);
+              jpeg_image=DestroyImage(jpeg_image);
+              jpeg_image_info=DestroyImageInfo(jpeg_image_info);
               return(MagickFalse);
             }
           jng_alpha_sample_depth=8;
@@ -13396,11 +13351,11 @@ static MagickBooleanType WriteOneJNGImage(MngInfo *mng_info,
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 */
-static MagickBooleanType WriteJNGImage(const ImageInfo *image_info,
-  Image *image, ExceptionInfo *exception)
+static MagickBooleanType WriteJNGImage(const ImageInfo *image_info,Image *image,
+  ExceptionInfo *exception)
 {
   MagickBooleanType
-    logging,
+    logging = MagickFalse,
     status;
 
   MngInfo
@@ -13413,8 +13368,11 @@ static MagickBooleanType WriteJNGImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter WriteJNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
+  if (image->debug != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),
+      "Enter WriteJNGImage()");
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -13446,8 +13404,7 @@ static MagickBooleanType WriteJNGImage(const ImageInfo *image_info,
 }
 #endif
 
-static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,
-  Image *image, ExceptionInfo *exception)
+static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,Image *image,ExceptionInfo *exception)
 {
   Image
     *next_image;
@@ -13456,7 +13413,7 @@ static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,
     status;
 
   volatile MagickBooleanType
-    logging;
+    logging = MagickFalse;
 
   MngInfo
     *mng_info;
@@ -13490,7 +13447,7 @@ static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,
 
   size_t
     final_delay=0,
-    imageListLength,
+    number_scenes,
     initial_delay;
 
 #if (PNG_LIBPNG_VER < 10200)
@@ -13506,8 +13463,11 @@ static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-  logging=LogMagickEvent(CoderEvent,GetMagickModule(),"Enter WriteMNGImage()");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
+  if (image->debug != MagickFalse)
+    logging=LogMagickEvent(CoderEvent,GetMagickModule(),
+      "Enter WriteMNGImage()");
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -14104,7 +14064,7 @@ static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,
     defined(PNG_MNG_FEATURES_SUPPORTED)
   mng_info->equal_palettes=MagickFalse;
 #endif
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     if (mng_info->adjoin)
@@ -14290,7 +14250,7 @@ static MagickBooleanType WriteMNGImage(const ImageInfo *image_info,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
 
     if (status == MagickFalse)
       break;

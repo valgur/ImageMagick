@@ -59,6 +59,7 @@
 #include "MagickCore/image.h"
 #include "MagickCore/image-private.h"
 #include "MagickCore/layer.h"
+#include "MagickCore/locale_.h"
 #include "MagickCore/mime-private.h"
 #include "MagickCore/memory_.h"
 #include "MagickCore/memory-private.h"
@@ -1074,15 +1075,15 @@ static double RunOpenCLBenchmark(MagickBooleanType is_cpu)
   for (i=0; i<=2; i++)
   {
     Image
-      *bluredImage,
+      *blurredImage,
       *resizedImage,
       *unsharpedImage;
 
     if (i > 0)
       StartAccelerateTimer(&timer);
 
-    bluredImage=BlurImage(inputImage,10.0f,3.5f,exception);
-    unsharpedImage=UnsharpMaskImage(bluredImage,2.0f,2.0f,50.0f,10.0f,
+    blurredImage=BlurImage(inputImage,10.0f,3.5f,exception);
+    unsharpedImage=UnsharpMaskImage(blurredImage,2.0f,2.0f,50.0f,10.0f,
       exception);
     resizedImage=ResizeImage(unsharpedImage,640,480,LanczosFilter,
       exception);
@@ -1105,8 +1106,8 @@ static double RunOpenCLBenchmark(MagickBooleanType is_cpu)
     if (i > 0)
       StopAccelerateTimer(&timer);
 
-    if (bluredImage != (Image *) NULL)
-      DestroyImage(bluredImage);
+    if (blurredImage != (Image *) NULL)
+      DestroyImage(blurredImage);
     if (unsharpedImage != (Image *) NULL)
       DestroyImage(unsharpedImage);
     if (resizedImage != (Image *) NULL)
@@ -1116,7 +1117,7 @@ static double RunOpenCLBenchmark(MagickBooleanType is_cpu)
   return(ReadAccelerateTimer(&timer));
 }
 
-static void RunDeviceBenckmark(MagickCLEnv clEnv,MagickCLEnv testEnv,
+static void RunDeviceBenchmark(MagickCLEnv clEnv,MagickCLEnv testEnv,
   MagickCLDevice device)
 {
   testEnv->devices[0]=device;
@@ -1212,7 +1213,7 @@ static void BenchmarkOpenCLDevices(MagickCLEnv clEnv)
   {
     device=clEnv->devices[i];
     if (device->score == MAGICKCORE_OPENCL_UNDEFINED_SCORE)
-      RunDeviceBenckmark(clEnv,testEnv,device);
+      RunDeviceBenchmark(clEnv,testEnv,device);
 
     /* Set the score on all the other devices that are the same */
     for (j = i+1; j < clEnv->number_devices; j++)
@@ -1597,12 +1598,13 @@ MagickPrivate void DumpOpenCLProfileData()
         profile;
 
       profile=device->profile_records[j];
-      strcpy(indent,"                    ");
+      (void) CopyMagickString(indent,"                              ",
+        sizeof(indent));
       CopyMagickString(indent,profile->kernel_name,MagickMin(strlen(
         profile->kernel_name),strlen(indent)));
-      sprintf(buf,"%s %7d %7d %7d %7d",indent,(int) (profile->total/
-        profile->count),(int) profile->count,(int) profile->min,
-        (int) profile->max);
+      (void) FormatLocaleString(buf,sizeof(buf),"%s %7d %7d %7d %7d",indent,
+        (int) (profile->total/profile->count),(int) profile->count,
+        (int) profile->min,(int) profile->max);
       OpenCLLog(buf);
       j++;
     }
@@ -1653,7 +1655,7 @@ MagickPrivate void DumpOpenCLProfileData()
 %
 %    o input_image: the input image of the operation.
 %
-%    o output_image: the output or secondairy image of the operation.
+%    o output_image: the output or secondary image of the operation.
 %
 %    o exception: return any errors or warnings in this structure.
 %
@@ -2176,7 +2178,8 @@ static MagickBooleanType HasOpenCLDevices(MagickCLEnv clEnv,
     strlen(accelerateKernels)+strlen(accelerateKernels2)+1);
   if (accelerateKernelsBuffer == (char*) NULL)
     return(MagickFalse);
-  sprintf(accelerateKernelsBuffer,"%s%s",accelerateKernels,accelerateKernels2);
+  (void) FormatLocaleString(accelerateKernelsBuffer,strlen(accelerateKernels)+
+    strlen(accelerateKernels2)+1,"%s%s",accelerateKernels,accelerateKernels2);
   signature^=StringSignature(accelerateKernelsBuffer);
 
   status=MagickTrue;
@@ -2223,7 +2226,7 @@ static MagickBooleanType HasOpenCLDevices(MagickCLEnv clEnv,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  InitializeOpenCL() is used to initialize the OpenCL environment. This method
-%  makes sure the devices are propertly initialized and benchmarked.
+%  makes sure the devices are properly initialized and benchmarked.
 %
 %  The format of the InitializeOpenCL method is:
 %

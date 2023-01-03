@@ -169,8 +169,8 @@ static MagickBooleanType WriteDEBUGImage(const ImageInfo *image_info,
     colorspace[MagickPathExtent],
     tuple[MagickPathExtent];
 
-  ssize_t
-    y;
+  const Quantum
+    *p;
 
   MagickBooleanType
     status;
@@ -181,14 +181,12 @@ static MagickBooleanType WriteDEBUGImage(const ImageInfo *image_info,
   PixelInfo
     pixel;
 
-  const Quantum
-    *p;
+  size_t
+    number_scenes;
 
   ssize_t
-    x;
-
-  size_t
-    imageListLength;
+    x,
+    y;
 
   /*
     Open output image file.
@@ -197,13 +195,13 @@ static MagickBooleanType WriteDEBUGImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBlobMode,exception);
   if (status == MagickFalse)
     return(status);
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     (void) CopyMagickString(colorspace,CommandOptionToMnemonic(
@@ -261,7 +259,7 @@ static MagickBooleanType WriteDEBUGImage(const ImageInfo *image_info,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

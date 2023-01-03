@@ -17,7 +17,7 @@
 %                               September 2002                                %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2002 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -126,8 +126,8 @@ static ResourceInfo
     MagickULLConstant(0),              /* initial thread */
     MagickULLConstant(0),              /* initial throttle */
     MagickULLConstant(0),              /* initial time */
-    MAGICK_SSIZE_MAX/sizeof(Quantum)/5,/* width limit */
-    MAGICK_SSIZE_MAX/sizeof(Quantum)/5,/* height limit */
+    (MagickSizeType) MAGICK_SSIZE_MAX/sizeof(Quantum)/5,/* width limit */
+    (MagickSizeType) MAGICK_SSIZE_MAX/sizeof(Quantum)/5,/* height limit */
     MagickResourceInfinity,            /* list length limit */
     MagickULLConstant(3072)*1024*1024, /* area limit */
     MagickULLConstant(1536)*1024*1024, /* memory limit */
@@ -374,7 +374,7 @@ MagickExport MagickBooleanType AcquireMagickResource(const ResourceType type,
     }
     default: ;
   }
-  if (IsEventLogging() != MagickFalse)
+  if ((GetLogEventMask() & ResourceEvent) != 0)
     {
       char
         resource_current[MagickFormatExtent],
@@ -429,6 +429,7 @@ MagickPrivate void AsynchronousResourceComponentTerminus(void)
   while (path != (const char *) NULL)
   {
     (void) ShredFile(path);
+    (void) remove_utf8(path);
     path=(const char *) GetNextKeyInSplayTree(temporary_resources);
   }
 }
@@ -461,6 +462,7 @@ MagickPrivate void AsynchronousResourceComponentTerminus(void)
 static void *DestroyTemporaryResources(void *temporary_resource)
 {
   (void) ShredFile((char *) temporary_resource);
+  (void) remove_utf8((char *) temporary_resource);
   temporary_resource=DestroyString((char *) temporary_resource);
   return((void *) NULL);
 }
@@ -578,7 +580,8 @@ MagickExport int AcquireUniqueFileResource(char *path)
     *datum;
 
   assert(path != (char *) NULL);
-  (void) LogMagickEvent(ResourceEvent,GetMagickModule(),"...");
+  if ((GetLogEventMask() & ResourceEvent) != 0)
+    (void) LogMagickEvent(ResourceEvent,GetMagickModule(),"...");
   if (random_info == (RandomInfo *) NULL)
     {
       if (resource_semaphore[FileResource] == (SemaphoreInfo *) NULL)
@@ -634,7 +637,8 @@ MagickExport int AcquireUniqueFileResource(char *path)
     if ((file >= 0) || (errno != EEXIST))
       break;
   }
-  (void) LogMagickEvent(ResourceEvent,GetMagickModule(),"%s",path);
+  if ((GetLogEventMask() & ResourceEvent) != 0)
+    (void) LogMagickEvent(ResourceEvent,GetMagickModule(),"%s",path);
   if (file == -1)
     return(file);
   if (resource_semaphore[FileResource] == (SemaphoreInfo *) NULL)
@@ -1054,7 +1058,7 @@ MagickExport void RelinquishMagickResource(const ResourceType type,
     }
     default: ;
   }
-  if (IsEventLogging() != MagickFalse)
+  if ((GetLogEventMask() & ResourceEvent) != 0)
     {
       char
         resource_current[MagickFormatExtent],
@@ -1100,12 +1104,13 @@ MagickExport MagickBooleanType RelinquishUniqueFileResource(const char *path)
   char
     cache_path[MagickPathExtent];
 
-  MagickBooleanType
+  MagickStatusType
     status;
 
   assert(path != (const char *) NULL);
   status=MagickFalse;
-  (void) LogMagickEvent(ResourceEvent,GetMagickModule(),"%s",path);
+  if ((GetLogEventMask() & ResourceEvent) != 0)
+    (void) LogMagickEvent(ResourceEvent,GetMagickModule(),"%s",path);
   if (resource_semaphore[FileResource] == (SemaphoreInfo *) NULL)
     ActivateSemaphoreInfo(&resource_semaphore[FileResource]);
   LockSemaphoreInfo(resource_semaphore[FileResource]);
@@ -1115,10 +1120,16 @@ MagickExport MagickBooleanType RelinquishUniqueFileResource(const char *path)
   (void) CopyMagickString(cache_path,path,MagickPathExtent);
   AppendImageFormat("cache",cache_path);
   if (access_utf8(cache_path,F_OK) == 0)
-    (void) ShredFile(cache_path);
+    {
+      status=ShredFile(cache_path);
+      status|=remove_utf8(cache_path);
+    }
   if (status == MagickFalse)
-    status=ShredFile(path);
-  return(status);
+    {
+      status=ShredFile(path);
+      status|=remove_utf8(path);
+    }
+  return(status == 0 ? MagickFalse : MagickTrue);
 }
 
 /*

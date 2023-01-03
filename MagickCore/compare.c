@@ -17,7 +17,7 @@
 %                               December 2003                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2003 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -70,6 +70,7 @@
 #include "MagickCore/resource_.h"
 #include "MagickCore/string_.h"
 #include "MagickCore/statistic.h"
+#include "MagickCore/statistic-private.h"
 #include "MagickCore/string-private.h"
 #include "MagickCore/thread-private.h"
 #include "MagickCore/transform.h"
@@ -148,14 +149,12 @@ MagickExport Image *CompareImages(Image *image,const Image *reconstruct_image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(reconstruct_image != (const Image *) NULL);
   assert(reconstruct_image->signature == MagickCoreSignature);
   assert(distortion != (double *) NULL);
-  *distortion=0.0;
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
+  *distortion=0.0;
   status=GetImageDistortion(image,reconstruct_image,metric,distortion,
     exception);
   if (status == MagickFalse)
@@ -821,14 +820,12 @@ static MagickBooleanType GetMeanSquaredDistortion(const Image *image,
   MagickBooleanType
     status;
 
-  ssize_t
-    j;
-
   size_t
     columns,
     rows;
 
   ssize_t
+    j,
     y;
 
   status=MagickTrue;
@@ -943,7 +940,8 @@ static MagickBooleanType GetNormalizedCrossCorrelationDistortion(
     *reconstruct_statistics;
 
   double
-    area;
+    alpha_variance[MaxPixelChannels+1],
+    beta_variance[MaxPixelChannels+1];
 
   MagickBooleanType
     status;
@@ -951,19 +949,16 @@ static MagickBooleanType GetNormalizedCrossCorrelationDistortion(
   MagickOffsetType
     progress;
 
-  ssize_t
-    channels,
-    i;
-
   size_t
     columns,
     rows;
 
   ssize_t
+    i,
     y;
 
   /*
-    Normalize to account for variation due to lighting and exposure condition.
+    Normalized cross correlation distortion.
   */
   image_statistics=GetImageStatistics(image,exception);
   reconstruct_statistics=GetImageStatistics(reconstruct_image,exception);
@@ -978,46 +973,15 @@ static MagickBooleanType GetNormalizedCrossCorrelationDistortion(
           reconstruct_statistics);
       return(MagickFalse);
     }
+  (void) memset(distortion,0,(MaxPixelChannels+1)*sizeof(*distortion));
+  (void) memset(alpha_variance,0,(MaxPixelChannels+1)*sizeof(*alpha_variance));
+  (void) memset(beta_variance,0,(MaxPixelChannels+1)*sizeof(*beta_variance));
   status=MagickTrue;
   progress=0;
-  for (i=0; i <= MaxPixelChannels; i++)
-    distortion[i]=0.0;
-  rows=MagickMax(image->rows,reconstruct_image->rows);
   columns=MagickMax(image->columns,reconstruct_image->columns);
-  area=0.0;
+  rows=MagickMax(image->rows,reconstruct_image->rows);
   image_view=AcquireVirtualCacheView(image,exception);
   reconstruct_view=AcquireVirtualCacheView(reconstruct_image,exception);
-  for (y=0; y < (ssize_t) rows; y++)
-  {
-    const Quantum
-      *magick_restrict p,
-      *magick_restrict q;
-
-    ssize_t
-      x;
-
-    p=GetCacheViewVirtualPixels(image_view,0,y,columns,1,exception);
-    q=GetCacheViewVirtualPixels(reconstruct_view,0,y,columns,1,exception);
-    if ((p == (const Quantum *) NULL) || (q == (const Quantum *) NULL))
-      {
-        status=MagickFalse;
-        break;
-      }
-    for (x=0; x < (ssize_t) columns; x++)
-    {
-      if ((GetPixelReadMask(image,p) <= (QuantumRange/2)) ||
-          (GetPixelReadMask(reconstruct_image,q) <= (QuantumRange/2)))
-        {
-          p+=GetPixelChannels(image);
-          q+=GetPixelChannels(reconstruct_image);
-          continue;
-        }
-      area++;
-      p+=GetPixelChannels(image);
-      q+=GetPixelChannels(reconstruct_image);
-    }
-  }
-  area=PerceptibleReciprocal(area);
   for (y=0; y < (ssize_t) rows; y++)
   {
     const Quantum
@@ -1051,6 +1015,10 @@ static MagickBooleanType GetNormalizedCrossCorrelationDistortion(
       Da=QuantumScale*GetPixelAlpha(reconstruct_image,q);
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
+        double
+          alpha,
+          beta;
+
         PixelChannel channel = GetPixelChannelChannel(image,i);
         PixelTrait traits = GetPixelChannelTraits(image,channel);
         PixelTrait reconstruct_traits = GetPixelChannelTraits(reconstruct_image,
@@ -1060,13 +1028,20 @@ static MagickBooleanType GetNormalizedCrossCorrelationDistortion(
             ((reconstruct_traits & UpdatePixelTrait) == 0))
           continue;
         if (channel == AlphaPixelChannel)
-          distortion[i]+=area*QuantumScale*((double) p[i]-
-            image_statistics[channel].mean)*(GetPixelChannel(reconstruct_image,
-            channel,q)-reconstruct_statistics[channel].mean);
+          {
+            alpha=QuantumScale*(p[i]-image_statistics[channel].mean);
+            beta=QuantumScale*(GetPixelChannel(reconstruct_image,channel,q)-
+              reconstruct_statistics[channel].mean);
+          }
         else
-          distortion[i]+=area*QuantumScale*(Sa*p[i]-
-            image_statistics[channel].mean)*(Da*GetPixelChannel(
-            reconstruct_image,channel,q)-reconstruct_statistics[channel].mean);
+          {
+            alpha=QuantumScale*(Sa*p[i]-image_statistics[channel].mean);
+            beta=QuantumScale*(Da*GetPixelChannel(reconstruct_image,channel,q)-
+              reconstruct_statistics[channel].mean);
+          }
+        distortion[i]+=alpha*beta;
+        alpha_variance[i]+=alpha*alpha;
+        beta_variance[i]+=beta*beta;
       }
       p+=GetPixelChannels(image);
       q+=GetPixelChannels(reconstruct_image);
@@ -1091,28 +1066,16 @@ static MagickBooleanType GetNormalizedCrossCorrelationDistortion(
   reconstruct_view=DestroyCacheView(reconstruct_view);
   image_view=DestroyCacheView(image_view);
   /*
-    Divide by the standard deviation.
+    Compute normalized cross correlation: divide by standard deviation.
   */
-  channels=0;
-  distortion[CompositePixelChannel]=0.0;
   for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
   {
-    double
-      gamma;
-
-    PixelChannel channel = GetPixelChannelChannel(image,i);
-    gamma=image_statistics[channel].standard_deviation*
-      reconstruct_statistics[channel].standard_deviation;
-    if (fabs(gamma) >= MagickEpsilon)
-      {
-        gamma=PerceptibleReciprocal(gamma);
-        distortion[i]=QuantumRange*gamma*distortion[i];
-        distortion[CompositePixelChannel]+=distortion[i]*distortion[i];
-        channels++;
-      }
+    distortion[i]/=sqrt(alpha_variance[i]*beta_variance[i]);
+    if (fabs(distortion[i]) > MagickEpsilon)
+      distortion[CompositePixelChannel]+=distortion[i];
   }
-  distortion[CompositePixelChannel]=sqrt(distortion[CompositePixelChannel]/
-    channels);
+  distortion[CompositePixelChannel]=distortion[CompositePixelChannel]/
+    GetImageChannels(image);
   /*
     Free resources.
   */
@@ -1229,15 +1192,6 @@ static MagickBooleanType GetPeakAbsoluteDistortion(const Image *image,
   return(status);
 }
 
-static inline double MagickLog10(const double x)
-{
-#define Log10Epsilon  (1.0e-11)
-
- if (fabs(x) < Log10Epsilon)
-   return(log10(Log10Epsilon));
- return(log10(fabs(x)));
-}
-
 static MagickBooleanType GetPeakSignalToNoiseRatio(const Image *image,
   const Image *reconstruct_image,double *distortion,ExceptionInfo *exception)
 {
@@ -1249,10 +1203,8 @@ static MagickBooleanType GetPeakSignalToNoiseRatio(const Image *image,
 
   status=GetMeanSquaredDistortion(image,reconstruct_image,distortion,exception);
   for (i=0; i <= MaxPixelChannels; i++)
-    if (fabs(distortion[i]) < MagickEpsilon)
-      distortion[i]=INFINITY;
-    else
-      distortion[i]=10.0*MagickLog10(1.0)-10.0*MagickLog10(distortion[i]);
+    if (fabs(distortion[i]) >= MagickEpsilon)
+      distortion[i]=(-10.0*MagickLog10(distortion[i]));
   return(status);
 }
 
@@ -1265,9 +1217,6 @@ static MagickBooleanType GetPerceptualHashDistortion(const Image *image,
 
   const char
     *artifact;
-
-  MagickBooleanType
-    normalize;
 
   ssize_t
     channel;
@@ -1285,9 +1234,6 @@ static MagickBooleanType GetPerceptualHashDistortion(const Image *image,
         channel_phash);
       return(MagickFalse);
     }
-  artifact=GetImageArtifact(image,"phash:normalize");
-  normalize=(artifact == (const char *) NULL) ||
-    (IsStringTrue(artifact) == MagickFalse) ? MagickFalse : MagickTrue;
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
   #pragma omp parallel for schedule(static)
 #endif
@@ -1313,11 +1259,7 @@ static MagickBooleanType GetPerceptualHashDistortion(const Image *image,
       {
         alpha=channel_phash[channel].phash[j][i];
         beta=reconstruct_phash[channel].phash[j][i];
-        if (normalize == MagickFalse)
-          difference+=(beta-alpha)*(beta-alpha);
-        else
-          difference=sqrt((beta-alpha)*(beta-alpha)/
-            channel_phash[0].number_channels);
+        difference+=(beta-alpha)*(beta-alpha);
       }
     }
     distortion[channel]+=difference;
@@ -1326,6 +1268,16 @@ static MagickBooleanType GetPerceptualHashDistortion(const Image *image,
 #endif
     distortion[CompositePixelChannel]+=difference;
   }
+  artifact=GetImageArtifact(image,"phash:normalize");
+  if ((artifact != (const char *) NULL) &&
+      (IsStringTrue(artifact) != MagickFalse))
+    {
+      ssize_t
+        j;
+
+      for (j=0; j <= MaxPixelChannels; j++)
+        distortion[j]=sqrt(distortion[j]/channel_phash[0].number_channels);
+    }
   /*
     Free resources.
   */
@@ -1622,14 +1574,12 @@ MagickExport MagickBooleanType GetImageDistortion(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(reconstruct_image != (const Image *) NULL);
   assert(reconstruct_image->signature == MagickCoreSignature);
   assert(distortion != (double *) NULL);
-  *distortion=0.0;
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
+  *distortion=0.0;
   /*
     Get image distortion.
   */
@@ -1770,11 +1720,9 @@ MagickExport double *GetImageDistortions(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(reconstruct_image != (const Image *) NULL);
   assert(reconstruct_image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Get image distortion.
@@ -2597,6 +2545,8 @@ static Image *NCCUnityImage(const Image *alpha_image,const Image *beta_image,
     MagickTrue,exception);
   if (unity_image == (Image *) NULL)
     return(unity_image);
+  if (SetImageStorageClass(unity_image,DirectClass,exception) == MagickFalse)
+    return(DestroyImage(unity_image));
   status=MagickTrue;
   image_view=AcquireAuthenticCacheView(unity_image,exception);
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
@@ -2726,7 +2676,6 @@ static Image *NCCVarianceImage(Image *alpha_image,const Image *beta_image,
 }
 
 static Image *NCCSimilarityImage(const Image *image,const Image *reference,
-  const MetricType metric,const double similarity_threshold,
   RectangleInfo *offset,double *similarity_metric,ExceptionInfo *exception)
 {
 #define DestroySimilarityResources() \
@@ -2788,7 +2737,7 @@ static Image *NCCSimilarityImage(const Image *image,const Image *reference,
     Compute the cross correlation of the square and unity images.
   */
   ncc_image=CrossCorrelationImage(square_image,unity_image,exception);
-  square_image=DestroyImage(square_image); \
+  square_image=DestroyImage(square_image);
   if (ncc_image == (Image *) NULL)
     ThrowSimilarityException();
   status=NCCMultiplyImage(ncc_image,(double) QuantumRange*reference->columns*
@@ -2841,7 +2790,7 @@ static Image *NCCSimilarityImage(const Image *image,const Image *reference,
   gamma_image=DestroyImage(gamma_image);
   if (beta_image == (Image *) NULL)
     ThrowSimilarityException();
-  (void) ResetImagePage(beta_image,"0x0+0+0"); 
+  (void) ResetImagePage(beta_image,"0x0+0+0");
   SetGeometry(image,&geometry);
   geometry.width=image->columns-reference->columns;
   geometry.height=image->rows-reference->rows;
@@ -2852,7 +2801,7 @@ static Image *NCCSimilarityImage(const Image *image,const Image *reference,
   beta_image=DestroyImage(beta_image);
   if (correlation_image == (Image *) NULL)
     ThrowSimilarityException();
-  (void) ResetImagePage(correlation_image,"0x0+0+0"); 
+  (void) ResetImagePage(correlation_image,"0x0+0+0");
   /*
     Identify the maxima value in the image and its location.
   */
@@ -2926,26 +2875,27 @@ MagickExport Image *SimilarityImage(const Image *image,const Image *reference,
 
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
   assert(offset != (RectangleInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   SetGeometry(reference,offset);
   *similarity_metric=MagickMaximumValue;
 #if defined(MAGICKCORE_HDRI_SUPPORT) && defined(MAGICKCORE_FFTW_DELEGATE)
-  {
-    const char *artifact = GetImageArtifact(image,"compare:accelerate-ncc");
-    MagickBooleanType accelerate = (artifact != (const char *) NULL) && 
-      (IsStringTrue(artifact) == MagickFalse) ? MagickFalse : MagickTrue;
-    if ((accelerate != MagickFalse) &&
-        (metric == NormalizedCrossCorrelationErrorMetric))
-      {
-        similarity_image=NCCSimilarityImage(image,reference,metric,
-          similarity_threshold,offset,similarity_metric,exception);
-        return(similarity_image);
-      }
-  }
+  if ((image->channels & ReadMaskChannel) == 0)
+    {
+      const char *artifact = GetImageArtifact(image,"compare:accelerate-ncc");
+      MagickBooleanType accelerate = (artifact != (const char *) NULL) &&
+        (IsStringTrue(artifact) == MagickFalse) ? MagickFalse : MagickTrue;
+      if ((accelerate != MagickFalse) &&
+          (metric == NormalizedCrossCorrelationErrorMetric))
+        {
+          similarity_image=NCCSimilarityImage(image,reference,offset,
+            similarity_metric,exception);
+          return(similarity_image);
+        }
+    }
 #endif
   similarity_image=CloneImage(image,image->columns-reference->columns+1,
     image->rows-reference->rows+1,MagickTrue,exception);
@@ -3006,6 +2956,8 @@ MagickExport Image *SimilarityImage(const Image *image,const Image *reference,
       if (*similarity_metric <= similarity_threshold)
         break;
       similarity=GetSimilarityMetric(image,reference,metric,x,y,exception);
+      if (metric == PeakSignalToNoiseRatioErrorMetric)
+        similarity*=0.01;
       if ((metric == NormalizedCrossCorrelationErrorMetric) ||
           (metric == UndefinedErrorMetric))
         similarity=1.0-similarity;

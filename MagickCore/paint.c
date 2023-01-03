@@ -174,10 +174,10 @@ MagickExport MagickBooleanType FloodfillPaintImage(Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(draw_info != (DrawInfo *) NULL);
   assert(draw_info->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse) 
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if ((x_offset < 0) || (x_offset >= (ssize_t) image->columns))
     return(MagickFalse);
   if ((y_offset < 0) || (y_offset >= (ssize_t) image->rows))
@@ -383,7 +383,7 @@ MagickExport MagickBooleanType FloodfillPaintImage(Image *image,
 %  vector from one color to another.
 %
 %  Note, the interface of this method will change in the future to support
-%  more than one transistion.
+%  more than one transition.
 %
 %  The format of the GradientImage method is:
 %
@@ -397,7 +397,7 @@ MagickExport MagickBooleanType FloodfillPaintImage(Image *image,
 %
 %    o type: the gradient type: linear or radial.
 %
-%    o spread: the gradient spread meathod: pad, reflect, or repeat.
+%    o spread: the gradient spread method: pad, reflect, or repeat.
 %
 %    o start_color: the start color.
 %
@@ -427,10 +427,10 @@ MagickExport MagickBooleanType GradientImage(Image *image,
   */
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(stops != (const StopInfo *) NULL);
   assert(number_stops > 0);
+  if (IsEventLogging() != MagickFalse) 
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   draw_info=AcquireDrawInfo();
   gradient=(&draw_info->gradient);
   gradient->type=type;
@@ -720,10 +720,10 @@ MagickExport Image *OilPaintImage(const Image *image,const double radius,
   */
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse) 
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   width=GetOptimalKernelWidth2D(radius,sigma);
   linear_image=CloneImage(image,0,0,MagickTrue,exception);
   paint_image=CloneImage(image,0,0,MagickTrue,exception);
@@ -935,7 +935,7 @@ MagickExport MagickBooleanType OpaquePaintImage(Image *image,
   assert(image->signature == MagickCoreSignature);
   assert(target != (PixelInfo *) NULL);
   assert(fill != (PixelInfo *) NULL);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse) 
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);
@@ -1082,7 +1082,7 @@ MagickExport MagickBooleanType TransparentPaintImage(Image *image,
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
   assert(target != (PixelInfo *) NULL);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse) 
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);
@@ -1211,7 +1211,7 @@ MagickExport MagickBooleanType TransparentPaintImageChroma(Image *image,
   assert(image->signature == MagickCoreSignature);
   assert(high != (PixelInfo *) NULL);
   assert(low != (PixelInfo *) NULL);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse) 
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);

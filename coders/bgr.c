@@ -136,11 +136,11 @@ static Image *ReadBGRImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   if ((image->columns == 0) || (image->rows == 0))
     ThrowReaderException(OptionError,"MustSpecifyImageSize");
@@ -1101,10 +1101,8 @@ static MagickBooleanType WriteBGRImage(const ImageInfo *image_info,Image *image,
     quantum_type;
 
   size_t
-    length;
-
-  size_t
-    imageListLength;
+    length,
+    number_scenes;
 
   ssize_t
     count,
@@ -1120,7 +1118,7 @@ static MagickBooleanType WriteBGRImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image_info->interlace != PartitionInterlace)
     {
@@ -1140,7 +1138,7 @@ static MagickBooleanType WriteBGRImage(const ImageInfo *image_info,Image *image,
       image->alpha_trait=BlendPixelTrait;
     }
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     /*
@@ -1459,7 +1457,7 @@ static MagickBooleanType WriteBGRImage(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

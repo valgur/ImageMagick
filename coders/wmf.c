@@ -270,7 +270,7 @@ static Image *ReadWMFImage(const ImageInfo *image_info,ExceptionInfo *exception)
 #undef BLACKNESS
 #undef WHITENESS
 
-/* The following additinal undefs were required for MinGW */
+/* The following additional undefs were required for MinGW */
 #undef BS_HOLLOW
 #undef PS_STYLE_MASK
 #undef PS_ENDCAP_ROUND
@@ -1223,24 +1223,27 @@ static void ipa_draw_polypolygon(wmfAPI * API, wmfPolyPoly_t* polypolygon)
       util_set_brush(API, polypolygon->dc, BrushApplyFill);
 
       DrawPathStart(WmfDrawingWand);
-      for (polygon = 0; polygon < polypolygon->npoly; polygon++)
+      if (polypolygon->pt && polypolygon->count)
         {
-          polyline.dc = polypolygon->dc;
-          polyline.pt = polypolygon->pt[polygon];
-          polyline.count = polypolygon->count[polygon];
-          if ((polyline.count > 2) && polyline.pt)
-            {
-              DrawPathMoveToAbsolute(WmfDrawingWand,
-                                     XC(polyline.pt[0].x),
-                                     YC(polyline.pt[0].y));
-              for (point = 1; point < polyline.count; point++)
-                {
-                  DrawPathLineToAbsolute(WmfDrawingWand,
-                                         XC(polyline.pt[point].x),
-                                         YC(polyline.pt[point].y));
-                }
-              DrawPathClose(WmfDrawingWand);
-            }
+        for (polygon = 0; polygon < polypolygon->npoly; polygon++)
+          {
+            polyline.dc = polypolygon->dc;
+            polyline.pt = polypolygon->pt[polygon];
+            polyline.count = polypolygon->count[polygon];
+            if ((polyline.count > 2) && polyline.pt)
+              {
+                DrawPathMoveToAbsolute(WmfDrawingWand,
+                                       XC(polyline.pt[0].x),
+                                       YC(polyline.pt[0].y));
+                for (point = 1; point < polyline.count; point++)
+                  {
+                    DrawPathLineToAbsolute(WmfDrawingWand,
+                                           XC(polyline.pt[point].x),
+                                           YC(polyline.pt[point].y));
+                  }
+                DrawPathClose(WmfDrawingWand);
+              }
+          }
         }
       DrawPathFinish(WmfDrawingWand);
 
@@ -1615,7 +1618,7 @@ static void ipa_draw_text(wmfAPI * API, wmfDrawText_t * draw_text)
   /* Apply rotation */
   /* ImageMagick's drawing rotation is clockwise from horizontal
      while WMF drawing rotation is counterclockwise from horizontal */
-  angle = fabs(RadiansToDegrees(2 * MagickPI - WMF_TEXT_ANGLE(font)));
+  angle=fabs(RadiansToDegrees(2.0*MagickPI-WMF_TEXT_ANGLE(font)));
   if (angle == 360)
     angle = 0;
   if (angle != 0)
@@ -1627,7 +1630,7 @@ static void ipa_draw_text(wmfAPI * API, wmfDrawText_t * draw_text)
    */
 
   /* Output string */
-  DrawAnnotation(WmfDrawingWand, 0, 0, (unsigned char*)draw_text->str);
+  DrawAnnotation(WmfDrawingWand,0,0,(unsigned char *) draw_text->str);
 
   /* Underline text the Windows way (at the bottom) */
   if (WMF_TEXT_UNDERLINE(font))
@@ -2010,7 +2013,7 @@ static void util_set_pen(wmfAPI * API, wmfDC * dc)
                  ((double) 1 / (ddata->scale_y))) / 2;
 
   /* Don't allow pen_width to be much less than pixel_width in order
-     to avoid dissapearing or spider-web lines */
+     to avoid disappearing or spider-web lines */
   pen_width = MagickMax(pen_width, pixel_width*0.8);
 
   pen_style = (unsigned int) WMF_PEN_STYLE(pen);
@@ -2023,7 +2026,7 @@ static void util_set_pen(wmfAPI * API, wmfDC * dc)
     }
 
   DrawSetStrokeAntialias(WmfDrawingWand, MagickTrue );
-  DrawSetStrokeWidth(WmfDrawingWand, (unsigned long) MagickMax(0.0, pen_width));
+  DrawSetStrokeWidth(WmfDrawingWand,MagickMax(0.0, pen_width));
 
   {
     LineCap
@@ -2623,7 +2626,7 @@ static Image *ReadWMFImage(const ImageInfo *image_info,ExceptionInfo *exception)
     RelinquishMagickMemory(ddata->draw_info->text);
 
 #if defined(MAGICKCORE_WMF_DELEGATE)
-  /* Must initialize font subystem for WMFlite interface */
+  /* Must initialize font subsystem for WMFlite interface */
   lite_font_init (API,&wmf_api_options); /* similar to wmf_ipa_font_init in src/font.c */
   /* wmf_arg_fontdirs (API,options); */ /* similar to wmf_arg_fontdirs in src/wmf.c */
 

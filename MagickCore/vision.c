@@ -124,6 +124,26 @@ static int CCObjectInfoCompare(const void *x,const void *y)
 
   p=(CCObjectInfo *) x;
   q=(CCObjectInfo *) y;
+  if (p->key == -5)
+    return((int) (q->bounding_box.y-(ssize_t) p->bounding_box.y));
+  if (p->key == -4)
+    return((int) (q->bounding_box.x-(ssize_t) p->bounding_box.x));
+  if (p->key == -3)
+    return((int) (q->bounding_box.height-(ssize_t) p->bounding_box.height));
+  if (p->key == -2)
+    return((int) (q->bounding_box.width-(ssize_t) p->bounding_box.width));
+  if (p->key == -1)
+    return((int) (q->area-(ssize_t) p->area));
+  if (p->key == 1)
+    return((int) (p->area-(ssize_t) q->area));
+  if (p->key == 2)
+    return((int) (p->bounding_box.width-(ssize_t) q->bounding_box.width));
+  if (p->key == 3)
+    return((int) (p->bounding_box.height-(ssize_t) q->bounding_box.height));
+  if (p->key == 4)
+    return((int) (p->bounding_box.x-(ssize_t) q->bounding_box.x));
+  if (p->key == 5)
+    return((int) (p->bounding_box.y-(ssize_t) q->bounding_box.y));
   return((int) (q->area-(ssize_t) p->area));
 }
 
@@ -170,8 +190,6 @@ static void PerimeterThreshold(const Image *component_image,
       ssize_t
         x;
 
-      if (status == MagickFalse)
-        continue;
       p=GetCacheViewVirtualPixels(component_view,bounding_box.x-1,
         bounding_box.y+y,bounding_box.width+2,2,exception);
       if (p == (const Quantum *) NULL)
@@ -281,8 +299,6 @@ static void CircularityThreshold(const Image *component_image,
       ssize_t
         x;
 
-      if (status == MagickFalse)
-        continue;
       p=GetCacheViewVirtualPixels(component_view,bounding_box.x-1,
         bounding_box.y+y,bounding_box.width+2,2,exception);
       if (p == (const Quantum *) NULL)
@@ -402,8 +418,6 @@ static void MajorAxisThreshold(const Image *component_image,
     bounding_box=object[i].bounding_box;
     for (y=0; y < (ssize_t) bounding_box.height; y++)
     {
-      if (status == MagickFalse)
-        continue;
       p=GetCacheViewVirtualPixels(component_view,bounding_box.x,
         bounding_box.y+y,bounding_box.width,1,exception);
       if (p == (const Quantum *) NULL)
@@ -447,8 +461,8 @@ static void MajorAxisThreshold(const Image *component_image,
       }
     }
     component_view=DestroyCacheView(component_view);
-    object[i].metric[metric_index]=sqrt((2.0*PerceptibleReciprocal(M00))*((M20+M02)+
-      sqrt(4.0*M11*M11+(M20-M02)*(M20-M02))));
+    object[i].metric[metric_index]=sqrt((2.0*PerceptibleReciprocal(M00))*
+      ((M20+M02)+sqrt(4.0*M11*M11+(M20-M02)*(M20-M02))));
   }
 }
 
@@ -503,8 +517,6 @@ static void MinorAxisThreshold(const Image *component_image,
     bounding_box=object[i].bounding_box;
     for (y=0; y < (ssize_t) bounding_box.height; y++)
     {
-      if (status == MagickFalse)
-        continue;
       p=GetCacheViewVirtualPixels(component_view,bounding_box.x,
         bounding_box.y+y,bounding_box.width,1,exception);
       if (p == (const Quantum *) NULL)
@@ -548,8 +560,8 @@ static void MinorAxisThreshold(const Image *component_image,
       }
     }
     component_view=DestroyCacheView(component_view);
-    object[i].metric[metric_index]=sqrt((2.0*PerceptibleReciprocal(M00))*((M20+M02)-
-      sqrt(4.0*M11*M11+(M20-M02)*(M20-M02))));
+    object[i].metric[metric_index]=sqrt((2.0*PerceptibleReciprocal(M00))*
+      ((M20+M02)-sqrt(4.0*M11*M11+(M20-M02)*(M20-M02))));
   }
 }
 
@@ -605,8 +617,6 @@ static void EccentricityThreshold(const Image *component_image,
     bounding_box=object[i].bounding_box;
     for (y=0; y < (ssize_t) bounding_box.height; y++)
     {
-      if (status == MagickFalse)
-        continue;
       p=GetCacheViewVirtualPixels(component_view,bounding_box.x,
         bounding_box.y+y,bounding_box.width,1,exception);
       if (p == (const Quantum *) NULL)
@@ -710,8 +720,6 @@ static void AngleThreshold(const Image *component_image,
     bounding_box=object[i].bounding_box;
     for (y=0; y < (ssize_t) bounding_box.height; y++)
     {
-      if (status == MagickFalse)
-        continue;
       p=GetCacheViewVirtualPixels(component_view,bounding_box.x,
         bounding_box.y+y,bounding_box.width,1,exception);
       if (p == (const Quantum *) NULL)
@@ -815,9 +823,6 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
   MatrixInfo
     *equivalences;
 
-  ssize_t
-    i;
-
   size_t
     size;
 
@@ -828,6 +833,7 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
     dx,
     dy,
     first,
+    i,
     last,
     n,
     step,
@@ -838,10 +844,10 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (objects != (CCObjectInfo **) NULL)
     *objects=(CCObjectInfo *) NULL;
   component_image=CloneImage(image,0,0,MagickTrue,exception);
@@ -1357,7 +1363,7 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
         Merge any object not within the min and max eccentricity threshold.
       */
       (void) sscanf(artifact,"%lf%*[ -]%lf",&min_threshold,&max_threshold);
-      metrics[++n]="eccentricy";
+      metrics[++n]="eccentricity";
       EccentricityThreshold(component_image,object,n,exception);
       for (i=0; i < (ssize_t) component_image->colors; i++)
         if (((object[i].metric[n] < min_threshold) ||
@@ -1383,6 +1389,7 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
   */
   component_view=AcquireAuthenticCacheView(component_image,exception);
   object_view=AcquireVirtualCacheView(component_image,exception);
+  (void) SetCacheViewVirtualPixelMethod(object_view,TileVirtualPixelMethod);
   for (i=0; i < (ssize_t) component_image->colors; i++)
   {
     RectangleInfo
@@ -1423,7 +1430,7 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
         }
       for (x=0; x < (ssize_t) bounding_box.width; x++)
       {
-        size_t
+        ssize_t
           k;
 
         if (status == MagickFalse)
@@ -1507,6 +1514,10 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
   if ((IsStringTrue(artifact) != MagickFalse) ||
       (objects != (CCObjectInfo **) NULL))
     {
+      ssize_t
+        key,
+        order;
+
       /*
         Report statistics on each unique object.
       */
@@ -1567,6 +1578,28 @@ MagickExport Image *ConnectedComponentsImage(const Image *image,
         object[i].centroid.y=object[i].centroid.y/object[i].area;
       }
       component_view=DestroyCacheView(component_view);
+      order=1;
+      artifact=GetImageArtifact(image,"connected-components:sort-order");
+      if (artifact != (const char *) NULL)
+        if (LocaleCompare(artifact,"decreasing") == 0)
+          order=(-1);
+      key=0;
+      artifact=GetImageArtifact(image,"connected-components:sort");
+      if (artifact != (const char *) NULL)
+        {
+          if (LocaleCompare(artifact,"area") == 0)
+            key=1;
+          if (LocaleCompare(artifact,"width") == 0)
+            key=2;
+          if (LocaleCompare(artifact,"height") == 0)
+            key=3;
+          if (LocaleCompare(artifact,"x") == 0)
+            key=4;
+          if (LocaleCompare(artifact,"y") == 0)
+            key=5;
+        }
+      for (i=0; i < (ssize_t) component_image->colors; i++)
+         object[i].key=order*key;
       qsort((void *) object,component_image->colors,sizeof(*object),
         CCObjectInfoCompare);
       if (objects == (CCObjectInfo **) NULL)
@@ -1670,10 +1703,10 @@ MagickExport Image *IntegralImage(const Image *image,ExceptionInfo *exception)
   */
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   integral_image=CloneImage(image,0,0,MagickTrue,exception);
   if (integral_image == (Image *) NULL)
     return((Image *) NULL);

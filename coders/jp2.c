@@ -1,4 +1,4 @@
-/*
+  /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
 %                                                                             %
@@ -278,24 +278,22 @@ static Image *ReadJP2Image(const ImageInfo *image_info,ExceptionInfo *exception)
     *jp2_stream;
 
   ssize_t
-    i;
-
-  ssize_t
+    i,
     y;
 
   unsigned char
-    sans[4];
+    magick[16];
 
   /*
     Open image file.
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -306,7 +304,7 @@ static Image *ReadJP2Image(const ImageInfo *image_info,ExceptionInfo *exception)
   /*
     Initialize JP2 codec.
   */
-  if (ReadBlob(image,4,sans) != 4)
+  if (ReadBlob(image,sizeof(magick),magick) != sizeof(magick))
     {
       image=DestroyImageList(image);
       return((Image *) NULL);
@@ -315,10 +313,13 @@ static Image *ReadJP2Image(const ImageInfo *image_info,ExceptionInfo *exception)
   if (LocaleCompare(image_info->magick,"JPT") == 0)
     jp2_codec=opj_create_decompress(OPJ_CODEC_JPT);
   else
-    if (IsJ2K(sans,4) != MagickFalse)
+    if (IsJ2K(magick,sizeof(magick)) != MagickFalse)
       jp2_codec=opj_create_decompress(OPJ_CODEC_J2K);
     else
-      jp2_codec=opj_create_decompress(OPJ_CODEC_JP2);
+      if (IsJP2(magick,sizeof(magick)) != MagickFalse)
+        jp2_codec=opj_create_decompress(OPJ_CODEC_JP2);
+      else
+        ThrowReaderException(DelegateError,"UnableToManageJP2Stream");
   opj_set_warning_handler(jp2_codec,JP2WarningHandler,exception);
   opj_set_error_handler(jp2_codec,JP2ErrorHandler,exception);
   opj_set_default_decoder_parameters(&parameters);
@@ -376,6 +377,19 @@ static Image *ReadJP2Image(const ImageInfo *image_info,ExceptionInfo *exception)
           ThrowReaderException(DelegateError,"UnableToDecodeImageFile");
         }
     }
+  for (i=0; i < (ssize_t) jp2_image->numcomps; i++)
+  {
+    if ((jp2_image->comps[i].dx == 0) || (jp2_image->comps[i].dy == 0) ||
+        (jp2_image->comps[0].prec != jp2_image->comps[i].prec) ||
+        (jp2_image->comps[0].prec > 64) ||
+        (jp2_image->comps[0].sgnd != jp2_image->comps[i].sgnd))
+      {
+        opj_stream_destroy(jp2_stream);
+        opj_destroy_codec(jp2_codec);
+        opj_image_destroy(jp2_image);
+        ThrowReaderException(CoderError,"IrregularChannelGeometryNotSupported")
+      }
+  }
   if ((image_info->number_scenes != 0) && (image_info->scene != 0))
     jp2_status=opj_get_decoded_tile(jp2_codec,jp2_stream,jp2_image,
       (unsigned int) image_info->scene-1);
@@ -394,19 +408,16 @@ static Image *ReadJP2Image(const ImageInfo *image_info,ExceptionInfo *exception)
       ThrowReaderException(DelegateError,"UnableToDecodeImageFile");
     }
   opj_stream_destroy(jp2_stream);
-  for (i=0; i < (ssize_t) jp2_image->numcomps; i++)
-  {
-    if ((jp2_image->comps[i].dx == 0) || (jp2_image->comps[i].dy == 0) ||
-        (jp2_image->comps[0].prec != jp2_image->comps[i].prec) ||
-        (jp2_image->comps[0].prec > 64) ||
-        (jp2_image->comps[0].sgnd != jp2_image->comps[i].sgnd) ||
-        ((image->ping == MagickFalse) && (jp2_image->comps[i].data == NULL)))
-      {
-        opj_destroy_codec(jp2_codec);
-        opj_image_destroy(jp2_image);
-        ThrowReaderException(CoderError,"IrregularChannelGeometryNotSupported")
-      }
-  }
+  if (image->ping == MagickFalse)
+    {
+      for (i=0; i < (ssize_t) jp2_image->numcomps; i++)
+        if (jp2_image->comps[i].data == NULL)
+          {
+            opj_destroy_codec(jp2_codec);
+            opj_image_destroy(jp2_image);
+            ThrowReaderException(CoderError,"IrregularChannelGeometryNotSupported")
+          }
+    }
   /*
     Convert JP2 image.
   */
@@ -488,9 +499,10 @@ static Image *ReadJP2Image(const ImageInfo *image_info,ExceptionInfo *exception)
             ThrowReaderException(CoderError,
               "IrregularChannelGeometryNotSupported")
           }
-        scale=QuantumRange/(double) ((1UL << jp2_image->comps[i].prec)-1);
-        pixel=scale*(jp2_image->comps[i].data[index]+
-          (jp2_image->comps[i].sgnd ? 1UL << (jp2_image->comps[i].prec-1) : 0));
+        scale=QuantumRange/(double) ((MagickULLConstant(1) <<
+          jp2_image->comps[i].prec)-1);
+        pixel=scale*(jp2_image->comps[i].data[index]+(jp2_image->comps[i].sgnd ?
+          MagickULLConstant(1) << (jp2_image->comps[i].prec-1) : 0));
         switch (i)
         {
            case 0:
@@ -798,7 +810,8 @@ static inline int CalculateNumResolutions(size_t width,size_t height)
     i;
 
   for (i=1; i < 6; i++)
-    if ((width < ((size_t) 1UL << i)) || (height < ((size_t) 1UL << i)))
+    if ((width < ((size_t) MagickULLConstant(1) << i)) ||
+        (height < ((size_t) MagickULLConstant(1) << i)))
       break;
   return(i);
 }
@@ -850,10 +863,10 @@ static MagickBooleanType WriteJP2Image(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -996,14 +1009,10 @@ static MagickBooleanType WriteJP2Image(const ImageInfo *image_info,Image *image,
   for (i=0; i < (ssize_t) channels; i++)
   {
     jp2_info[i].prec=(OPJ_UINT32) image->depth;
-    jp2_info[i].bpp=(OPJ_UINT32) image->depth;
     if ((image->depth == 1) &&
         ((LocaleCompare(image_info->magick,"JPT") == 0) ||
          (LocaleCompare(image_info->magick,"JP2") == 0)))
-      {
-        jp2_info[i].prec++;  /* OpenJPEG returns exception for depth @ 1 */
-        jp2_info[i].bpp++;
-      }
+      jp2_info[i].prec++;  /* OpenJPEG returns exception for depth @ 1 */
     jp2_info[i].sgnd=0;
     jp2_info[i].dx=parameters->subsampling_dx;
     jp2_info[i].dy=parameters->subsampling_dy;
@@ -1029,8 +1038,8 @@ static MagickBooleanType WriteJP2Image(const ImageInfo *image_info,Image *image,
   if (channels == 4)
     jp2_image->comps[3].alpha=1;
   else
-   if ((channels == 2) && (jp2_colorspace == OPJ_CLRSPC_GRAY))
-     jp2_image->comps[1].alpha=1;
+    if ((channels == 2) && (jp2_colorspace == OPJ_CLRSPC_GRAY))
+      jp2_image->comps[1].alpha=1;
   /*
     Convert to JP2 pixels.
   */
@@ -1055,8 +1064,8 @@ static MagickBooleanType WriteJP2Image(const ImageInfo *image_info,Image *image,
         int
           *q;
 
-        scale=(double) (((size_t) 1UL << jp2_image->comps[i].prec)-1)/
-          QuantumRange;
+        scale=(double) (((size_t) MagickULLConstant(1) <<
+          jp2_image->comps[i].prec)-1)/QuantumRange;
         q=jp2_image->comps[i].data+(ssize_t) (y*PerceptibleReciprocal(
           jp2_image->comps[i].dy)*image->columns*PerceptibleReciprocal(
           jp2_image->comps[i].dx)+x*PerceptibleReciprocal(

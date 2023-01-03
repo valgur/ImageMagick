@@ -173,10 +173,10 @@ MagickExport Image *ComplexImages(const Image *images,const ComplexOperator op,
 
   assert(images != (Image *) NULL);
   assert(images->signature == MagickCoreSignature);
-  if (images->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   if (images->next == (Image *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),ImageError,
@@ -278,60 +278,65 @@ MagickExport Image *ComplexImages(const Image *images,const ComplexOperator op,
     {
       ssize_t
         i;
-
+      
       for (i=0; i < (ssize_t) number_channels; i++)
       {
+        double
+          ai = QuantumScale*Ai[i],
+          ar = QuantumScale*Ar[i],
+          bi = QuantumScale*Bi[i],
+          br = QuantumScale*Br[i],
+          ci,
+          cr;
+
         switch (op)
         {
           case AddComplexOperator:
           {
-            Cr[i]=Ar[i]+Br[i];
-            Ci[i]=Ai[i]+Bi[i];
+            cr=ar+br;
+            ci=ai+bi;
             break;
           }
           case ConjugateComplexOperator:
           default:
           {
-            Cr[i]=Ar[i];
-            Ci[i]=(-Ai[i]);
+            cr=ar;
+            ci=(-ai);
             break;
           }
           case DivideComplexOperator:
           {
-            double
-              gamma;
-
-            gamma=QuantumRange*PerceptibleReciprocal(QuantumScale*Br[i]*Br[i]+
-              QuantumScale*Bi[i]*Bi[i]+snr);
-            Cr[i]=gamma*(QuantumScale*Ar[i]*Br[i]+QuantumScale*Ai[i]*Bi[i]);
-            Ci[i]=gamma*(QuantumScale*Ai[i]*Br[i]-QuantumScale*Ar[i]*Bi[i]);
+            cr=PerceptibleReciprocal(br*br+bi*bi+snr)*(ar*br+ai*bi);
+            ci=PerceptibleReciprocal(br*br+bi*bi+snr)*(ai*br-ar*bi);
             break;
           }
           case MagnitudePhaseComplexOperator:
           {
-            Cr[i]=sqrt(QuantumScale*Ar[i]*Ar[i]+QuantumScale*Ai[i]*Ai[i]);
-            Ci[i]=atan2((double) Ai[i],(double) Ar[i])/(2.0*MagickPI)+0.5;
+            cr=sqrt(ar*ar+ai*ai);
+            ci=atan2((double) ai,(double) ar)/(2.0*MagickPI)+0.5;
             break;
           }
           case MultiplyComplexOperator:
           {
-            Cr[i]=(QuantumScale*Ar[i]*Br[i]-QuantumScale*Ai[i]*Bi[i]);
-            Ci[i]=(QuantumScale*Ai[i]*Br[i]+QuantumScale*Ar[i]*Bi[i]);
+            cr=(ar*br-ai*bi);
+            ci=(ai*br+ar*bi);
             break;
           }
           case RealImaginaryComplexOperator:
           {
-            Cr[i]=Ar[i]*cos(2.0*MagickPI*(Ai[i]-0.5));
-            Ci[i]=Ar[i]*sin(2.0*MagickPI*(Ai[i]-0.5));
+            cr=ar*cos(2.0*MagickPI*(ai-0.5));
+            ci=ar*sin(2.0*MagickPI*(ai-0.5));
             break;
           }
           case SubtractComplexOperator:
           {
-            Cr[i]=Ar[i]-Br[i];
-            Ci[i]=Ai[i]-Bi[i];
+            cr=ar-br;
+            ci=ai-bi;
             break;
           }
         }
+        Cr[i]=QuantumRange*cr;
+        Ci[i]=QuantumRange*ci;
       }
       Ar+=GetPixelChannels(Ar_image);
       Ai+=GetPixelChannels(Ai_image);
@@ -384,7 +389,7 @@ MagickExport Image *ComplexImages(const Image *images,const ComplexOperator op,
 %  (DFT) of the image either as a magnitude / phase or real / imaginary image
 %  pair.
 %
-%  The format of the ForwadFourierTransformImage method is:
+%  The format of the ForwardFourierTransformImage method is:
 %
 %      Image *ForwardFourierTransformImage(const Image *image,
 %        const MagickBooleanType modulus,ExceptionInfo *exception)
@@ -540,10 +545,10 @@ static MagickBooleanType ForwardFourier(const FourierInfo *fourier_info,
   /*
     Create "Fourier Transform" image from constituent arrays.
   */
-  magnitude_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    fourier_info->height*sizeof(*magnitude_pixels));
-  phase_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    fourier_info->height*sizeof(*phase_pixels));
+  magnitude_info=AcquireVirtualMemory(fourier_info->width,fourier_info->height*
+    sizeof(*magnitude_pixels));
+  phase_info=AcquireVirtualMemory(fourier_info->width,fourier_info->height*
+    sizeof(*phase_pixels));
   if ((magnitude_info == (MemoryInfo *) NULL) ||
       (phase_info == (MemoryInfo *) NULL))
     {
@@ -723,8 +728,14 @@ static MagickBooleanType ForwardFourierTransform(FourierInfo *fourier_info,
   /*
     Generate the forward Fourier transform.
   */
-  source_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    fourier_info->height*sizeof(*source_pixels));
+  if ((fourier_info->width >= INT_MAX) || (fourier_info->height >= INT_MAX))
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),ImageError,
+        "WidthOrHeightExceedsLimit","`%s'",image->filename);
+      return(MagickFalse);
+    }
+  source_info=AcquireVirtualMemory(fourier_info->width,fourier_info->height*
+    sizeof(*source_pixels));
   if (source_info == (MemoryInfo *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
@@ -778,8 +789,8 @@ static MagickBooleanType ForwardFourierTransform(FourierInfo *fourier_info,
     }
   }
   image_view=DestroyCacheView(image_view);
-  forward_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    (fourier_info->height/2+1)*sizeof(*forward_pixels));
+  forward_info=AcquireVirtualMemory(fourier_info->width,(fourier_info->height/2+
+    1)*sizeof(*forward_pixels));
   if (forward_info == (MemoryInfo *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
@@ -791,8 +802,8 @@ static MagickBooleanType ForwardFourierTransform(FourierInfo *fourier_info,
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
   #pragma omp critical (MagickCore_ForwardFourierTransform)
 #endif
-  fftw_r2c_plan=fftw_plan_dft_r2c_2d(fourier_info->width,fourier_info->height,
-    source_pixels,forward_pixels,FFTW_ESTIMATE);
+  fftw_r2c_plan=fftw_plan_dft_r2c_2d((int) fourier_info->width,
+    (int) fourier_info->height,source_pixels,forward_pixels,FFTW_ESTIMATE);
   fftw_execute_dft_r2c(fftw_r2c_plan,source_pixels,forward_pixels);
   fftw_destroy_plan(fftw_r2c_plan);
   source_info=(MemoryInfo *) RelinquishVirtualMemory(source_info);
@@ -874,10 +885,10 @@ static MagickBooleanType ForwardFourierTransformChannel(const Image *image,
   fourier_info.center=(ssize_t) (fourier_info.width/2L)+1L;
   fourier_info.channel=channel;
   fourier_info.modulus=modulus;
-  magnitude_info=AcquireVirtualMemory((size_t) fourier_info.width,
-    (fourier_info.height/2+1)*sizeof(*magnitude_pixels));
-  phase_info=AcquireVirtualMemory((size_t) fourier_info.width,
-    (fourier_info.height/2+1)*sizeof(*phase_pixels));
+  magnitude_info=AcquireVirtualMemory(fourier_info.width,(fourier_info.height/2+
+    1)*sizeof(*magnitude_pixels));
+  phase_info=AcquireVirtualMemory(fourier_info.width,(fourier_info.height/2+1)*
+    sizeof(*phase_pixels));
   if ((magnitude_info == (MemoryInfo *) NULL) ||
       (phase_info == (MemoryInfo *) NULL))
     {
@@ -1136,12 +1147,12 @@ static MagickBooleanType InverseFourier(FourierInfo *fourier_info,
   /*
     Inverse fourier - read image and break down into a double array.
   */
-  magnitude_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    fourier_info->height*sizeof(*magnitude_pixels));
-  phase_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    fourier_info->height*sizeof(*phase_pixels));
-  inverse_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    (fourier_info->height/2+1)*sizeof(*inverse_pixels));
+  magnitude_info=AcquireVirtualMemory(fourier_info->width,fourier_info->height*
+    sizeof(*magnitude_pixels));
+  phase_info=AcquireVirtualMemory(fourier_info->width,fourier_info->height*
+    sizeof(*phase_pixels));
+  inverse_info=AcquireVirtualMemory(fourier_info->width,(fourier_info->height/2+
+    1)*sizeof(*inverse_pixels));
   if ((magnitude_info == (MemoryInfo *) NULL) ||
       (phase_info == (MemoryInfo *) NULL) ||
       (inverse_info == (MemoryInfo *) NULL))
@@ -1332,8 +1343,17 @@ static MagickBooleanType InverseFourierTransform(FourierInfo *fourier_info,
   ssize_t
     y;
 
-  source_info=AcquireVirtualMemory((size_t) fourier_info->width,
-    fourier_info->height*sizeof(*source_pixels));
+  /*
+    Generate the inverse Fourier transform.
+  */
+  if ((fourier_info->width >= INT_MAX) || (fourier_info->height >= INT_MAX))
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),ImageError,
+        "WidthOrHeightExceedsLimit","`%s'",image->filename);
+      return(MagickFalse);
+    }
+  source_info=AcquireVirtualMemory(fourier_info->width,fourier_info->height*
+    sizeof(*source_pixels));
   if (source_info == (MemoryInfo *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
@@ -1368,8 +1388,8 @@ static MagickBooleanType InverseFourierTransform(FourierInfo *fourier_info,
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
   #pragma omp critical (MagickCore_InverseFourierTransform)
 #endif
-  fftw_c2r_plan=fftw_plan_dft_c2r_2d(fourier_info->width,fourier_info->height,
-    fourier_pixels,source_pixels,FFTW_ESTIMATE);
+  fftw_c2r_plan=fftw_plan_dft_c2r_2d((int) fourier_info->width,
+    (int) fourier_info->height,fourier_pixels,source_pixels,FFTW_ESTIMATE);
   fftw_execute_dft_c2r(fftw_c2r_plan,fourier_pixels,source_pixels);
   fftw_destroy_plan(fftw_c2r_plan);
   i=0L;
@@ -1460,8 +1480,8 @@ static MagickBooleanType InverseFourierTransformChannel(
   fourier_info.center=(ssize_t) (fourier_info.width/2L)+1L;
   fourier_info.channel=channel;
   fourier_info.modulus=modulus;
-  inverse_info=AcquireVirtualMemory((size_t) fourier_info.width,
-    (fourier_info.height/2+1)*sizeof(*inverse_pixels));
+  inverse_info=AcquireVirtualMemory(fourier_info.width,(fourier_info.height/2+
+    1)*sizeof(*inverse_pixels));
   if (inverse_info == (MemoryInfo *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
@@ -1489,7 +1509,7 @@ MagickExport Image *InverseFourierTransformImage(const Image *magnitude_image,
 
   assert(magnitude_image != (Image *) NULL);
   assert(magnitude_image->signature == MagickCoreSignature);
-  if (magnitude_image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       magnitude_image->filename);
   if (phase_image == (Image *) NULL)

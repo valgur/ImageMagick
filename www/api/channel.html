@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,12 +87,25 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="channel.html#ChannelFxImage">ChannelFxImage</a></li>
+  <li><a href="channel.html#CombineImages">CombineImages</a></li>
+  <li><a href="channel.html#GetImageAlphaChannel">GetImageAlphaChannel</a></li>
+  <li><a href="channel.html#SeparateImage">SeparateImage</a></li>
+  <li><a href="channel.html#SeparateImages">SeparateImages</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="channel.html#ChannelFxImage">ChannelFxImage</a> &#8226; <a href="channel.html#CombineImages">CombineImages</a> &#8226; <a href="channel.html#GetImageAlphaChannel">GetImageAlphaChannel</a> &#8226; <a href="channel.html#SeparateImage">SeparateImage</a> &#8226; <a href="channel.html#SeparateImages">SeparateImages</a> &#8226; <a href="channel.html#SetImageAlphaChannel">SetImageAlphaChannel</a></p>
-
 <h2><a href="../../api/MagickCore/channel_8c.html" id="ChannelFxImage">ChannelFxImage</a></h2>
 
-<p>ChannelFxImage() applies a channel expression to the specified image.  The expression consists of one or more channels, either mnemonic or numeric (e.g. red, 1), separated by actions as follows:</p>
+<p>ChannelFxImage() applies a channel expression to the specified image.  The expression consists of one or more channels, either mnemonic or numeric (e.g. r, red, 0), separated by actions as follows:</p>
 
 <dd>
 </dd>
@@ -104,18 +114,16 @@
 
 <dd> For example, to create 3 grayscale images from the red, green, and blue channels of an image, use: </dd>
 
-<pre class="text">
-    -channel-fx "red; green; blue"
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>    -channel-fx "red; green; blue"
+</samp></pre>
 
 <p>A channel without an operation symbol implies separate (i.e, semicolon). </dd>
 
 <dd> The format of the ChannelFxImage method is: </dd>
 
-<pre class="text">
-Image *ChannelFxImage(const Image *image,const char *expression,
+<pre class="bg-light text-dark mx-4"><samp>Image *ChannelFxImage(const Image *image,const char *expression,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows: </dd>
 
@@ -143,10 +151,9 @@ Image *ChannelFxImage(const Image *image,const char *expression,
 
 <p>The format of the CombineImages method is:</p>
 
-<pre class="text">
-Image *CombineImages(const Image *images,const ColorspaceType colorspace,
+<pre class="bg-light text-dark mx-4"><samp>Image *CombineImages(const Image *images,const ColorspaceType colorspace,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -174,9 +181,8 @@ Image *CombineImages(const Image *images,const ColorspaceType colorspace,
 
 <p>The format of the GetImageAlphaChannel method is:</p>
 
-<pre class="text">
-MagickBooleanType GetImageAlphaChannel(const Image *image)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType GetImageAlphaChannel(const Image *image)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -196,10 +202,9 @@ MagickBooleanType GetImageAlphaChannel(const Image *image)
 
 <p>The format of the SeparateImage method is:</p>
 
-<pre class="text">
-Image *SeparateImage(const Image *image,const ChannelType channel,
+<pre class="bg-light text-dark mx-4"><samp>Image *SeparateImage(const Image *image,const ChannelType channel,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -227,9 +232,8 @@ Image *SeparateImage(const Image *image,const ChannelType channel,
 
 <p>The format of the SeparateImages method is:</p>
 
-<pre class="text">
-Image *SeparateImages(const Image *image,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>Image *SeparateImages(const Image *image,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -253,10 +257,9 @@ Image *SeparateImages(const Image *image,ExceptionInfo *exception)
 
 <p>The format of the SetImageAlphaChannel method is:</p>
 
-<pre class="text">
-MagickBooleanType SetImageAlphaChannel(Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SetImageAlphaChannel(Image *image,
   const AlphaChannelOption alpha_type,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

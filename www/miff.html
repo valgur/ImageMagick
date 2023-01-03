@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="download.html">Download</a>
         </li>
@@ -104,7 +101,7 @@
 <p>The following is a partial list of <var> key = value</var> combinations that are typically be found in a MIFF file:</p>
 
 <div class="table-responsive" style="font-size:smaller !important;">
-<table class="table table-sm table-hover">
+<table class="table table-sm table-hover table-striped">
   <tr>
     <td>background-color = <var>color</var></td>
     <td> </td>
@@ -161,8 +158,8 @@
     <td>the gamma of the image.  If it is not specified, a gamma of 1.0 (linear brightness response) is assumed.</td>
   </tr>
   <tr>
-    <td>id = ImageMagick</td>
-    <td>identifies the file as a MIFF-format image file.  This key is required and has no default.  Although this key can appear anywhere in the header, it should start as the first key of the header in column 1.  This will allow programs like <samp>file</samp>(1) to easily identify the file as MIFF.</td>
+    <td>id=ImageMagick</td>
+    <td>identifies the file as a MIFF-format image file.  This key is required, must be the first key-value pair, can only appear once, and has no default.  Although this key can appear anywhere in the header, it should start as the first key of the header in column 1.  This will allow programs like <samp>file</samp>(1) to easily identify the file as MIFF.</td>
 	</tr>
 	<tr>
     <td>iterations = <var>value</var></td>
@@ -288,4 +285,4 @@ or fewer colors in the image, each byte of image data contains an index value. I
   <script src="assets/magick.js" ></script>
   </body>
 </html>
-<!-- Magick Cache 18th February 2022 23:53 -->
+<!-- Magick Cache 17th December 2022 12:44 -->

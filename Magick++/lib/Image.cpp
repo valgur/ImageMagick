@@ -2,7 +2,7 @@
 //
 // Copyright Bob Friesenhahn, 1999, 2000, 2001, 2002, 2003
 //
-// Copyright @ 2013 ImageMagick Studio LLC, a non-profit organization
+// Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization
 // dedicated to making software imaging solutions freely available.
 //
 // Implementation of Image
@@ -816,7 +816,7 @@ void Magick::Image::fillPattern(const Image &fillPattern_)
 
 Magick::Image Magick::Image::fillPattern(void) const
 {
-  // FIXME: This is inordinately innefficient
+  // FIXME: This is inordinately inefficient
   const MagickCore::Image
     *tmpTexture;
 
@@ -1482,7 +1482,7 @@ void Magick::Image::strokePattern(const Image &strokePattern_)
 
 Magick::Image Magick::Image::strokePattern(void) const
 {
-  // FIXME: This is inordinately innefficient
+  // FIXME: This is inordinately inefficient
   const MagickCore::Image 
     *tmpTexture;
 
@@ -3153,7 +3153,8 @@ void Magick::Image::fontTypeMetricsMultiline(const std::string &text_,
   drawInfo->text=DestroyString(drawInfo->text);
   drawInfo->text=const_cast<char *>(text_.c_str());
   GetPPException;
-  GetMultilineTypeMetrics(image(),drawInfo,&(metrics->_typeMetric),exceptionInfo);
+  (void) GetMultilineTypeMetrics(image(),drawInfo,&(metrics->_typeMetric),
+    exceptionInfo);
   drawInfo->text=(char *) NULL;
   ThrowImageException;
 }

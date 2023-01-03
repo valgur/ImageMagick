@@ -173,9 +173,11 @@ static const OptionInfo
     { "Meta", MetaChannel, UndefinedOptionFlag, MagickFalse },
     { "Opacity", AlphaChannel, DeprecateOptionFlag, MagickTrue },/*depreciate*/
     { "R", RedChannel, UndefinedOptionFlag, MagickFalse },
+    { "ReadMask", ReadMaskChannel, UndefinedOptionFlag, MagickFalse },
     { "Red", RedChannel, UndefinedOptionFlag, MagickFalse },
     { "S", GreenChannel, UndefinedOptionFlag, MagickFalse },
     { "Saturation", GreenChannel, UndefinedOptionFlag, MagickFalse },
+    { "WriteMask", WriteMaskChannel, UndefinedOptionFlag, MagickFalse },
     { "Y", YellowChannel, UndefinedOptionFlag, MagickFalse },
     { "Yellow", YellowChannel, UndefinedOptionFlag, MagickFalse },
     { "0", (((ssize_t) 1) << 0), UndefinedOptionFlag, MagickFalse },
@@ -1015,9 +1017,9 @@ static const OptionInfo
     { "+sampling-factor", 0L, ImageInfoOptionFlag, MagickFalse },
     { "-sampling-factor", 1L, ImageInfoOptionFlag, MagickFalse },
     { "-sans0", 0L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue },
-    { "+sans0", 0L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue }, /* equivelent to 'noop' */
+    { "+sans0", 0L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue }, /* equivalent to 'noop' */
     { "+sans1", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue },
-    { "-sans1", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue }, /* equivelent to 'sans' */
+    { "-sans1", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue }, /* equivalent to 'sans' */
     { "-sans", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue },
     { "+sans", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue },
     { "-sans2", 2L, NoImageOperatorFlag | NeverInterpretArgsFlag, MagickTrue },
@@ -1178,6 +1180,8 @@ static const OptionInfo
     { "-window", 1L, NonMagickOptionFlag, MagickFalse },
     { "+window-group", 0L, NonMagickOptionFlag, MagickFalse },
     { "-window-group", 1L, NonMagickOptionFlag, MagickFalse },
+    { "+word-break", 0L, ImageInfoOptionFlag | DrawInfoOptionFlag, MagickFalse },
+    { "-word-break", 1L, ImageInfoOptionFlag | DrawInfoOptionFlag, MagickFalse },
     { "-write", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag | FireOptionFlag, MagickFalse },
     { "+write", 1L, NoImageOperatorFlag | NeverInterpretArgsFlag | FireOptionFlag, MagickFalse },
     { "+write-mask", 0L, SimpleOperatorFlag | NeverInterpretArgsFlag, MagickFalse },
@@ -1730,6 +1734,7 @@ static const OptionInfo
     { "Validate", MagickValidateOptions, UndefinedOptionFlag, MagickFalse },
     { "VirtualPixel", MagickVirtualPixelOptions, UndefinedOptionFlag, MagickFalse },
     { "Weight", MagickWeightOptions, UndefinedOptionFlag, MagickFalse },
+    { "WordBreak", MagickWordBreakOptions, UndefinedOptionFlag, MagickFalse },
     { (char *) NULL, MagickUndefinedOptions, UndefinedOptionFlag, MagickFalse }
   },
   LogEventOptions[] =
@@ -2142,6 +2147,7 @@ static const OptionInfo
     { "FormatsMemory", FormatsMemoryValidate, UndefinedOptionFlag, MagickFalse },
     { "Identify", IdentifyValidate, UndefinedOptionFlag, MagickFalse },
     { "ImportExport", ImportExportValidate, UndefinedOptionFlag, MagickFalse },
+    { "Magick", MagickValidate, UndefinedOptionFlag, MagickFalse },
     { "Montage", MontageValidate, UndefinedOptionFlag, MagickFalse },
     { "Stream", StreamValidate, UndefinedOptionFlag, MagickFalse },
     { "None", NoValidate, UndefinedOptionFlag, MagickFalse },
@@ -2187,6 +2193,13 @@ static const OptionInfo
     { "Heavy", 900L, UndefinedOptionFlag, MagickFalse },
     { "Black", 900L, UndefinedOptionFlag, MagickFalse },
     { (char *) NULL, 0L, UndefinedOptionFlag, MagickFalse }
+  },
+  WordBreakOptions[] =
+  {
+    { "Undefined", UndefinedWordBreakType, UndefinedOptionFlag, MagickTrue },
+    { "Normal", NormalWordBreakType, UndefinedOptionFlag, MagickFalse },
+    { "BreakWord", BreakWordBreakType, UndefinedOptionFlag, MagickFalse },
+    { (char *) NULL, UndefinedWordBreakType, UndefinedOptionFlag, MagickFalse }
   };
 
 /*
@@ -2209,7 +2222,7 @@ static const OptionInfo
 %
 %  A description of each parameter follows:
 %
-%    o image_info: the image info to recieve the cloned options.
+%    o image_info: the image info to receive the cloned options.
 %
 %    o clone_info: the source image info for options to clone.
 %
@@ -2219,11 +2232,11 @@ MagickExport MagickBooleanType CloneImageOptions(ImageInfo *image_info,
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(clone_info != (const ImageInfo *) NULL);
   assert(clone_info->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   if (clone_info->options != (void *) NULL)
     {
       if (image_info->options != (void *) NULL)
@@ -2246,7 +2259,7 @@ MagickExport MagickBooleanType CloneImageOptions(ImageInfo *image_info,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  DefineImageOption() associates an assignment string of the form
-%  "key=value" with a global image option. It is equivelent to
+%  "key=value" with a global image option. It is equivalent to
 %  SetImageOption().
 %
 %  The format of the DefineImageOption method is:
@@ -2316,7 +2329,7 @@ MagickExport MagickBooleanType DeleteImageOption(ImageInfo *image_info,
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options == (void *) NULL)
@@ -2351,7 +2364,7 @@ MagickExport void DestroyImageOptions(ImageInfo *image_info)
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options != (void *) NULL)
@@ -2391,7 +2404,7 @@ MagickExport const char *GetImageOption(const ImageInfo *image_info,
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options == (void *) NULL)
@@ -2500,6 +2513,7 @@ static const OptionInfo *GetOptionInfo(const CommandOption option)
     case MagickValidateOptions: return(ValidateOptions);
     case MagickVirtualPixelOptions: return(VirtualPixelOptions);
     case MagickWeightOptions: return(WeightOptions);
+    case MagickWordBreakOptions: return(WordBreakOptions);
     default: break;
   }
   return((const OptionInfo *) NULL);
@@ -2695,7 +2709,7 @@ MagickExport char *GetNextImageOption(const ImageInfo *image_info)
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options == (void *) NULL)
@@ -3236,7 +3250,7 @@ MagickExport char *RemoveImageOption(ImageInfo *image_info,const char *option)
 
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options == (void *) NULL)
@@ -3273,7 +3287,7 @@ MagickExport void ResetImageOptions(const ImageInfo *image_info)
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options == (void *) NULL)
@@ -3309,7 +3323,7 @@ MagickExport void ResetImageOptionIterator(const ImageInfo *image_info)
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   if (image_info->options == (void *) NULL)
@@ -3349,7 +3363,7 @@ MagickExport MagickBooleanType SetImageOption(ImageInfo *image_info,
 {
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   /*

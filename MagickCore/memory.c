@@ -1050,7 +1050,7 @@ MagickExport size_t GetMaxMemoryRequest(void)
       char
         *value;
 
-      max_memory_request=MAGICK_SSIZE_MAX;
+      max_memory_request=(size_t) MAGICK_SSIZE_MAX;
       value=GetPolicyValue("system:max-memory-request");
       if (value != (char *) NULL)
         {
@@ -1062,7 +1062,7 @@ MagickExport size_t GetMaxMemoryRequest(void)
           value=DestroyString(value);
         }
     }
-  return(MagickMin(max_memory_request,MAGICK_SSIZE_MAX));
+  return(MagickMin(max_memory_request,(size_t) MAGICK_SSIZE_MAX));
 }
 
 /*
@@ -1235,6 +1235,7 @@ MagickExport MemoryInfo *RelinquishVirtualMemory(MemoryInfo *memory_info)
     {
       case AlignedVirtualMemory:
       {
+        (void) ShredMagickMemory(memory_info->blob,memory_info->length);
         memory_info->blob=RelinquishAlignedMemory(memory_info->blob);
         break;
       }
@@ -1249,6 +1250,7 @@ MagickExport MemoryInfo *RelinquishVirtualMemory(MemoryInfo *memory_info)
       case UnalignedVirtualMemory:
       default:
       {
+        (void) ShredMagickMemory(memory_info->blob,memory_info->length);
         memory_info->blob=RelinquishMagickMemory(memory_info->blob);
         break;
       }
@@ -1550,4 +1552,101 @@ MagickExport void SetMagickMemoryMethods(
     memory_methods.resize_memory_handler=resize_memory_handler;
   if (destroy_memory_handler != (DestroyMemoryHandler) NULL)
     memory_methods.destroy_memory_handler=destroy_memory_handler;
+}
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%   S h r e d M a g i c k M e m o r y                                         %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  ShredMagickMemory() overwrites the specified memory buffer with random data.
+%  The overwrite is optional and is only required to help keep the contents of
+%  the memory buffer private.
+%
+%  The format of the ShredMagickMemory method is:
+%
+%      MagickBooleanType ShredMagickMemory(void *memory,const size_t length)
+%
+%  A description of each parameter follows.
+%
+%    o memory:  Specifies the memory buffer.
+%
+%    o length:  Specifies the length of the memory buffer.
+%
+*/
+MagickPrivate MagickBooleanType ShredMagickMemory(void *memory,
+  const size_t length)
+{
+  RandomInfo
+    *random_info;
+
+  size_t
+    quantum;
+
+  ssize_t
+    i;
+
+  static ssize_t
+    passes = -1;
+
+  StringInfo
+    *key;
+
+  if ((memory == NULL) || (length == 0))
+    return(MagickFalse);
+  if (passes == -1)
+    {
+      char
+        *property;
+
+      passes=0;
+      property=GetEnvironmentValue("MAGICK_SHRED_PASSES");
+      if (property != (char *) NULL)
+        {
+          passes=(ssize_t) StringToInteger(property);
+          property=DestroyString(property);
+        }
+      property=GetPolicyValue("system:shred");
+      if (property != (char *) NULL)
+        {
+          passes=(ssize_t) StringToInteger(property);
+          property=DestroyString(property);
+        }
+    }
+  if (passes == 0)
+    return(MagickTrue);
+  /*
+    Overwrite the memory buffer with random data.
+  */
+  quantum=(size_t) MagickMin(length,MagickMinBufferExtent);
+  random_info=AcquireRandomInfo();
+  key=GetRandomKey(random_info,quantum);
+  for (i=0; i < passes; i++)
+  {
+    size_t
+      j;
+
+    unsigned char
+      *p = (unsigned char *) memory;
+
+    for (j=0; j < length; j+=quantum)
+    {
+      if (i != 0)
+        SetRandomKey(random_info,quantum,GetStringInfoDatum(key));
+      (void) memcpy(p,GetStringInfoDatum(key),(size_t)
+        MagickMin(quantum,length-j));
+      p+=quantum;
+    }
+    if (j < length)
+      break;
+  }
+  key=DestroyStringInfo(key);
+  random_info=DestroyRandomInfo(random_info);
+  return(i < passes ? MagickFalse : MagickTrue);
 }

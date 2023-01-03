@@ -155,7 +155,7 @@ MagickExport CacheView *AcquireVirtualCacheView(const Image *image,
   magick_unreferenced(exception);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 #if defined(MAGICKCORE_OPENCL_SUPPORT)
   SyncAuthenticOpenCLBuffer(image);
@@ -173,7 +173,8 @@ MagickExport CacheView *AcquireVirtualCacheView(const Image *image,
     cache_view->number_threads=1;
   cache_view->nexus_info=AcquirePixelCacheNexus(cache_view->number_threads);
   cache_view->virtual_pixel_method=GetImageVirtualPixelMethod(image);
-  cache_view->debug=IsEventLogging();
+  cache_view->debug=(GetLogEventMask() & CacheEvent) != 0 ? MagickTrue :
+    MagickFalse;
   cache_view->signature=MagickCoreSignature;
   if (cache_view->nexus_info == (NexusInfo **) NULL)
     ThrowFatalException(CacheFatalError,"UnableToAcquireCacheView");
@@ -209,7 +210,7 @@ MagickExport CacheView *CloneCacheView(const CacheView *cache_view)
 
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   clone_view=(CacheView *) MagickAssumeAligned(AcquireAlignedMemory(1,
@@ -253,7 +254,7 @@ MagickExport CacheView *DestroyCacheView(CacheView *cache_view)
 {
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   if (cache_view->nexus_info != (NexusInfo **) NULL)
@@ -415,7 +416,7 @@ MagickExport ColorspaceType GetCacheViewColorspace(const CacheView *cache_view)
 {
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   return(GetPixelCacheColorspace(cache_view->image->cache));
@@ -455,7 +456,7 @@ MagickExport MagickSizeType GetCacheViewExtent(const CacheView *cache_view)
 
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   assert(cache_view->image->cache != (Cache) NULL);
@@ -491,7 +492,7 @@ MagickExport const Image *GetCacheViewImage(const CacheView *cache_view)
 {
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   return(cache_view->image);
@@ -524,7 +525,7 @@ MagickExport ClassType GetCacheViewStorageClass(const CacheView *cache_view)
 {
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   return(GetPixelCacheStorageClass(cache_view->image->cache));
@@ -683,7 +684,7 @@ MagickExport const Quantum *GetCacheViewVirtualPixels(
 %
 %  The format of the GetOneCacheViewAuthenticPixel method is:
 %
-%      MagickBooleaNType GetOneCacheViewAuthenticPixel(
+%      MagickBooleanType GetOneCacheViewAuthenticPixel(
 %        const CacheView *cache_view,const ssize_t x,const ssize_t y,
 %        Quantum *pixel,ExceptionInfo *exception)
 %
@@ -1025,7 +1026,7 @@ MagickExport MagickBooleanType SetCacheViewStorageClass(CacheView *cache_view,
 {
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   return(SetImageStorageClass(cache_view->image,storage_class,exception));
@@ -1063,7 +1064,7 @@ MagickExport MagickBooleanType SetCacheViewVirtualPixelMethod(
 {
   assert(cache_view != (CacheView *) NULL);
   assert(cache_view->signature == MagickCoreSignature);
-  if (cache_view->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       cache_view->image->filename);
   cache_view->virtual_pixel_method=virtual_pixel_method;

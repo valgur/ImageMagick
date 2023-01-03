@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,19 +87,31 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="mime.html#AcquireMimeCache">AcquireMimeCache</a></li>
+  <li><a href="mime.html#GetMimeInfoList">GetMimeInfoList</a></li>
+  <li><a href="mime.html#GetMimeList">GetMimeList</a></li>
+  <li><a href="mime.html#GetMimeDescription">GetMimeDescription</a></li>
+  <li><a href="mime.html#GetMimeType">GetMimeType</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="mime.html#AcquireMimeCache">AcquireMimeCache</a> &#8226; <a href="mime.html#GetMimeInfoList">GetMimeInfoList</a> &#8226; <a href="mime.html#GetMimeList">GetMimeList</a> &#8226; <a href="mime.html#GetMimeDescription">GetMimeDescription</a> &#8226; <a href="mime.html#GetMimeType">GetMimeType</a> &#8226; <a href="mime.html#ListMimeInfo">ListMimeInfo</a></p>
-
 <h2><a href="../../api/MagickCore/mime_8c.html" id="AcquireMimeCache">AcquireMimeCache</a></h2>
 
 <p>AcquireMimeCache() caches one or more magic configurations which provides a mapping between magic attributes and a magic name.</p>
 
 <p>The format of the AcquireMimeCache method is:</p>
 
-<pre class="text">
-LinkedListInfo *AcquireMimeCache(const char *filename,
+<pre class="bg-light text-dark mx-4"><samp>LinkedListInfo *AcquireMimeCache(const char *filename,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -126,10 +135,9 @@ LinkedListInfo *AcquireMimeCache(const char *filename,
 
 <p>The magic of the GetMimeInfoList function is:</p>
 
-<pre class="text">
-const MimeInfo **GetMimeInfoList(const char *pattern,
+<pre class="bg-light text-dark mx-4"><samp>const MimeInfo **GetMimeInfoList(const char *pattern,
   size_t *number_aliases,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -157,10 +165,9 @@ const MimeInfo **GetMimeInfoList(const char *pattern,
 
 <p>The format of the GetMimeList function is:</p>
 
-<pre class="text">
-char **GetMimeList(const char *pattern,size_t *number_aliases,
+<pre class="bg-light text-dark mx-4"><samp>char **GetMimeList(const char *pattern,size_t *number_aliases,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -188,9 +195,8 @@ char **GetMimeList(const char *pattern,size_t *number_aliases,
 
 <p>The format of the GetMimeDescription method is:</p>
 
-<pre class="text">
-const char *GetMimeDescription(const MimeInfo *mime_info)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMimeDescription(const MimeInfo *mime_info)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -210,9 +216,8 @@ const char *GetMimeDescription(const MimeInfo *mime_info)
 
 <p>The format of the GetMimeType method is:</p>
 
-<pre class="text">
-const char *GetMimeType(const MimeInfo *mime_info)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMimeType(const MimeInfo *mime_info)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -232,9 +237,8 @@ const char *GetMimeType(const MimeInfo *mime_info)
 
 <p>The format of the ListMimeInfo method is:</p>
 
-<pre class="text">
-MagickBooleanType ListMimeInfo(FILE *file,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType ListMimeInfo(FILE *file,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows.</p>
 

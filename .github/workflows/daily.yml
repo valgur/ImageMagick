@@ -5,6 +5,35 @@ on:
 
 name: daily
 jobs:
+  change_log:
+    name: 'Create ChangeLog.md'
+    container:
+      image: node:18
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: npm install -g auto-changelog
+
+    - name: Create ChangeLog.md
+      run: |
+        export NEXT_VERSION=$(grep -oP "PACKAGE_VERSION='\K[0-9\.-]*" configure)
+        git tag $NEXT_VERSION
+        auto-changelog --sort-commits date
+        mkdir artifacts
+        mv ChangeLog.md artifacts/ChangeLog.md
+
+    - name: Upload ChangeLog.md
+      uses: actions/upload-artifact@v3
+      with:
+        name: ChangeLog
+        path: artifacts
+
   build_linux:
     name: 'Linux Q${{matrix.quantum}}-x64 hdri=${{matrix.hdri}} (${{matrix.modules}})'
     container:
@@ -33,20 +62,17 @@ jobs:
         apt-get install -y autoconf pkg-config gcc libfontconfig1-dev libfreetype6-dev libltdl-dev
 
     - name: Clone msttcorefonts
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: ImageMagick/msttcorefonts
         ref: refs/heads/main
-        fetch-depth: 1
 
     - name: Install msttcorefonts
       run: |
         set -e
         ./install.sh
 
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
+    - uses: actions/checkout@v3
 
     - name: Configure ImageMagick
       run: |
@@ -65,6 +91,8 @@ jobs:
 
   build_windows:
     name: 'Windows Q${{matrix.quantum}}-${{matrix.platform}} hdri=${{matrix.hdri}} (${{matrix.buildType}})'
+    needs:
+      - change_log
     runs-on: windows-2022
 
     strategy:
@@ -84,37 +112,42 @@ jobs:
 
     steps:
     - name: Clone ImageMagick-Windows
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: ImageMagick/ImageMagick-Windows
         path: ImageMagick-Windows
         ref: refs/heads/main
-        fetch-depth: 1
 
     - name: Clone repositories
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows
+        cd ImageMagick-Windows
         CloneRepositories.cmd https://github.com/ImageMagick shallow
+
+    - name: Download ChangeLog.md
+      uses: actions/download-artifact@v3
+      with:
+        name: ChangeLog
+        path: ImageMagick-Windows\ImageMagick
 
     - name: Build configure
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         msbuild configure.2022.sln /m /t:Rebuild /p:Configuration=Release,Platform=x64
 
     - name: Configure ImageMagick
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         configure.exe /noWizard /VS2022 /${{matrix.platform}} /${{matrix.buildType}}
 
     - name: Build ImageMagick
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick
+        cd ImageMagick-Windows\VisualMagick
         dir /B *.sln > solution
         set /p solution=<solution
         msbuild %solution% /m /t:Rebuild /p:Configuration=Release,Platform=${{matrix.platform}}
@@ -130,37 +163,36 @@ jobs:
 
     steps:
     - name: Clone ImageMagick-Windows
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: ImageMagick/ImageMagick-Windows
         path: ImageMagick-Windows
         ref: refs/heads/main
-        fetch-depth: 1
 
     - name: Clone repositories
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows
+        cd ImageMagick-Windows
         CloneRepositories.cmd https://github.com/ImageMagick shallow
 
     - name: Build configure
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         msbuild configure.2022.sln /m /t:Rebuild /p:Configuration=Release,Platform=x64
 
     - name: Configure ImageMagick
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         configure.exe /noWizard /VS2022 /x64 /${{matrix.buildType}} /zeroConfigurationSupport
 
     - name: Build ImageMagick
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick
+        cd ImageMagick-Windows\VisualMagick
         dir /B *.sln > solution
         set /p solution=<solution
         msbuild %solution% /m /t:Rebuild /p:Configuration=Release,Platform=x64
@@ -182,14 +214,13 @@ jobs:
     - name: Prepare git
       run: git config --global core.autocrlf false
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         repository: ImageMagick/ImageMagick-Windows
         path: ImageMagick-Windows
         ref: refs/heads/main
-        fetch-depth: 1
 
     - uses: msys2/setup-msys2@v2
       with:

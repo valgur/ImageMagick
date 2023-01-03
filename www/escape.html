@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../www/download.html">Download</a>
         </li>
@@ -94,7 +91,7 @@
 <p class="lead magick-description">There are copious amounts of extra data associated with images (metadata), beyond the actual image pixels. This metadata can be useful, either for display, or for various calculations, or in modifying the behavior of later image processing operations.  You can utilize percent escapes in a number of options, for example in <a href="../www/command-line-options.html#format_identify_">-format</a> or in montage <a href="../www/command-line-options.html#label" >-label</a>, to print various properties and other settings associated with an image.</p>
 
 <div class="table-responsive" style="font-size:smaller !important;">
-<table class="table table-hover">
+<table class="table table-hover table-striped">
 <tr>
     <td><b>Profile Data</b></td>
     <td>Such as EXIF: data, containing focal lengths, exposures, dates, and in
@@ -172,7 +169,7 @@ common attributes and properties of an image, such as: the image filename
 filename, type, width, height. </p>
 
 <div class="table-responsive" style="font-size:smaller !important;">
-<table class="table table-sm table-hover">
+<table class="table table-sm table-hover table-striped">
   <tr>
     <td>\</td>
     <td>backslash, the next character is literal and not subject to interpretation</td>
@@ -295,7 +292,7 @@ filename, type, width, height. </p>
   </tr>
   <tr>
     <td>%A</td>
-    <td>image transparency channel enabled (true/false)</td>
+    <td>image transparency channel. Values include Undefined (no transparency channel), Blend, Copy, or Update. </td>
   </tr>
   <tr>
     <td>%B</td>
@@ -400,7 +397,7 @@ especially for large images.</p>
 when enclosed in braces (long form):</p>
 
 <div class="table-responsive" style="font-size:smaller !important;">
-<table class="table table-sm table-hover">
+<table class="table table-sm table-hover table-striped">
   <tr>
     <td>%[basename]</td>
     <td>base filename, no suffixes (as %t)</td>
@@ -450,6 +447,10 @@ when enclosed in braces (long form):</p>
     <td>points that form a convex hull around the foreground object.  Use <samp><a href="../www/command-line-options.html#define">-define</a> convex-hull:background-color=<em>color</em></samp> to identify the image background color.  Use <samp><a href="../www/command-line-options.html#fuzz">-fuzz</a> to allow for a non-uniform background color. </td>
   </tr>
   <tr>
+    <td><a href="convex-hull.html">%[convex-hull:extreme-points]</a></td>
+    <td>return the top, right, bottom, and left extreme points of the convex hull.</td>
+  </tr>
+  <tr>
     <td>%[copyright]</td>
     <td>ImageMagick Copyright String</td>
   </tr>
@@ -470,6 +471,10 @@ when enclosed in braces (long form):</p>
     <td>how well an image resembles a reference image (<a href="../www/command-line-options.html#compare" >-compare</a>)</td>
   </tr>
   <tr>
+    <td>%[dominant-color]</td>
+    <td>return the dominate image color in hex.  Preceed usage with <a href="../www/command-line-options.html#kmeans" >-kmeans</a>.</td>
+  </tr>
+  <tr>
     <td>%[entropy]</td>
     <td>CALCULATED: entropy of the image</td>
   </tr>
@@ -488,6 +493,14 @@ when enclosed in braces (long form):</p>
   <tr>
     <td>%[height]</td>
     <td>original height of image (when it was read in)</td>
+  </tr>
+  <tr>
+    <td>%[histogram:contrast-stretch]</td>
+    <td>computed min and max contrast stretch percentage</td>
+  </tr>
+  <tr>
+    <td>%[histogram:linear-stretch]</td>
+    <td>computed min and max linear stretch percentage</td>
   </tr>
   <tr>
     <td>%[input]</td>
@@ -964,3 +977,4 @@ Post ObjectData Descriptor Record
   <script src="assets/magick.js" ></script>
   </body>
 </html>
+<!-- Magick Cache 17th December 2022 13:40 -->

@@ -209,10 +209,10 @@ MagickExport Image *AdaptiveThresholdImage(const Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   threshold_image=CloneImage(image,0,0,MagickTrue,exception);
   if (threshold_image == (Image *) NULL)
     return((Image *) NULL);
@@ -411,7 +411,7 @@ static double KapurThreshold(const Image *image,const double *histogram,
     threshold;
 
   /*
-    Compute optimal threshold from the entopy of the histogram.
+    Compute optimal threshold from the entropy of the histogram.
   */
   cumulative_histogram=(double *) AcquireQuantumMemory(MaxIntensity+1UL,
     sizeof(*cumulative_histogram));
@@ -687,7 +687,7 @@ MagickExport MagickBooleanType AutoThresholdImage(Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   histogram=(double *) AcquireQuantumMemory(MaxIntensity+1UL,
     sizeof(*histogram));
@@ -822,7 +822,7 @@ MagickExport MagickBooleanType BilevelImage(Image *image,const double threshold,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);
@@ -953,7 +953,7 @@ MagickExport MagickBooleanType BlackThresholdImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (thresholds == (const char *) NULL)
     return(MagickTrue);
@@ -1103,7 +1103,7 @@ MagickExport MagickBooleanType ClampImage(Image *image,ExceptionInfo *exception)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->storage_class == PseudoClass)
     {
@@ -1248,7 +1248,7 @@ MagickExport MagickBooleanType ColorThresholdImage(Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=AcquireImageColormap(image,2,exception);
   if (status == MagickFalse)
@@ -1881,7 +1881,7 @@ MagickExport MagickBooleanType ListThresholdMaps(FILE *file,
 %      each level. While checker,8,8,4 will produce a 332 colormaped image
 %      with only a single checkerboard hash pattern (50% grey) between each
 %      color level, to basically double the number of color levels with
-%      a bare minimim of dithering.
+%      a bare minimum of dithering.
 %
 %    o exception: return any errors or warnings in this structure.
 %
@@ -1918,10 +1918,10 @@ MagickExport MagickBooleanType OrderedDitherImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (threshold_map == (const char *) NULL)
     return(MagickTrue);
   p=(char *) threshold_map;
@@ -2103,7 +2103,7 @@ MagickExport MagickBooleanType PerceptibleImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->storage_class == PseudoClass)
     {
@@ -2116,14 +2116,18 @@ MagickExport MagickBooleanType PerceptibleImage(Image *image,
       q=image->colormap;
       for (i=0; i < (ssize_t) image->colors; i++)
       {
-        q->red=(double) PerceptibleThreshold(ClampToQuantum(q->red),
-          epsilon);
-        q->green=(double) PerceptibleThreshold(ClampToQuantum(q->green),
-          epsilon);
-        q->blue=(double) PerceptibleThreshold(ClampToQuantum(q->blue),
-          epsilon);
-        q->alpha=(double) PerceptibleThreshold(ClampToQuantum(q->alpha),
-          epsilon);
+        if ((GetPixelChannelTraits(image,RedPixelChannel) & UpdatePixelTrait) != 0)
+          q->red=(MagickRealType) PerceptibleThreshold(ClampToQuantum(q->red),
+            epsilon);
+        if ((GetPixelChannelTraits(image,GreenPixelChannel) & UpdatePixelTrait) != 0)
+          q->green=(MagickRealType) PerceptibleThreshold(ClampToQuantum(q->green),
+            epsilon);
+        if ((GetPixelChannelTraits(image,BluePixelChannel) & UpdatePixelTrait) != 0)
+          q->blue=(MagickRealType) PerceptibleThreshold(ClampToQuantum(q->blue),
+            epsilon);
+        if ((GetPixelChannelTraits(image,AlphaPixelChannel) & UpdatePixelTrait) != 0)
+          q->alpha=(MagickRealType) PerceptibleThreshold(ClampToQuantum(q->alpha),
+            epsilon);
         q++;
       }
       return(SyncImage(image,exception));
@@ -2163,9 +2167,8 @@ MagickExport MagickBooleanType PerceptibleImage(Image *image,
       {
         PixelChannel channel = GetPixelChannelChannel(image,i);
         PixelTrait traits = GetPixelChannelTraits(image,channel);
-        if (traits == UndefinedPixelTrait)
-          continue;
-        q[i]=PerceptibleThreshold(q[i],epsilon);
+        if ((traits & UpdatePixelTrait) != 0)
+          q[i]=PerceptibleThreshold(q[i],epsilon);
       }
       q+=GetPixelChannels(image);
     }
@@ -2247,10 +2250,10 @@ MagickExport MagickBooleanType RandomThresholdImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);
   /*
@@ -2386,7 +2389,7 @@ MagickExport MagickBooleanType RangeThresholdImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);
@@ -2534,7 +2537,7 @@ MagickExport MagickBooleanType WhiteThresholdImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (thresholds == (const char *) NULL)
     return(MagickTrue);

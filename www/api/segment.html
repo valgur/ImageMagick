@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,21 +87,28 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="segment.html#SegmentImage">SegmentImage</a></p>
-
 <h2><a href="../../api/MagickCore/segment_8c.html" id="SegmentImage">SegmentImage</a></h2>
 
 <p>SegmentImage() segment an image by analyzing the histograms of the color components and identifying units that are homogeneous with the fuzzy C-means technique.</p>
 
 <p>The format of the SegmentImage method is:</p>
 
-<pre class="text">
-MagickBooleanType SegmentImage(Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SegmentImage(Image *image,
   const ColorspaceType colorspace,const MagickBooleanType verbose,
   const double cluster_threshold,const double smooth_threshold,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows.</p>
 

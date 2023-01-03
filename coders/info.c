@@ -167,7 +167,7 @@ static MagickBooleanType WriteINFOImage(const ImageInfo *image_info,
     scene;
 
   size_t
-    imageListLength;
+    number_scenes;
 
   /*
     Open output image file.
@@ -176,13 +176,13 @@ static MagickBooleanType WriteINFOImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBlobMode,exception);
   if (status == MagickFalse)
     return(status);
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     format=GetImageOption(image_info,"format");
@@ -211,7 +211,7 @@ static MagickBooleanType WriteINFOImage(const ImageInfo *image_info,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

@@ -88,6 +88,7 @@
 #include "MagickCore/segment.h"
 #include "MagickCore/semaphore.h"
 #include "MagickCore/signature-private.h"
+#include "MagickCore/statistic-private.h"
 #include "MagickCore/string_.h"
 #include "MagickCore/thread-private.h"
 #include "MagickCore/timer.h"
@@ -275,10 +276,10 @@ MagickExport Image *CannyEdgeImage(const Image *image,const double radius,
 
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Filter out noise.
   */
@@ -586,7 +587,7 @@ MagickExport Image *CannyEdgeImage(const Image *image,const double radius,
 %  each of four directions (horizontal, vertical, left and right diagonals)
 %  for the specified distance.  The features include the angular second
 %  moment, contrast, correlation, sum of squares: variance, inverse difference
-%  moment, sum average, sum varience, sum entropy, entropy, difference variance,
+%  moment, sum average, sum variance, sum entropy, entropy, difference variance,
 %  difference entropy, information measures of correlation 1, information
 %  measures of correlation 2, and maximum correlation coefficient.  You can
 %  access the red channel contrast, for example, like this:
@@ -610,16 +611,6 @@ MagickExport Image *CannyEdgeImage(const Image *image,const double radius,
 %    o exception: return any errors or warnings in this structure.
 %
 */
-
-static inline double MagickLog10(const double x)
-{
-#define Log10Epsilon  (1.0e-11)
-
- if (fabs(x) < Log10Epsilon)
-   return(log10(Log10Epsilon));
- return(log10(fabs(x)));
-}
-
 MagickExport ChannelFeatures *GetImageFeatures(const Image *image,
   const size_t distance,ExceptionInfo *exception)
 {
@@ -671,7 +662,7 @@ MagickExport ChannelFeatures *GetImageFeatures(const Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if ((image->columns < (distance+1)) || (image->rows < (distance+1)))
     return((ChannelFeatures *) NULL);
@@ -1887,10 +1878,10 @@ MagickExport Image *HoughLineImage(const Image *image,const size_t width,
   */
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   accumulator_width=180;
   hough_height=((sqrt(2.0)*(double) (image->rows > image->columns ?
     image->rows : image->columns))/2.0);
@@ -2187,10 +2178,10 @@ MagickExport Image *MeanShiftImage(const Image *image,const size_t width,
 
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   mean_image=CloneImage(image,0,0,MagickTrue,exception);
   if (mean_image == (Image *) NULL)
     return((Image *) NULL);
@@ -2250,7 +2241,7 @@ MagickExport Image *MeanShiftImage(const Image *image,const size_t width,
       {
         double
           distance,
-          gamma;
+          gamma = 1.0;
 
         PixelInfo
           sum_pixel;
@@ -2299,7 +2290,8 @@ MagickExport Image *MeanShiftImage(const Image *image,const size_t width,
               }
           }
         }
-        gamma=PerceptibleReciprocal(count);
+        if (count != 0)
+          gamma=PerceptibleReciprocal((double) count);
         mean_location.x=gamma*sum_location.x;
         mean_location.y=gamma*sum_location.y;
         mean_pixel.red=gamma*sum_pixel.red;

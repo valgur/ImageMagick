@@ -330,7 +330,7 @@ typedef struct DPXInfo
 } DPXInfo;
 
 /*
-  Forward declaractions.
+  Forward declarations.
 */
 static MagickBooleanType
   WriteDPXImage(const ImageInfo *,Image *,ExceptionInfo *);
@@ -698,11 +698,11 @@ static Image *ReadDPXImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -1244,7 +1244,6 @@ static Image *ReadDPXImage(const ImageInfo *image_info,ExceptionInfo *exception)
     SetQuantumQuantum(quantum_info,32);
     SetQuantumPack(quantum_info,dpx.image.image_element[n].packing == 0 ?
       MagickTrue : MagickFalse);
-    status=SetQuantumPad(image,quantum_info,0);
     pixels=GetQuantumPixels(quantum_info);
     for (y=0; y < (ssize_t) image->rows; y++)
     {
@@ -1362,6 +1361,7 @@ ModuleExport size_t RegisterDPXImage(void)
   entry->magick=(IsImageFormatHandler *) IsDPX;
   entry->flags^=CoderAdjoinFlag;
   entry->flags|=CoderDecoderSeekableStreamFlag;
+  entry->flags|=CoderEndianSupportFlag;
   entry->note=ConstantString(DPXNote);
   (void) RegisterMagickInfo(entry);
   return(MagickImageCoderSignature);
@@ -1521,7 +1521,7 @@ static MagickBooleanType WriteDPXImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   horizontal_factor=4;
   vertical_factor=4;
@@ -1995,17 +1995,6 @@ static MagickBooleanType WriteDPXImage(const ImageInfo *image_info,Image *image,
   SetQuantumQuantum(quantum_info,32);
   SetQuantumPack(quantum_info,dpx.image.image_element[0].packing == 0 ?
     MagickTrue : MagickFalse);
-  quantum_type=RGBQuantum;
-  if (image->alpha_trait != UndefinedPixelTrait)
-    quantum_type=RGBAQuantum;
-  if (IsYCbCrCompatibleColorspace(image->colorspace) != MagickFalse)
-    {
-      quantum_type=CbYCrQuantum;
-      if (image->alpha_trait != UndefinedPixelTrait)
-        quantum_type=CbYCrAQuantum;
-      if ((horizontal_factor == 2) || (vertical_factor == 2))
-        quantum_type=CbYCrYQuantum;
-    }
   samples_per_pixel=1;
   quantum_type=GrayQuantum;
   component_type=dpx.image.image_element[0].descriptor;
@@ -2038,7 +2027,22 @@ static MagickBooleanType WriteDPXImage(const ImageInfo *image_info,Image *image,
       break;
     }
     default:
+    {
+      if (channels == 1)
+        break;
+      quantum_type=RGBAQuantum;
+      if (image->alpha_trait != UndefinedPixelTrait)
+        quantum_type=RGBQuantum;
+      if (IsYCbCrCompatibleColorspace(image->colorspace) != MagickFalse)
+        {
+          quantum_type=CbYCrQuantum;
+          if (image->alpha_trait != UndefinedPixelTrait)
+            quantum_type=CbYCrAQuantum;
+          if ((horizontal_factor == 2) || (vertical_factor == 2))
+            quantum_type=CbYCrYQuantum;
+        }
       break;
+    }
   }
   extent=GetBytesPerRow(image->columns,samples_per_pixel,image->depth,
     dpx.image.image_element[0].packing == 0 ? MagickFalse : MagickTrue);

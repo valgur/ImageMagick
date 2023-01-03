@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../www/download.html">Download</a>
         </li>
@@ -96,7 +93,7 @@
 
 <a class="anchor" id="fx"></a>
 
-<p class="lead magick-description">The <a href="http://im.snibgo.com/fxnew.htm" target="_blank">FX special effects image operator</a> applies a mathematical expression to each pixel channel of an image.  Use FX to:</p>
+<p class="lead magick-description">The <a href="http://im.snibgo.com/fxnew.htm" target="_blank">FX special effects image operator</a> applies a mathematical expression to each pixel channel of an image. The FX expression language provides a powerful and flexible way to manipulate images, allowing you to perform a wide range of operations and transformations on your images. Use FX to:</p>
 
 <ul>
   <li>create canvases, gradients, mathematical colormaps</li>
@@ -155,12 +152,12 @@
 <pre class="bg-light text-dark mx-4"><samp>magick photo.jpg -fx 'iso=32; rone=rand(); rtwo=rand(); \
   myn=sqrt(-2*ln(rone))*cos(2*Pi*rtwo); myntwo=sqrt(-2*ln(rtwo))* \
   cos(2*Pi*rone); pnoise=sqrt(p)*myn*sqrt(iso)* \
-  channel(4.28,3.86,6.68,0)/255; max(0,p+pnoise)' noisy.png
+  channel(4.28,3.86,6.68)/255; max(0,p+pnoise)' noisy.png
 </samp></pre>
 
 <p>This FX script utilizes a loop to create a <a href="https://en.wikipedia.org/wiki/Julia_set">Julia set</a>:</p>
 
-<pre class="bg-light text-dark mx-4"><samp>magick -size 400x400 xc:black -colorspace gray -fx " \
+<pre class="bg-light text-dark mx-4"><samp>magick -size 400x400 xc:gray -fx " \
   Xi=2.4*i/w-1.2; \
   Yj=2.4*j/h-1.2; \
   for (pixel=0.0, (hypot(Xi,Yj) &lt; 2.0) &amp;&amp; (pixel &lt; 1.0), \
@@ -179,12 +176,12 @@
 </ul>
 
 <p>This FX script prints the first 10 prime numbers:</p>
-<pre class="bg-light text-dark mx-4"><samp>magick xc: -channel gray -fx " \
+<pre class="bg-light text-dark mx-4"><samp>magick xc:gray -fx " \
   for (prime=2, prime &lt; 30, composite=0; \
     for (nn=2, nn &lt; (prime/2+1), if ((prime % nn) == 0, composite++, ); nn++); \
       if (composite &lt;= 0, debug(prime), ); prime++)" null:</samp></pre>
 
-<p>See <a href="https://legacy.imagemagick.org/Usage/transform/index.html#fx">Using FX, The Special Effects Image Operator</a> for more examples.</p>
+<p>See <a href="../Usage/transform/index.html#fx">Using FX, The Special Effects Image Operator</a> for more examples.</p>
 
 <p>The <samp>-fx</samp> option replaces any image sequence with a clone of the first image updated with the results of the expression.  If you prefer to apply the expression to each image in the sequence, use <samp>+fx</samp> instead.</p>
 
@@ -213,7 +210,7 @@
   <dt class="col-md-4"> math functions: </dt>
      <dd class="col-md-8"> abs(), acos(), acosh(), airy(), alt(), asin(), asinh(), atan(), atanh(), atan2(), ceil(), clamp(), cos(), cosh(), debug(), drc(), erf(), exp(), floor(), gauss(), gcd(), hypot(), int(), isnan(), j0(), j1(), jinc(), ln(), log(), logtwo(), max(), min(), mod(), not(), pow(), rand(), round(), sign(), sin(), sinc(), sinh(), sqrt(), squish(), tan(), tanh(), trunc()</dd>
   <dt class="col-md-4"> channel functions: </dt>
-    <dd class="col-md-8"> channel(r,g,b,a), channel(c,m,y,k,a)</dd>
+    <dd class="col-md-8"> define up to 5 pixel channels</dd>
   <dt class="col-md-4"> color names:</dt>
     <dd class="col-md-8"> red, cyan, black, etc.</dd>
   <dt class="col-md-4"> color functions:</dt>
@@ -279,7 +276,7 @@
   <dt class="col-md-4"> iterators:</dt>
     <dd class="col-md-8"> do(), for(), while()</dd>
   <dt class="col-md-4"> image attributes:</dt>
-  	<dd class="col-md-8"> s.depth, s.kurtosis, s.maxima, s.minima, s.resolution.x, s.resolution.y, s.skewness, s.standard_deviation</dd>
+  	<dd class="col-md-8"> s.depth, s.kurtosis, s.maxima, s.mean, s.minima, s.resolution.x, s.resolution.y, s.skewness, s.standard_deviation</dd>
   <dt class="col-md-4"> user settings:</dt>
   	<dd class="col-md-8">define Fx symbols as user settings, e.g. <pre class="bg-light text-dark mx-4"><samp>magick ... -set option:wd1 "%[fx:w/2]" -resize "%[fx:wd1-5]" ...</samp></pre><dd>
 </dl>
@@ -338,8 +335,7 @@
 <dt class="col-md-4"> <samp>atanh(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8"> inverse hyperbolic tangent function</dd>
 <dt class="col-md-4"> <samp>atan2(</samp><var>y</var>,<var>x</var><samp>)</samp></dt><dd class="col-md-8"> arc tangent function of two variables</dd>
 <dt class="col-md-4"> <samp>ceil(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8">smallest integral value not less than argument</dd>
-<dt class="col-md-4"> <samp>channel(</samp><var>r</var>,<var>g</var>,<var>b</var>,<var>a</var><samp>)</samp></dt><dd class="col-md-8">select numeric argument based on current channel</dd>
-<dt class="col-md-4"> <samp>channel(</samp><var>c</var>,<var>m</var>,<var>y</var>,<var>k</var>,<var>a</var><samp>)</samp></dt><dd class="col-md-8">select numeric argument based on current channel</dd>
+<dt class="col-md-4"> <samp>channel(</samp>...<samp>)</samp></dt><dd class="col-md-8">supports from zero to five arguments, e.g., channel(0.1) sets the first channel to 0.1 and zero's the other channels.</dd>
 <dt class="col-md-4"> <samp>clamp(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8"> clamp value</dd>
 <dt class="col-md-4"> <samp>cos(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8"> cosine function</dd>
 <dt class="col-md-4"> <samp>cosh(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8"> hyperbolic cosine function</dd>
@@ -380,7 +376,7 @@
 <dt class="col-md-4"> <samp>tanh(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8"> hyperbolic tangent function</dd>
 <dt class="col-md-4"> <samp>trunc(</samp><var>x</var><samp>)</samp></dt><dd class="col-md-8"> round to integer, towards zero</dd>
 <dt class="col-md-4"> <samp>while(</samp><var>condition</var>, <var>statements</var><samp>)</samp></dt><dd class="col-md-8"> iterate while the condition is not equal to 0</dd>
-<dt class="col-md-4"> <samp>image.depth, image.kurtosis, image.maxima, image.minima, image.resolution.x, image.resolution.y, image.skewness, image.standard_deviation</samp></dt><dd class="col-md-8"> image attributes</dd>
+<dt class="col-md-4"> <samp>image.depth, image.kurtosis, image.maxima, image.mean, image.median, image.minima, image.resolution.x, image.resolution.y, image.skewness, image.standard_deviation</samp></dt><dd class="col-md-8"> image attributes</dd>
 </dl>
 <p>The expression semantics include these rules:</p>
 
@@ -506,3 +502,4 @@ Red channel of NW corner of image #1 is 0.184582
   <script src="assets/magick.js" ></script>
   </body>
 </html>
+<!-- Magick Cache 17th December 2022 14:04 -->

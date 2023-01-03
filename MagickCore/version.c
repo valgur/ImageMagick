@@ -17,7 +17,7 @@
 %                               September 2002                                %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2002 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -486,7 +486,7 @@ MagickExport const char *GetMagickReleaseDate(void)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  GetMagickSignature() returns a signature that uniquely encodes the
-%  MagickCore libary version, quantum depth, HDRI status, OS word size, and
+%  MagickCore library version, quantum depth, HDRI status, OS word size, and
 %  endianness.
 %
 %  The format of the GetMagickSignature method is:

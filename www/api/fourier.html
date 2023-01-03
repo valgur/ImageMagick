@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,19 +87,28 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="fourier.html#ComplexImages">ComplexImages</a></li>
+  <li><a href="fourier.html#ForwardFourierTransformImage">ForwardFourierTransformImage</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="fourier.html#ComplexImages">ComplexImages</a> &#8226; <a href="fourier.html#ForwardFourierTransformImage">ForwardFourierTransformImage</a> &#8226; <a href="fourier.html#InverseFourierTransformImage">InverseFourierTransformImage</a></p>
-
 <h2><a href="../../api/MagickCore/fourier_8c.html" id="ComplexImages">ComplexImages</a></h2>
 
 <p>ComplexImages() performs complex mathematics on an image sequence.</p>
 
 <p>The format of the ComplexImages method is:</p>
 
-<pre class="text">
-MagickBooleanType ComplexImages(Image *images,const ComplexOperator op,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType ComplexImages(Image *images,const ComplexOperator op,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -128,12 +134,11 @@ MagickBooleanType ComplexImages(Image *images,const ComplexOperator op,
 
 <p>ForwardFourierTransformImage() implements the discrete Fourier transform (DFT) of the image either as a magnitude / phase or real / imaginary image pair.</p>
 
-<p>The format of the ForwadFourierTransformImage method is:</p>
+<p>The format of the ForwardFourierTransformImage method is:</p>
 
-<pre class="text">
-Image *ForwardFourierTransformImage(const Image *image,
+<pre class="bg-light text-dark mx-4"><samp>Image *ForwardFourierTransformImage(const Image *image,
   const MagickBooleanType modulus,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -161,11 +166,10 @@ Image *ForwardFourierTransformImage(const Image *image,
 
 <p>The format of the InverseFourierTransformImage method is:</p>
 
-<pre class="text">
-Image *InverseFourierTransformImage(const Image *magnitude_image,
+<pre class="bg-light text-dark mx-4"><samp>Image *InverseFourierTransformImage(const Image *magnitude_image,
   const Image *phase_image,const MagickBooleanType modulus,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

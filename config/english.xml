@@ -116,6 +116,9 @@
         <message name="ImageDoesNotHaveAnAlphaChannel">
           image does not have an alpha channel
         </message>
+        <message name="ImageDoesNotHaveAMaskChannel">
+          image does not have an mask channel
+        </message>
         <message name="ImageDoesNotHaveAThumbnail">
           image does not have a EXIF thumbnail
         </message>
@@ -675,6 +678,9 @@
         </message>
         <message name="KernelWidthMustBeAnOddNumber">
           kernel width must be an odd number
+        </message>
+        <message name="LabelExpected">
+          label expected
         </message>
         <message name="MapImageRequired">
           map image required
@@ -1467,11 +1473,11 @@
         load images
       </message>
     </Load>
-    <Magnfiy>
+    <Magnify>
       <message name="Image">
-        magnfiy image
+        magnify image
       </message>
-    </Magnfiy>
+    </Magnify>
     <MedianFilter>
       <message name="Image">
         filter image with neighborhood ranking

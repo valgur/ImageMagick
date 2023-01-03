@@ -328,7 +328,7 @@ static ChannelStatistics *GetLocationStatistics(const Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   channel_statistics=(ChannelStatistics *) AcquireQuantumMemory(
     MaxPixelChannels+1,sizeof(*channel_statistics));
@@ -952,21 +952,22 @@ static MagickBooleanType EncodeImageAttributes(Image *image,FILE *file,
   MagickBooleanType
     ping;
 
-  ssize_t
-    i,
-    x;
-
   size_t
     depth,
     distance,
     scale;
 
   ssize_t
+    i,
+    x,
     y;
+
+  struct stat
+    properties;
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   *format='\0';
   elapsed_time=GetElapsedTime(&image->timer);
@@ -1000,12 +1001,17 @@ static MagickBooleanType EncodeImageAttributes(Image *image,FILE *file,
           JSONFormatLocaleFile(file,"    \"baseName\": %s,\n",filename);
         }
     }
+  properties=(*GetBlobProperties(image));
+  if (properties.st_mode != 0)
+    (void) FormatLocaleFile(file,"    \"permissions\": %d%d%d,\n",
+      (properties.st_mode >> 6) & 0x07,(properties.st_mode >> 3) & 0x07,
+      (properties.st_mode >> 0) & 0x07);
   JSONFormatLocaleFile(file,"    \"format\": %s,\n",image->magick);
   magick_info=GetMagickInfo(image->magick,exception);
   if ((magick_info != (const MagickInfo *) NULL) &&
       (GetMagickDescription(magick_info) != (const char *) NULL))
     JSONFormatLocaleFile(file,"    \"formatDescription\": %s,\n",
-      image->magick);
+      GetMagickDescription(magick_info));
   if ((magick_info != (const MagickInfo *) NULL) &&
       (GetMagickMimeType(magick_info) != (const char *) NULL))
     JSONFormatLocaleFile(file,"    \"mimeType\": %s,\n",GetMagickMimeType(
@@ -1708,7 +1714,7 @@ static MagickBooleanType WriteJSONImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBlobMode,exception);
   if (status == MagickFalse)

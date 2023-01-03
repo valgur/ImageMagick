@@ -164,6 +164,8 @@ typedef struct
 
 #define TILE_WIDTH   64
 #define TILE_HEIGHT  64
+#define GIMP_MIN_RESOLUTION  5e-3f
+#define GIMP_MAX_RESOLUTION  65536.0f
 
 typedef struct
 {
@@ -390,7 +392,7 @@ static char *ReadBlobStringWithLongSize(Image *image,char *string,size_t max,
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
   assert(max != 0);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   length=ReadBlobMSBLong(image);
   for (i=0; i < (ssize_t) MagickMin(length,max-1); i++)
@@ -536,6 +538,7 @@ static MagickBooleanType load_tile_rle(Image *image,Image *tile_image,
   if (xcfdata == (unsigned char *) NULL)
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
+  (void) memset(xcfdata,0,(size_t) data_length*sizeof(*xcfdata));
   xcfodata=xcfdata;
   count=ReadBlob(image, (size_t) data_length, xcfdata);
   xcfdatalimit = xcfodata+count-1;
@@ -560,11 +563,13 @@ static MagickBooleanType load_tile_rle(Image *image,Image *tile_image,
             {
               if (xcfdata >= xcfdatalimit)
                 goto bogus_rle;
-              length=(size_t) ((*xcfdata << 8) + xcfdata[1]);
+              length=(size_t) ((*xcfdata << 8) + xcfdata[1]) & 0xffff;
               xcfdata+=2;
             }
           size-=length;
           if (size < 0)
+            goto bogus_rle;
+          if ((length < 1) || (length > data_length))
             goto bogus_rle;
           if (&xcfdata[length-1] > xcfdatalimit)
             goto bogus_rle;
@@ -615,7 +620,7 @@ static MagickBooleanType load_tile_rle(Image *image,Image *tile_image,
             {
               if (xcfdata >= xcfdatalimit)
                 goto bogus_rle;
-              length=(size_t) ((*xcfdata << 8) + xcfdata[1]);
+              length=(size_t) ((*xcfdata << 8) + xcfdata[1]) & 0xffff;
               xcfdata+=2;
             }
           size-=length;
@@ -1165,11 +1170,11 @@ static Image *ReadXCFImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -1296,25 +1301,19 @@ static Image *ReadXCFImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
     case PROP_RESOLUTION:
       {
-        /* float xres = (float) */ (void) ReadBlobMSBLong(image);
-        /* float yres = (float) */ (void) ReadBlobMSBLong(image);
+        float
+          x,
+          y;
 
-        /*
-        if (xres < GIMP_MIN_RESOLUTION || xres > GIMP_MAX_RESOLUTION ||
-            yres < GIMP_MIN_RESOLUTION || yres > GIMP_MAX_RESOLUTION)
-        {
-        g_message ("Warning, resolution out of range in XCF file");
-        xres = gimage->gimp->config->default_xresolution;
-        yres = gimage->gimp->config->default_yresolution;
-        }
-        */
-
-
-        /* BOGUS: we don't write these yet because we aren't
-              reading them properly yet :(
-              image->resolution.x = xres;
-              image->resolution.y = yres;
-        */
+        x=ReadBlobFloat(image);
+        y=ReadBlobFloat(image);
+        if ((x >= GIMP_MIN_RESOLUTION) && (x <= GIMP_MAX_RESOLUTION) &&
+            (y >= GIMP_MIN_RESOLUTION) && (y <= GIMP_MAX_RESOLUTION))
+          {
+            image->resolution.x=(double) x;
+            image->resolution.y=(double) y;
+            image->units=PixelsPerInchResolution;
+          }
       }
       break;
 

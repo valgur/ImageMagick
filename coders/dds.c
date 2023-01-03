@@ -1936,6 +1936,8 @@ static void ReadEndpoints(BC7Colors *endpoints,const unsigned char *block,
     endpoints->b[i]=GetBits(block,start_bit,color_bits);
 
   /* alpha */
+  for (i=0; i < num_subsets * 2; i++)
+    endpoints->a[i]=255;
   alpha_bits=BC7_mode_info[mode].alpha_precision;
   has_alpha=mode >= 4 ? MagickTrue : MagickFalse;
 
@@ -2023,7 +2025,7 @@ static MagickBooleanType ReadBC7Pixels(Image *image,
   const DDSInfo *magick_unused(dds_info),ExceptionInfo *exception)
 {
   BC7Colors
-    colors;
+    colors = {{ 0 }};
 
   Quantum
     *q;
@@ -2383,7 +2385,8 @@ static MagickBooleanType ReadUncompressedRGBAPixels(Image *image,
     {
       if (IsBitMask(dds_info->pixelformat,0x7c00,0x03e0,0x001f,0x8000))
         alphaBits=1;
-      else if (IsBitMask(dds_info->pixelformat,0x00ff,0x00ff,0x00ff,0xff00))
+      else if ((IsBitMask(dds_info->pixelformat,0x00ff,0x00ff,0x00ff,0xff00)) ||
+               (IsBitMask(dds_info->pixelformat,0x00ff,0x0000,0x0000,0xff00)))
         {
           alphaBits=2;
           (void) SetImageType(image,GrayscaleAlphaType,exception);
@@ -2547,11 +2550,11 @@ static Image *ReadDDSImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   cubemap=MagickFalse,
   volume=MagickFalse,
   read_mipmaps=MagickFalse;
@@ -2597,8 +2600,8 @@ static Image *ReadDDSImage(const ImageInfo *image_info,ExceptionInfo *exception)
       compression = NoCompression;
       if (dds_info.pixelformat.flags & DDPF_ALPHAPIXELS)
         {
-          /* Not sure how to handle this */
-          ThrowReaderException(CorruptImageError, "ImageTypeNotSupported");
+          alpha_trait = BlendPixelTrait;
+          decoder = ReadUncompressedRGBA;
         }
       else
         {
@@ -3756,7 +3759,7 @@ static void WriteFourCC(Image *image, const size_t compression,
 
       DDSVector4
         point,
-        points[16];
+        points[16] = {{ 0 }};
 
       size_t
         count = 0,
@@ -4102,7 +4105,7 @@ static MagickBooleanType WriteDDSImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)

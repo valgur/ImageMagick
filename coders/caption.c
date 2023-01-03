@@ -141,11 +141,11 @@ static Image *ReadCAPTIONImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   (void) ResetImagePage(image,"0x0+0+0");
   if ((image->columns != 0) && (image->rows != 0))
@@ -337,8 +337,10 @@ static Image *ReadCAPTIONImage(const ImageInfo *image_info,
   caption=DestroyString(caption);
   (void) FormatLocaleString(geometry,MagickPathExtent,"%+g%+g",
     (draw_info->direction == RightToLeftDirection ? (double) image->columns-
-    metrics.bounds.x2 : metrics.bounds.x1),(draw_info->gravity ==
-    UndefinedGravity ? MagickMax(metrics.ascent,metrics.bounds.y2) : 0.0));
+    (draw_info->gravity == UndefinedGravity ? metrics.bounds.x2 : 0.0) : 
+    (draw_info->gravity == UndefinedGravity ? metrics.bounds.x1 : 0.0)),
+    (draw_info->gravity == UndefinedGravity ? 
+    MagickMax(metrics.ascent,metrics.bounds.y2) : 0.0));
   (void) CloneString(&draw_info->geometry,geometry);
   status=AnnotateImage(image,draw_info,exception);
   if (image_info->pointsize == 0.0)

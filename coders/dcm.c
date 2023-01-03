@@ -692,7 +692,7 @@ static const DicomInfo
     { 0x0018, 0x1602, "IS", "Shutter Left Vertical Edge" },
     { 0x0018, 0x1604, "IS", "Shutter Right Vertical Edge" },
     { 0x0018, 0x1606, "IS", "Shutter Upper Horizontal Edge" },
-    { 0x0018, 0x1608, "IS", "Shutter Lower Horizonta lEdge" },
+    { 0x0018, 0x1608, "IS", "Shutter Lower Horizontal Edge" },
     { 0x0018, 0x1610, "IS", "Center of Circular Shutter" },
     { 0x0018, 0x1612, "IS", "Radius of Circular Shutter" },
     { 0x0018, 0x1620, "IS", "Vertices of Polygonal Shutter" },
@@ -2188,7 +2188,7 @@ static const DicomInfo
     { 0x3006, 0x0039, "SQ", "ROI Contour Sequence" },
     { 0x3006, 0x0040, "SQ", "Contour Sequence" },
     { 0x3006, 0x0042, "CS", "Contour Geometric Type" },
-    { 0x3006, 0x0044, "DS", "Contour SlabT hickness" },
+    { 0x3006, 0x0044, "DS", "Contour Slab Thickness" },
     { 0x3006, 0x0045, "DS", "Contour Offset Vector" },
     { 0x3006, 0x0046, "IS", "Number of Contour Points" },
     { 0x3006, 0x0050, "DS", "Contour Data" },
@@ -2455,7 +2455,7 @@ static const DicomInfo
     { 0x300c, 0x00a0, "IS", "Referenced Tolerance Table Number" },
     { 0x300c, 0x00b0, "SQ", "Referenced Bolus Sequence" },
     { 0x300c, 0x00c0, "IS", "Referenced Wedge Number" },
-    { 0x300c, 0x00d0, "IS", "Referenced Compensato rNumber" },
+    { 0x300c, 0x00d0, "IS", "Referenced Compensator Number" },
     { 0x300c, 0x00e0, "IS", "Referenced Block Number" },
     { 0x300c, 0x00f0, "IS", "Referenced Control Point" },
     { 0x300e, 0x0002, "CS", "Approval Status" },
@@ -3036,11 +3036,13 @@ static inline void RelinquishDCMMemory(DCMInfo *info,DCMMap *map,
     map->green=(int *) RelinquishMagickMemory(map->green);
   if (map->red != (int *) NULL)
     map->red=(int *) RelinquishMagickMemory(map->red);
-  if (stream_info->offsets != (ssize_t *) NULL)
-    stream_info->offsets=(ssize_t *) RelinquishMagickMemory(
-      stream_info->offsets);
   if (stream_info != (DCMStreamInfo *) NULL)
-    stream_info=(DCMStreamInfo *) RelinquishMagickMemory(stream_info);
+    {
+      if (stream_info->offsets != (ssize_t *) NULL)
+        stream_info->offsets=(ssize_t *) RelinquishMagickMemory(
+          stream_info->offsets);
+      stream_info=(DCMStreamInfo *) RelinquishMagickMemory(stream_info);
+    }
   if (stack != (LinkedListInfo *) NULL)
     stack=DestroyLinkedList(stack,RelinquishDCMInfo);
   if (data != (unsigned char *) NULL)
@@ -3121,11 +3123,11 @@ static Image *ReadDCMImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -3241,7 +3243,7 @@ static Image *ReadDCMImage(const ImageInfo *image_info,ExceptionInfo *exception)
               quantum=4;
             }
         }
-      if ((group == 0xFFFE) && (element == 0xE0DD))
+      if ((group == 0xFFFE) && (element == 0xE0DD) && (sequence_depth != 0))
         {
           /*
             If we're exiting a sequence, restore the previous image parameters,
@@ -3263,7 +3265,7 @@ static Image *ReadDCMImage(const ImageInfo *image_info,ExceptionInfo *exception)
           (void) memcpy(&info,info_copy,sizeof(info));
           info_copy=(DCMInfo *) RelinquishMagickMemory(info_copy);
         }
-      if (strcmp(explicit_vr,"SQ") == 0)
+      if ((info.scale != (Quantum *) NULL) && (strcmp(explicit_vr,"SQ") == 0))
         {
           /*
             If we're entering a sequence, push the current image parameters
@@ -3276,7 +3278,10 @@ static Image *ReadDCMImage(const ImageInfo *image_info,ExceptionInfo *exception)
           clone_info->scale=(Quantum *) AcquireQuantumMemory(
             clone_info->scale_size+1,sizeof(*clone_info->scale));
           if (clone_info->scale == (Quantum *) NULL)
-            ThrowDCMException(ResourceLimitError,"MemoryAllocationFailed")
+            {
+              clone_info=(DCMInfo *) RelinquishMagickMemory(clone_info);
+              ThrowDCMException(ResourceLimitError,"MemoryAllocationFailed")
+            }
           (void) memcpy(clone_info->scale,info.scale,clone_info->scale_size*
             sizeof(*clone_info->scale));
           AppendValueToLinkedList(stack,clone_info);

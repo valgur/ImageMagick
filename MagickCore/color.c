@@ -55,6 +55,7 @@
 #include "MagickCore/gem-private.h"
 #include "MagickCore/geometry.h"
 #include "MagickCore/image-private.h"
+#include "MagickCore/linked-list-private.h"
 #include "MagickCore/memory_.h"
 #include "MagickCore/monitor.h"
 #include "MagickCore/monitor-private.h"
@@ -1012,11 +1013,14 @@ MagickExport const ColorInfo *GetColorCompliance(const char *name,
   char
     colorname[MagickPathExtent];
 
-  const ColorInfo
-    *p;
-
   char
     *q;
+
+  const ColorInfo
+    *color;
+
+  ElementInfo
+    *p;
 
   assert(exception != (ExceptionInfo *) NULL);
   if (IsColorCacheInstantiated(exception) == MagickFalse)
@@ -1037,29 +1041,34 @@ MagickExport const ColorInfo *GetColorCompliance(const char *name,
   /*
     Search for color tag.
   */
+  color=(const ColorInfo *) NULL;
   LockSemaphoreInfo(color_semaphore);
-  ResetLinkedListIterator(color_cache);
-  p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
+  p=GetHeadElementInLinkedList(color_cache);
   if ((name == (const char *) NULL) || (LocaleCompare(name,"*") == 0))
     {
       UnlockSemaphoreInfo(color_semaphore);
-      return(p);
+      if (p != (ElementInfo *) NULL)
+        color=(const ColorInfo *) p->value;
+      return(color);
     }
-  while (p != (const ColorInfo *) NULL)
+  while (p != (ElementInfo *) NULL)
   {
-    if (((p->compliance & compliance) != 0) &&
-        (LocaleCompare(colorname,p->name) == 0))
+    color=(const ColorInfo *) p->value;
+    if (((color->compliance & compliance) != 0) &&
+        (LocaleCompare(colorname,color->name) == 0))
       break;
-    p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
+    p=p->next;
   }
-  if (p == (ColorInfo *) NULL)
-    (void) ThrowMagickException(exception,GetMagickModule(),OptionWarning,
-      "UnrecognizedColor","`%s'",name);
+  if (p == (ElementInfo *) NULL)
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),OptionWarning,
+        "UnrecognizedColor","`%s'",name);
+      color=(const ColorInfo *) NULL;
+    }
   else
-    (void) InsertValueInLinkedList(color_cache,0,
-      RemoveElementByValueFromLinkedList(color_cache,p));
+    SetHeadElementInLinkedList(color_cache,p);
   UnlockSemaphoreInfo(color_semaphore);
-  return(p);
+  return(color);
 }
 
 /*
@@ -1287,42 +1296,44 @@ MagickExport const ColorInfo **GetColorInfoList(const char *pattern,
   const ColorInfo
     **colors;
 
-  const ColorInfo
+  ElementInfo
     *p;
 
   ssize_t
     i;
 
-  /*
-    Allocate color list.
-  */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_colors != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_colors=0;
-  p=GetColorInfo("*",exception);
-  if (p == (const ColorInfo *) NULL)
+  if (IsColorCacheInstantiated(exception) == MagickFalse)
     return((const ColorInfo **) NULL);
   colors=(const ColorInfo **) AcquireQuantumMemory((size_t)
     GetNumberOfElementsInLinkedList(color_cache)+1UL,sizeof(*colors));
   if (colors == (const ColorInfo **) NULL)
     return((const ColorInfo **) NULL);
-  /*
-    Generate color list.
-  */
   LockSemaphoreInfo(color_semaphore);
-  ResetLinkedListIterator(color_cache);
-  p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
-  for (i=0; p != (const ColorInfo *) NULL; )
+  p=GetHeadElementInLinkedList(color_cache);
+  for (i=0; p != (ElementInfo *) NULL; )
   {
-    if ((p->stealth == MagickFalse) &&
-        (GlobExpression(p->name,pattern,MagickFalse) != MagickFalse))
-      colors[i++]=p;
-    p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
+    const ColorInfo
+      *color;
+
+    color=(const ColorInfo *) p->value;
+    if ((color->stealth == MagickFalse) &&
+        (GlobExpression(color->name,pattern,MagickFalse) != MagickFalse))
+      colors[i++]=color;
+    p=p->next;
   }
   UnlockSemaphoreInfo(color_semaphore);
-  qsort((void *) colors,(size_t) i,sizeof(*colors),ColorInfoCompare);
-  colors[i]=(ColorInfo *) NULL;
+  if (i == 0)
+    colors=(const ColorInfo **) RelinquishMagickMemory((void*) colors);
+  else
+    {
+      qsort((void *) colors,(size_t) i,sizeof(*colors),ColorInfoCompare);
+      colors[i]=(ColorInfo *) NULL;
+    }
   *number_colors=(size_t) i;
   return(colors);
 }
@@ -1380,42 +1391,44 @@ MagickExport char **GetColorList(const char *pattern,
   char
     **colors;
 
-  const ColorInfo
+  ElementInfo
     *p;
 
   ssize_t
     i;
 
-  /*
-    Allocate color list.
-  */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_colors != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_colors=0;
-  p=GetColorInfo("*",exception);
-  if (p == (const ColorInfo *) NULL)
+  if (IsColorCacheInstantiated(exception) == MagickFalse)
     return((char **) NULL);
   colors=(char **) AcquireQuantumMemory((size_t)
     GetNumberOfElementsInLinkedList(color_cache)+1UL,sizeof(*colors));
   if (colors == (char **) NULL)
     return((char **) NULL);
-  /*
-    Generate color list.
-  */
   LockSemaphoreInfo(color_semaphore);
-  ResetLinkedListIterator(color_cache);
-  p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
-  for (i=0; p != (const ColorInfo *) NULL; )
+  p=GetHeadElementInLinkedList(color_cache);
+  for (i=0; p != (ElementInfo *) NULL; )
   {
-    if ((p->stealth == MagickFalse) &&
-        (GlobExpression(p->name,pattern,MagickFalse) != MagickFalse))
-      colors[i++]=ConstantString(p->name);
-    p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
+    const ColorInfo
+      *color;
+
+    color=(const ColorInfo *) p->value;
+    if ((color->stealth == MagickFalse) &&
+        (GlobExpression(color->name,pattern,MagickFalse) != MagickFalse))
+      colors[i++]=ConstantString(color->name);
+    p=p->next;
   }
   UnlockSemaphoreInfo(color_semaphore);
-  qsort((void *) colors,(size_t) i,sizeof(*colors),ColorCompare);
-  colors[i]=(char *) NULL;
+  if (i == 0)
+    colors=(char **) RelinquishMagickMemory(colors);
+  else
+    {
+      qsort((void *) colors,(size_t) i,sizeof(*colors),ColorCompare);
+      colors[i]=(char *) NULL;
+    }
   *number_colors=(size_t) i;
   return(colors);
 }
@@ -1443,13 +1456,13 @@ MagickExport char **GetColorList(const char *pattern,
 %
 %    o pixel: the pixel.
 %
-%    o hex: A value other than zero returns the tuple in a hexidecimal format.
+%    o hex: A value other than zero returns the tuple in a hexadecimal format.
 %
 %    o tuple: Return the color tuple as this string.
 %
 */
 
-static void ConcatentateHexColorComponent(const PixelInfo *pixel,
+static void ConcatenateHexColorComponent(const PixelInfo *pixel,
   const PixelChannel channel,char *tuple)
 {
   char
@@ -1525,7 +1538,8 @@ MagickExport void GetColorTuple(const PixelInfo *pixel,
 
   assert(pixel != (const PixelInfo *) NULL);
   assert(tuple != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",tuple);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",tuple);
   *tuple='\0';
   if (hex != MagickFalse)
     {
@@ -1533,13 +1547,13 @@ MagickExport void GetColorTuple(const PixelInfo *pixel,
         Convert pixel to hex color.
       */
       (void) ConcatenateMagickString(tuple,"#",MagickPathExtent);
-      ConcatentateHexColorComponent(pixel,RedPixelChannel,tuple);
-      ConcatentateHexColorComponent(pixel,GreenPixelChannel,tuple);
-      ConcatentateHexColorComponent(pixel,BluePixelChannel,tuple);
+      ConcatenateHexColorComponent(pixel,RedPixelChannel,tuple);
+      ConcatenateHexColorComponent(pixel,GreenPixelChannel,tuple);
+      ConcatenateHexColorComponent(pixel,BluePixelChannel,tuple);
       if (pixel->colorspace == CMYKColorspace)
-        ConcatentateHexColorComponent(pixel,BlackPixelChannel,tuple);
+        ConcatenateHexColorComponent(pixel,BlackPixelChannel,tuple);
       if (pixel->alpha_trait != UndefinedPixelTrait)
-        ConcatentateHexColorComponent(pixel,AlphaPixelChannel,tuple);
+        ConcatenateHexColorComponent(pixel,AlphaPixelChannel,tuple);
       return;
     }
   /*
@@ -1734,13 +1748,13 @@ MagickExport MagickBooleanType IsEquivalentImage(const Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(target_image != (Image *) NULL);
   assert(target_image->signature == MagickCoreSignature);
   assert(x_offset != (ssize_t *) NULL);
   assert(y_offset != (ssize_t *) NULL);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   x=0;
   status=MagickTrue;
   GetPixelInfo(image,&pixel);
@@ -2267,22 +2281,20 @@ static MagickStatusType ParseCSSColor(const char *magick_restrict color,
 MagickExport MagickBooleanType QueryColorCompliance(const char *name,
   const ComplianceType compliance,PixelInfo *color,ExceptionInfo *exception)
 {
-  GeometryInfo
-    geometry_info;
+  const ColorInfo
+    *p;
 
   double
     scale;
 
+  GeometryInfo
+    geometry_info;
+
   MagickStatusType
     flags;
 
-  const ColorInfo
-    *p;
-
   ssize_t
-    i;
-
-  ssize_t
+    i,
     type;
 
   /*
@@ -2291,7 +2303,8 @@ MagickExport MagickBooleanType QueryColorCompliance(const char *name,
   assert(color != (PixelInfo *) NULL);
   if ((name == (char *) NULL) || (*name == '\0'))
     name=BackgroundColor;
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",name);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",name);
   if (strlen(name) > MagickPathExtent)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),OptionWarning,
@@ -2307,7 +2320,7 @@ MagickExport MagickBooleanType QueryColorCompliance(const char *name,
         c;
 
       PixelPacket
-        pixel;
+        pixel = { 0 };
 
       QuantumAny
         range;
@@ -2319,7 +2332,6 @@ MagickExport MagickBooleanType QueryColorCompliance(const char *name,
       /*
         Parse hex color.
       */
-      (void) memset(&pixel,0,sizeof(pixel));
       name++;
       for (n=0; isxdigit((int) ((unsigned char) name[n])) != 0; n++) ;
       if ((n == 3) || (n == 6) || (n == 9) || (n == 12) || (n == 24) ||
@@ -2674,11 +2686,13 @@ MagickExport MagickBooleanType QueryColorname(
   double
     alpha;
 
-  const ColorInfo
+  ElementInfo
     *p;
 
   magick_unreferenced(image);
   *name='\0';
+  if (IsColorCacheInstantiated(exception) == MagickFalse)
+    return(MagickFalse);
   pixel=(*color);
   if (compliance == XPMCompliance)
     {
@@ -2692,20 +2706,25 @@ MagickExport MagickBooleanType QueryColorname(
     return(MagickFalse);
   alpha=color->alpha_trait != UndefinedPixelTrait ? color->alpha : OpaqueAlpha;
   (void) GetColorInfo("*",exception);
-  ResetLinkedListIterator(color_cache);
-  p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
-  while (p != (const ColorInfo *) NULL)
+  LockSemaphoreInfo(color_semaphore);
+  p=GetHeadElementInLinkedList(color_cache);
+  while (p != (ElementInfo *) NULL)
   {
-    if (((p->compliance & compliance) != 0) &&
-        ((fabs((double) (p->color.red-color->red)) < MagickEpsilon)) &&
-         (fabs((double) (p->color.green-color->green)) < MagickEpsilon) &&
-         (fabs((double) (p->color.blue-color->blue)) < MagickEpsilon) &&
-         (fabs((double) (p->color.alpha-alpha)) < MagickEpsilon))
+    const ColorInfo
+      *value;
+    
+    value=(const ColorInfo *) p->value;
+    if (((value->compliance & compliance) != 0) &&
+        ((fabs((double) (value->color.red-color->red)) < MagickEpsilon)) &&
+         (fabs((double) (value->color.green-color->green)) < MagickEpsilon) &&
+         (fabs((double) (value->color.blue-color->blue)) < MagickEpsilon) &&
+         (fabs((double) (value->color.alpha-alpha)) < MagickEpsilon))
       {
-        (void) CopyMagickString(name,p->name,MagickPathExtent);
+        (void) CopyMagickString(name,value->name,MagickPathExtent);
         break;
       }
-    p=(const ColorInfo *) GetNextValueInLinkedList(color_cache);
+    p=p->next;
   }
+  UnlockSemaphoreInfo(color_semaphore);
   return(MagickTrue);
 }

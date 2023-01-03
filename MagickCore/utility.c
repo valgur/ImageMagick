@@ -135,7 +135,7 @@ MagickExport MagickBooleanType AcquireUniqueFilename(char *path)
 %  source path and returns MagickTrue on success otherwise MagickFalse.  If the
 %  symlink() method fails or is not available, a unique file name is generated
 %  and the source file copied to it.  When you are finished with the file, use
-%  RelinquishUniqueFilename() to destroy it.
+%  RelinquishUniqueFileResource() to destroy it.
 %
 %  The format of the AcquireUniqueSymbolicLink method is:
 %
@@ -286,7 +286,8 @@ MagickExport void AppendImageFormat(const char *format,char *filename)
 
   assert(format != (char *) NULL);
   assert(filename != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   if ((*format == '\0') || (*filename == '\0'))
     return;
   if (LocaleCompare(filename,"-") == 0)
@@ -358,9 +359,10 @@ MagickExport unsigned char *Base64Decode(const char *source,size_t *length)
   unsigned char
     *decode;
 
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(source != (char *) NULL);
   assert(length != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   *length=0;
   decode=(unsigned char *) AcquireQuantumMemory((strlen(source)+3)/4,
     3*sizeof(*decode));
@@ -513,10 +515,11 @@ MagickExport char *Base64Encode(const unsigned char *blob,
   size_t
     remainder;
 
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(blob != (const unsigned char *) NULL);
   assert(blob_length != 0);
   assert(encode_length != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   *encode_length=0;
   encode=(char *) AcquireQuantumMemory(blob_length/3+4,4*sizeof(*encode));
   if (encode == (char *) NULL)
@@ -711,12 +714,12 @@ MagickPrivate void ExpandFilename(char *path)
 %
 %  Meta-characters handled...
 %     @    read a list of filenames (no further expansion performed)
-%     ~    At start of filename expands to HOME environemtn variable
+%     ~    At start of filename expands to HOME environment variable
 %     *    matches any string including an empty string
 %     ?    matches by any single character
 %
 %  WARNING: filenames starting with '.' (hidden files in a UNIX file system)
-%  will never be expanded.  Attempting to epand '.*' will produce no change.
+%  will never be expanded.  Attempting to expand '.*' will produce no change.
 %
 %  Expansion is ignored for coders "label:" "caption:" "pango:" and "vid:".
 %  Which provide their own '@' meta-character handling.
@@ -763,9 +766,10 @@ MagickExport MagickBooleanType ExpandFilenames(int *number_arguments,
   /*
     Allocate argument vector.
   */
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(number_arguments != (int *) NULL);
   assert(arguments != (char ***) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   vector=(char **) AcquireQuantumMemory((size_t) (*number_arguments+1),
     sizeof(*vector));
   if (vector == (char **) NULL)
@@ -1213,7 +1217,7 @@ MagickExport MagickBooleanType GetPathAttributes(const char *path,
 %    o path: Specifies a pointer to a character array that contains the
 %      file path.
 %
-%    o type: Specififies which file path component to return.
+%    o type: Specifies which file path component to return.
 %
 %    o component: the selected file path component is returned here.
 %
@@ -1233,8 +1237,9 @@ MagickExport void GetPathComponent(const char *path,PathType type,
     subimage_length;
 
   assert(path != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",path);
   assert(component != (char *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",path);
   if (*path == '\0')
     {
       *component='\0';
@@ -1417,7 +1422,7 @@ MagickExport void GetPathComponent(const char *path,PathType type,
 %  The format of the GetPathComponents method is:
 %
 %      char **GetPathComponents(const char *path,
-%        size_t *number_componenets)
+%        size_t *number_components)
 %
 %  A description of each parameter follows:
 %
@@ -1626,9 +1631,10 @@ MagickPrivate char **ListFiles(const char *directory,const char *pattern,
     Open directory.
   */
   assert(directory != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",directory);
   assert(pattern != (const char *) NULL);
   assert(number_entries != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",directory);
   *number_entries=0;
   current_directory=opendir(directory);
   if (current_directory == (DIR *) NULL)
@@ -1792,7 +1798,7 @@ MagickExport void MagickDelay(const MagickSizeType milliseconds)
 %  MultilineCensus() returns the number of lines within a label.  A line is
 %  represented by a \n character.
 %
-%  The format of the MultilineCenus method is:
+%  The format of the MultilineCensus method is:
 %
 %      size_t MultilineCensus(const char *label)
 %
@@ -1828,10 +1834,8 @@ MagickExport size_t MultilineCensus(const char *label)
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  ShredFile() overwrites the specified file with zeros or random data and then
-%  removes it.  The overwrite is optional and is only required to help keep
-%  the contents of the file private.  On the first pass, the file is zeroed.
-%  For subsequent passes, random data is written.
+%  ShredFile() overwrites the specified file with random data.  The overwrite is
+%  optional and is only required to help keep the contents of the file private.
 %
 %  The format of the ShredFile method is:
 %
@@ -1844,9 +1848,6 @@ MagickExport size_t MultilineCensus(const char *label)
 */
 MagickPrivate MagickBooleanType ShredFile(const char *path)
 {
-  char
-    *passes;
-
   int
     file,
     status;
@@ -1854,59 +1855,61 @@ MagickPrivate MagickBooleanType ShredFile(const char *path)
   MagickSizeType
     length;
 
-  ssize_t
-    i;
+  RandomInfo
+    *random_info;
 
   size_t
     quantum;
+
+  ssize_t
+    i;
+
+  static ssize_t
+    passes = -1;
+
+  StringInfo
+    *key;
 
   struct stat
     file_stats;
 
   if ((path == (const char *) NULL) || (*path == '\0'))
     return(MagickFalse);
-  passes=GetPolicyValue("system:shred");
-  if (passes == (char *) NULL)
-    passes=GetEnvironmentValue("MAGICK_SHRED_PASSES");
-  if (passes == (char *) NULL)
+  if (passes == -1)
     {
-      /*
-        Don't shred the file, just remove it.
-      */
-      status=remove_utf8(path);
-      if (status == -1)
+      char
+        *property;
+          
+      passes=0;
+      property=GetEnvironmentValue("MAGICK_SHRED_PASSES");
+      if (property != (char *) NULL)
         {
-          (void) LogMagickEvent(ExceptionEvent,GetMagickModule(),
-            "Failed to remove: %s",path);
-          return(MagickFalse);
+          passes=(ssize_t) StringToInteger(property);
+          property=DestroyString(property);
         }
-      return(MagickTrue);
+      property=GetPolicyValue("system:shred");
+      if (property != (char *) NULL)
+        {
+          passes=(ssize_t) StringToInteger(property);
+          property=DestroyString(property);
+        }
     }
-  file=open_utf8(path,O_WRONLY | O_EXCL | O_BINARY,S_MODE);
-  if (file == -1)
-    {
-      /*
-        Don't shred the file, just remove it.
-      */
-      passes=DestroyString(passes);
-      status=remove_utf8(path);
-      if (status == -1)
-        (void) LogMagickEvent(ExceptionEvent,GetMagickModule(),
-          "Failed to remove: %s",path);
-      return(MagickFalse);
-    }
+  if (passes == 0)
+    return(MagickTrue);
   /*
     Shred the file.
   */
-  quantum=(size_t) MagickMaxBufferExtent;
+  file=open_utf8(path,O_WRONLY | O_EXCL | O_BINARY,S_MODE);
+  if (file == -1)
+    return(MagickFalse);
+  quantum=(size_t) MagickMinBufferExtent;
   if ((fstat(file,&file_stats) == 0) && (file_stats.st_size > 0))
-    quantum=(size_t) MagickMin(file_stats.st_size,MagickMaxBufferExtent);
+    quantum=(size_t) MagickMin(file_stats.st_size,MagickMinBufferExtent);
   length=(MagickSizeType) file_stats.st_size;
-  for (i=0; i < (ssize_t) StringToInteger(passes); i++)
+  random_info=AcquireRandomInfo();
+  key=GetRandomKey(random_info,quantum);
+  for (i=0; i < passes; i++)
   {
-    RandomInfo
-      *random_info;
-
     MagickOffsetType
       j;
 
@@ -1915,18 +1918,12 @@ MagickPrivate MagickBooleanType ShredFile(const char *path)
 
     if (lseek(file,0,SEEK_SET) < 0)
       break;
-    random_info=AcquireRandomInfo();
     for (j=0; j < (MagickOffsetType) length; j+=count)
     {
-      StringInfo
-        *key;
-
-      key=GetRandomKey(random_info,quantum);
-      if (i == 0)
-        ResetStringInfo(key);  /* zero on first pass */
+      if (i != 0)
+        SetRandomKey(random_info,quantum,GetStringInfoDatum(key));
       count=write(file,GetStringInfoDatum(key),(size_t)
         MagickMin((MagickSizeType) quantum,length-j));
-      key=DestroyStringInfo(key);
       if (count <= 0)
         {
           count=0;
@@ -1934,14 +1931,11 @@ MagickPrivate MagickBooleanType ShredFile(const char *path)
             break;
         }
     }
-    random_info=DestroyRandomInfo(random_info);
     if (j < (MagickOffsetType) length)
       break;
   }
+  key=DestroyStringInfo(key);
+  random_info=DestroyRandomInfo(random_info);
   status=close(file);
-  status=remove_utf8(path);
-  if (status != -1)
-    status=StringToInteger(passes);
-  passes=DestroyString(passes);
-  return((status == -1 || i < (ssize_t) status) ? MagickFalse : MagickTrue);
+  return((status == -1 || i < passes) ? MagickFalse : MagickTrue);
 }

@@ -71,11 +71,11 @@
 %
 %  The value must form a proper geometry style specification of WxH+X+Y
 %  of integers only, and values can not be separated by comma, colon, or
-%  slash charcaters.  See ParseGeometry() below.
+%  slash characters.  See ParseGeometry() below.
 %
 %  Offsets may be prefixed by multiple signs to make offset string
 %  substitutions easier to handle from shell scripts.
-%  For example: "-10-10", "-+10-+10", or "+-10+-10" will generate negtive
+%  For example: "-10-10", "-+10-+10", or "+-10+-10" will generate negative
 %  offsets, while "+10+10", "++10++10", or "--10--10" will generate positive
 %  offsets.
 %
@@ -351,7 +351,7 @@ MagickExport MagickStatusType GetGeometry(const char *geometry,ssize_t *x,
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  GetPageGeometry() replaces any page mneumonic with the equivalent size in
+%  GetPageGeometry() replaces any page mnemonic with the equivalent size in
 %  picas.
 %
 %  The format of the GetPageGeometry method is:
@@ -474,7 +474,8 @@ MagickExport char *GetPageGeometry(const char *page_geometry)
     i;
 
   assert(page_geometry != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",page_geometry);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",page_geometry);
   (void) CopyMagickString(page,page_geometry,MagickPathExtent);
   for (i=0; i < (ssize_t) (sizeof(PageSizes)/sizeof(PageSizes[0])); i++)
   {
@@ -491,7 +492,7 @@ MagickExport char *GetPageGeometry(const char *page_geometry)
           geometry;
 
         /*
-          Replace mneumonic with the equivalent size in dots-per-inch.
+          Replace mnemonic with the equivalent size in dots-per-inch.
         */
         (void) FormatLocaleString(page,MagickPathExtent,"%s%.80s",
           PageSizes[i].geometry,page_geometry+PageSizes[i].extent);
@@ -848,7 +849,7 @@ MagickExport MagickStatusType ParseAffineGeometry(const char *geometry,
 %  Chroma subsampling definitions have to be in the form of a:b:c.  Offsets may
 %  be prefixed by multiple signs to make offset string substitutions easier to
 %  handle from shell scripts.  For example: "-10-10", "-+10-+10", or "+-10+-10"
-%  will generate negtive offsets, while "+10+10", "++10++10", or "--10--10"
+%  will generate negative offsets, while "+10+10", "++10++10", or "--10--10"
 %  will generate positive offsets.
 %
 %  The format of the ParseGeometry method is:
@@ -964,6 +965,8 @@ MagickExport MagickStatusType ParseGeometry(const char *geometry,
       {
         if (*(p+1) == ')')
           return(flags);
+        (void) CopyMagickString(p,p+1,MagickPathExtent);
+        break;
       }
       case ')':
       {
@@ -1230,7 +1233,7 @@ MagickExport MagickStatusType ParseGeometry(const char *geometry,
 %  with respect to the given image page (canvas) dimensions and the images
 %  gravity setting.
 %
-%  This is typically used for specifing a area within a given image for
+%  This is typically used for specifying a area within a given image for
 %  cropping images to a smaller size, chopping out rows and or columns, or
 %  resizing and positioning overlay images.
 %
@@ -1240,7 +1243,7 @@ MagickExport MagickStatusType ParseGeometry(const char *geometry,
 %  The format of the ParseGravityGeometry method is:
 %
 %      MagickStatusType ParseGravityGeometry(Image *image,const char *geometry,
-%        RectangeInfo *region_info,ExceptionInfo *exception)
+%        RectangleInfo *region_info,ExceptionInfo *exception)
 %
 %  A description of each parameter follows:
 %
@@ -1262,7 +1265,8 @@ MagickExport MagickStatusType ParseGravityGeometry(const Image *image,
     height,
     width;
 
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",geometry);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",geometry);
   if ((geometry == (char *) NULL) || (*geometry == '\0'))
     return(NoValue);
   SetGeometry(image,region_info);
@@ -1431,7 +1435,8 @@ MagickExport MagickStatusType ParseMetaGeometry(const char *geometry,ssize_t *x,
   assert(y != (ssize_t *) NULL);
   assert(width != (size_t *) NULL);
   assert(height != (size_t *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",geometry);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",geometry);
   if ((geometry == (char *) NULL) || (*geometry == '\0'))
     return(NoValue);
   /*
@@ -1605,7 +1610,7 @@ MagickExport MagickStatusType ParseMetaGeometry(const char *geometry,ssize_t *x,
 %  The format of the ParsePageGeometry method is:
 %
 %      MagickStatusType ParsePageGeometry(const Image *image,
-%        const char *geometry,RectangeInfo *region_info,
+%        const char *geometry,RectangleInfo *region_info,
 %        ExceptionInfo *exception)
 %
 %  A description of each parameter follows:
@@ -1675,7 +1680,7 @@ MagickExport MagickStatusType ParsePageGeometry(const Image *image,
 %  The format of the ParseRegionGeometry method is:
 %
 %      MagickStatusType ParseRegionGeometry(const Image *image,
-%        const char *geometry,RectangeInfo *region_info,
+%        const char *geometry,RectangleInfo *region_info,
 %        ExceptionInfo *exception)
 %
 %  A description of each parameter follows:
@@ -1730,7 +1735,7 @@ MagickExport void SetGeometry(const Image *image,RectangleInfo *geometry)
 {
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(geometry != (RectangleInfo *) NULL);
   (void) memset(geometry,0,sizeof(*geometry));
@@ -1763,6 +1768,7 @@ MagickExport void SetGeometry(const Image *image,RectangleInfo *geometry)
 MagickExport void SetGeometryInfo(GeometryInfo *geometry_info)
 {
   assert(geometry_info != (GeometryInfo *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   (void) memset(geometry_info,0,sizeof(*geometry_info));
 }

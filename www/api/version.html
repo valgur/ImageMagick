@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,18 +87,36 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="version.html#GetMagickCopyright">GetMagickCopyright</a></li>
+  <li><a href="version.html#GetMagickDelegates">GetMagickDelegates</a></li>
+  <li><a href="version.html#GetMagickFeatures">GetMagickFeatures</a></li>
+  <li><a href="version.html#GetMagickHomeURL">GetMagickHomeURL</a></li>
+  <li><a href="version.html#GetMagickLicense">GetMagickLicense</a></li>
+  <li><a href="version.html#GetMagickPackageName">GetMagickPackageName</a></li>
+  <li><a href="version.html#GetMagickQuantumDepth">GetMagickQuantumDepth</a></li>
+  <li><a href="version.html#GetMagickQuantumRange">GetMagickQuantumRange</a></li>
+  <li><a href="version.html#GetMagickReleaseDate">GetMagickReleaseDate</a></li>
+  <li><a href="version.html#GetMagickSignature">GetMagickSignature</a></li>
+  <li><a href="version.html#GetMagickVersion">GetMagickVersion</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="version.html#GetMagickCopyright">GetMagickCopyright</a> &#8226; <a href="version.html#GetMagickDelegates">GetMagickDelegates</a> &#8226; <a href="version.html#GetMagickFeatures">GetMagickFeatures</a> &#8226; <a href="version.html#GetMagickHomeURL">GetMagickHomeURL</a> &#8226; <a href="version.html#GetMagickLicense">GetMagickLicense</a> &#8226; <a href="version.html#GetMagickPackageName">GetMagickPackageName</a> &#8226; <a href="version.html#GetMagickQuantumDepth">GetMagickQuantumDepth</a> &#8226; <a href="version.html#GetMagickQuantumRange">GetMagickQuantumRange</a> &#8226; <a href="version.html#GetMagickReleaseDate">GetMagickReleaseDate</a> &#8226; <a href="version.html#GetMagickSignature">GetMagickSignature</a> &#8226; <a href="version.html#GetMagickVersion">GetMagickVersion</a> &#8226; <a href="version.html#ListMagickVersion">ListMagickVersion</a></p>
-
 <h2><a href="../../api/MagickCore/version_8c.html" id="GetMagickCopyright">GetMagickCopyright</a></h2>
 
 <p>GetMagickCopyright() returns the ImageMagick API copyright as a string.</p>
 
 <p>The format of the GetMagickCopyright method is:</p>
 
-<pre class="text">
-const char *GetMagickCopyright(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickCopyright(void)
+</samp></pre>
 
 <h2><a href="../../api/MagickCore/version_8c.html" id="GetMagickDelegates">GetMagickDelegates</a></h2>
 
@@ -109,9 +124,8 @@ const char *GetMagickCopyright(void)
 
 <p>The format of the GetMagickDelegates method is:</p>
 
-<pre class="text">
-const char *GetMagickDelegates(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickDelegates(void)
+</samp></pre>
 
 <p>No parameters are required.</p>
 
@@ -121,9 +135,8 @@ const char *GetMagickDelegates(void)
 
 <p>The format of the GetMagickFeatures method is:</p>
 
-<pre class="text">
-const char *GetMagickFeatures(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickFeatures(void)
+</samp></pre>
 
 <p>No parameters are required.</p>
 
@@ -133,9 +146,8 @@ const char *GetMagickFeatures(void)
 
 <p>The format of the GetMagickHomeURL method is:</p>
 
-<pre class="text">
-char *GetMagickHomeURL(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>char *GetMagickHomeURL(void)
+</samp></pre>
 
 <h2><a href="../../api/MagickCore/version_8c.html" id="GetMagickLicense">GetMagickLicense</a></h2>
 
@@ -143,9 +155,8 @@ char *GetMagickHomeURL(void)
 
 <p>The format of the GetMagickLicense method is:</p>
 
-<pre class="text">
-const char *GetMagickLicense(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickLicense(void)
+</samp></pre>
 
 <h2><a href="../../api/MagickCore/version_8c.html" id="GetMagickPackageName">GetMagickPackageName</a></h2>
 
@@ -153,9 +164,8 @@ const char *GetMagickLicense(void)
 
 <p>The format of the GetMagickName method is:</p>
 
-<pre class="text">
-const char *GetMagickName(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickName(void)
+</samp></pre>
 
 <p>No parameters are required.</p>
 
@@ -165,9 +175,8 @@ const char *GetMagickName(void)
 
 <p>The format of the GetMagickQuantumDepth method is:</p>
 
-<pre class="text">
-const char *GetMagickQuantumDepth(size_t *depth)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickQuantumDepth(size_t *depth)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -187,9 +196,8 @@ const char *GetMagickQuantumDepth(size_t *depth)
 
 <p>The format of the GetMagickQuantumRange method is:</p>
 
-<pre class="text">
-const char *GetMagickQuantumRange(size_t *range)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickQuantumRange(size_t *range)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -209,21 +217,19 @@ const char *GetMagickQuantumRange(size_t *range)
 
 <p>The format of the GetMagickReleaseDate method is:</p>
 
-<pre class="text">
-const char *GetMagickReleaseDate(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickReleaseDate(void)
+</samp></pre>
 
 <p>No parameters are required.</p>
 
 <h2><a href="../../api/MagickCore/version_8c.html" id="GetMagickSignature">GetMagickSignature</a></h2>
 
-<p>GetMagickSignature() returns a signature that uniquely encodes the MagickCore libary version, quantum depth, HDRI status, OS word size, and endianness.</p>
+<p>GetMagickSignature() returns a signature that uniquely encodes the MagickCore library version, quantum depth, HDRI status, OS word size, and endianness.</p>
 
 <p>The format of the GetMagickSignature method is:</p>
 
-<pre class="text">
-unsigned int GetMagickSignature(const StringInfo *nonce)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>unsigned int GetMagickSignature(const StringInfo *nonce)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -243,9 +249,8 @@ unsigned int GetMagickSignature(const StringInfo *nonce)
 
 <p>The format of the GetMagickVersion method is:</p>
 
-<pre class="text">
-const char *GetMagickVersion(size_t *version)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const char *GetMagickVersion(size_t *version)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -265,9 +270,8 @@ const char *GetMagickVersion(size_t *version)
 
 <p>The format of the ListMagickVersion method is:</p>
 
-<pre class="text">
-void ListMagickVersion(FILE *file)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>void ListMagickVersion(FILE *file)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

@@ -197,11 +197,11 @@ static Image *ReadPCLImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   /*
     Open image file.
   */
@@ -676,33 +676,33 @@ static MagickBooleanType WritePCLImage(const ImageInfo *image_info,Image *image,
   const char
     *option;
 
+  const Quantum
+    *p;
+
   MagickBooleanType
     status;
 
   MagickOffsetType
     scene;
 
-  const Quantum *p;
-
-  ssize_t i, x;
-
-  unsigned char *q;
-
   size_t
     density,
-    imageListLength,
     length,
+    number_scenes,
     one,
     packets;
 
   ssize_t
+    i,
+    x,
     y;
 
   unsigned char
     bits_per_pixel,
     *compress_pixels,
     *pixels,
-    *previous_pixels;
+    *previous_pixels,
+    *q;
 
   /*
     Open output image file.
@@ -711,10 +711,10 @@ static MagickBooleanType WritePCLImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -729,7 +729,7 @@ static MagickBooleanType WritePCLImage(const ImageInfo *image_info,Image *image,
     }
   scene=0;
   one=1;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     /*
@@ -989,7 +989,7 @@ static MagickBooleanType WritePCLImage(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

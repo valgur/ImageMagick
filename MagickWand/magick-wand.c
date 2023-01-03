@@ -256,6 +256,9 @@ WandExport MagickBooleanType MagickClearException(MagickWand *wand)
 %  MagickGetException() returns the severity, reason, and description of any
 %  error that occurs when using other methods in this API.
 %
+%  Use RelinquishMagickMemory() to free the description when its no longer in
+%  use.
+%
 %  The format of the MagickGetException method is:
 %
 %      char *MagickGetException(const MagickWand *wand,ExceptionType *severity)
@@ -781,7 +784,8 @@ WandExport char **MagickQueryFormats(const char *pattern,
 */
 WandExport void *MagickRelinquishMemory(void *memory)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   return(RelinquishMagickMemory(memory));
 }
 

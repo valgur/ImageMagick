@@ -16,7 +16,7 @@
 %                               January 2006                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2006 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -246,10 +246,10 @@ MagickExport Image *CoalesceImages(const Image *image,ExceptionInfo *exception)
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   next=GetFirstImageInList(image);
   bounds=next->page;
   if (bounds.width == 0)
@@ -338,7 +338,8 @@ MagickExport Image *CoalesceImages(const Image *image,ExceptionInfo *exception)
       Next image is the dispose image, overlaid with next frame in sequence.
     */
     coalesce_image->next=CloneImage(dispose_image,0,0,MagickTrue,exception);
-    coalesce_image->next->previous=coalesce_image;
+    if (coalesce_image->next != (Image *) NULL)
+      coalesce_image->next->previous=coalesce_image;
     previous=coalesce_image;
     coalesce_image=GetNextImageInList(coalesce_image);
     coalesce_image->background_color.alpha_trait=BlendPixelTrait;
@@ -413,10 +414,10 @@ MagickExport Image *DisposeImages(const Image *images,ExceptionInfo *exception)
   */
   assert(images != (Image *) NULL);
   assert(images->signature == MagickCoreSignature);
-  if (images->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   image=GetFirstImageInList(images);
   dispose_image=CloneImage(image,image->page.width,image->page.height,
     MagickTrue,exception);
@@ -524,7 +525,7 @@ MagickExport Image *DisposeImages(const Image *images,ExceptionInfo *exception)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  ComparePixels() Compare the two pixels and return true if the pixels
-%  differ according to the given LayerType comparision method.
+%  differ according to the given LayerType comparison method.
 %
 %  This currently only used internally by CompareImagesBounds(). It is
 %  doubtful that this sub-routine will be useful outside this module.
@@ -558,7 +559,7 @@ static MagickBooleanType ComparePixels(const LayerMethod method,
   o1 = (p->alpha_trait != UndefinedPixelTrait) ? p->alpha : OpaqueAlpha;
   o2 = (q->alpha_trait != UndefinedPixelTrait) ? q->alpha : OpaqueAlpha;
   /*
-    Pixel goes from opaque to transprency.
+    Pixel goes from opaque to transparency.
   */
   if (method == CompareClearLayer)
     return((MagickBooleanType) ( (o1 >= ((double) QuantumRange/2.0)) &&
@@ -589,8 +590,8 @@ static MagickBooleanType ComparePixels(const LayerMethod method,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  CompareImagesBounds() Given two images return the smallest rectangular area
-%  by which the two images differ, accourding to the given 'Compare...'
-%  layer method.
+%  by which the two images differ, according to the given 'Compare...' layer
+%  method.
 %
 %  This currently only used internally in this module, but may eventually
 %  be used by other modules.
@@ -598,14 +599,15 @@ static MagickBooleanType ComparePixels(const LayerMethod method,
 %  The format of the CompareImagesBounds method is:
 %
 %      RectangleInfo *CompareImagesBounds(const LayerMethod method,
-%        const Image *image1,const Image *image2,ExceptionInfo *exception)
+%        const Image *alpha_image,const Image *beta_image,
+%        ExceptionInfo *exception)
 %
 %  A description of each parameter follows:
 %
 %    o method: What differences to look for. Must be one of CompareAnyLayer,
 %      CompareClearLayer, CompareOverlayLayer.
 %
-%    o image1, image2: the two images to compare.
+%    o alpha_image, beta_image: the two images to compare.
 %
 %    o exception: return any errors or warnings in this structure.
 %
@@ -614,131 +616,116 @@ static MagickBooleanType ComparePixels(const LayerMethod method,
 static RectangleInfo CompareImagesBounds(const Image *alpha_image,
   const Image *beta_image,const LayerMethod method,ExceptionInfo *exception)
 {
-  CacheView
-    *alpha_view,
-    *beta_view;
-
-  MagickBooleanType
-    status;
+  const Quantum
+    *p,
+    *q;
 
   PixelInfo
-    zero;
+    alpha_pixel,
+    beta_pixel;
 
   RectangleInfo
     bounds;
 
   ssize_t
+    x,
     y;
 
-  assert(alpha_image != (Image *) NULL);
-  assert(alpha_image->signature == MagickCoreSignature);
-  assert(beta_image != (Image *) NULL);
-  assert(beta_image->signature == MagickCoreSignature);
-  if (alpha_image->debug != MagickFalse)
+  /*
+    Set bounding box of the differences between images.
+  */
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       alpha_image->filename);
-  SetGeometry(alpha_image,&bounds);
-  bounds.x=(ssize_t) bounds.width;
-  bounds.y=(ssize_t) bounds.height;
-  bounds.width=0;
-  bounds.height=0;
-  alpha_view=AcquireVirtualCacheView(alpha_image,exception);
-  beta_view=AcquireVirtualCacheView(beta_image,exception);
-  GetPixelInfo(alpha_image,&zero);
-  status=MagickTrue;
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-  #pragma omp parallel for schedule(static) shared(status) \
-    magick_number_threads(alpha_image,alpha_image,alpha_image->rows,1)
-#endif
+  GetPixelInfo(alpha_image,&alpha_pixel);
+  GetPixelInfo(beta_image,&beta_pixel);
+  for (x=0; x < (ssize_t) alpha_image->columns; x++)
+  {
+    p=GetVirtualPixels(alpha_image,x,0,1,alpha_image->rows,exception);
+    q=GetVirtualPixels(beta_image,x,0,1,beta_image->rows,exception);
+    if ((p == (const Quantum *) NULL) || (q == (Quantum *) NULL))
+      break;
+    for (y=0; y < (ssize_t) alpha_image->rows; y++)
+    {
+      GetPixelInfoPixel(alpha_image,p,&alpha_pixel);
+      GetPixelInfoPixel(beta_image,q,&beta_pixel);
+      if (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse)
+        break;
+      p+=GetPixelChannels(alpha_image);
+      q+=GetPixelChannels(beta_image);
+    }
+    if (y < (ssize_t) alpha_image->rows)
+      break;
+  }
+  if (x >= (ssize_t) alpha_image->columns)
+    {
+      /*
+        Images are identical, return a null image.
+      */
+      bounds.x=-1;
+      bounds.y=-1;
+      bounds.width=1;
+      bounds.height=1;
+      return(bounds);
+    }
+  bounds.x=x;
+  for (x=(ssize_t) alpha_image->columns-1; x >= 0; x--)
+  {
+    p=GetVirtualPixels(alpha_image,x,0,1,alpha_image->rows,exception);
+    q=GetVirtualPixels(beta_image,x,0,1,beta_image->rows,exception);
+    if ((p == (const Quantum *) NULL) || (q == (Quantum *) NULL))
+      break;
+    for (y=0; y < (ssize_t) alpha_image->rows; y++)
+    {
+      GetPixelInfoPixel(alpha_image,p,&alpha_pixel);
+      GetPixelInfoPixel(beta_image,q,&beta_pixel);
+      if (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse)
+        break;
+      p+=GetPixelChannels(alpha_image);
+      q+=GetPixelChannels(beta_image);
+    }
+    if (y < (ssize_t) alpha_image->rows)
+      break;
+  }
+  bounds.width=(size_t) (x-bounds.x+1);
   for (y=0; y < (ssize_t) alpha_image->rows; y++)
   {
-    const Quantum
-      *magick_restrict p,
-      *magick_restrict q;
-
-    PixelInfo
-      alpha_pixel,
-      beta_pixel;
-
-    RectangleInfo
-      bounding_box;
-
-    ssize_t
-      x;
-
-    if (status == MagickFalse)
-      continue;
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-#   pragma omp critical (MagickCore_CompareImagesBound)
-#endif
-    bounding_box=bounds;
-    p=GetCacheViewVirtualPixels(alpha_view,0,y,alpha_image->columns,1,
-      exception);
-    q=GetCacheViewVirtualPixels(beta_view,0,y,alpha_image->columns,1,exception);
-    if ((p == (const Quantum *) NULL) || (q == (const Quantum *) NULL))
-      {
-        status=MagickFalse;
-        continue;
-      }
-    alpha_pixel=zero;
-    beta_pixel=zero;
+    p=GetVirtualPixels(alpha_image,0,y,alpha_image->columns,1,exception);
+    q=GetVirtualPixels(beta_image,0,y,beta_image->columns,1,exception);
+    if ((p == (const Quantum *) NULL) || (q == (Quantum *) NULL))
+      break;
     for (x=0; x < (ssize_t) alpha_image->columns; x++)
     {
       GetPixelInfoPixel(alpha_image,p,&alpha_pixel);
       GetPixelInfoPixel(beta_image,q,&beta_pixel);
-      if ((x < bounding_box.x) &&
-          (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse))
-        bounding_box.x=x;
-      if ((x > (ssize_t) bounding_box.width) &&
-          (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse))
-        bounding_box.width=(size_t) x;
-      if ((y < bounding_box.y) &&
-          (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse))
-        bounding_box.y=y;
-      if ((y > (ssize_t) bounding_box.height) &&
-          (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse))
-        bounding_box.height=(size_t) y;
-      if ((x < (ssize_t) bounding_box.width) &&
-          (y > (ssize_t) bounding_box.height) &&
-          (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse))
-        {
-          bounding_box.width=(size_t) x;
-          bounding_box.height=(size_t) y;
-        }
+      if (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse)
+        break;
       p+=GetPixelChannels(alpha_image);
       q+=GetPixelChannels(beta_image);
     }
-#if defined(MAGICKCORE_OPENMP_SUPPORT)
-#   pragma omp critical (MagickCore_CompareImagesBound)
-#endif
-    {
-      if (bounding_box.x < bounds.x)
-        bounds.x=bounding_box.x;
-      if (bounding_box.y < bounds.y)
-        bounds.y=bounding_box.y;
-      if (bounding_box.width > bounds.width)
-        bounds.width=bounding_box.width;
-      if (bounding_box.height > bounds.height)
-        bounds.height=bounding_box.height;
-    }
+    if (x < (ssize_t) alpha_image->columns)
+      break;
   }
-  beta_view=DestroyCacheView(beta_view);
-  alpha_view=DestroyCacheView(alpha_view);
-  if ((bounds.width != 0) && (bounds.height != 0))
+  bounds.y=y;
+  for (y=(ssize_t) alpha_image->rows-1; y >= 0; y--)
+  {
+    p=GetVirtualPixels(alpha_image,0,y,alpha_image->columns,1,exception);
+    q=GetVirtualPixels(beta_image,0,y,beta_image->columns,1,exception);
+    if ((p == (const Quantum *) NULL) || (q == (Quantum *) NULL))
+      break;
+    for (x=0; x < (ssize_t) alpha_image->columns; x++)
     {
-      bounds.width-=(bounds.x-1);
-      bounds.height-=(bounds.y-1);
+      GetPixelInfoPixel(alpha_image,p,&alpha_pixel);
+      GetPixelInfoPixel(beta_image,q,&beta_pixel);
+      if (ComparePixels(method,&alpha_pixel,&beta_pixel) != MagickFalse)
+        break;
+      p+=GetPixelChannels(alpha_image);
+      q+=GetPixelChannels(beta_image);
     }
-  else
-    {
-      /*
-        Images are identical.
-      */
-      bounds.x=(-1);
-      bounds.y=(-1);
-      bounds.width=1;
-      bounds.height=1;
-    }
+    if (x < (ssize_t) alpha_image->columns)
+      break;
+  }
+  bounds.height=(size_t) (y-bounds.y+1);
   return(bounds);
 }
 
@@ -799,13 +786,13 @@ MagickExport Image *CompareImagesLayers(const Image *image,
 
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
   assert((method == CompareAnyLayer) ||
          (method == CompareClearLayer) ||
          (method == CompareOverlayLayer));
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Allocate bounds memory.
   */
@@ -815,7 +802,7 @@ MagickExport Image *CompareImagesLayers(const Image *image,
   if (bounds == (RectangleInfo *) NULL)
     ThrowImageException(ResourceLimitError,"MemoryAllocationFailed");
   /*
-    Set up first comparision images.
+    Set up first comparison images.
   */
   image_a=CloneImage(next,next->page.width,next->page.height,
     MagickTrue,exception);
@@ -987,13 +974,13 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
 
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
   assert(method == OptimizeLayer ||
          method == OptimizeImageLayer ||
          method == OptimizePlusLayer);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Are we allowed to add/remove frames from animation?
   */
@@ -1160,7 +1147,7 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
                 cleared=MagickFalse;
                 bounds[i]=try_bounds;
                 disposals[i-1]=DupDispose;
-                /* to be finalised later, if found to be optimial */
+                /* to be finalised later, if found to be optimal */
               }
             else
               dup_bounds.width=dup_bounds.height=0;
@@ -1179,7 +1166,7 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
             return((Image *) NULL);
           }
         bgnd_image->background_color.alpha_trait=BlendPixelTrait;
-        bgnd_bounds=bounds[i-1]; /* interum bounds of the previous image */
+        bgnd_bounds=bounds[i-1]; /* interim bounds of the previous image */
         ClearBounds(bgnd_image,&bgnd_bounds,exception);
         try_bounds=CompareImagesBounds(bgnd_image,curr,CompareAnyLayer,exception);
         try_cleared=IsBoundsCleared(bgnd_image,curr,&try_bounds,exception);
@@ -1200,7 +1187,7 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
             (void) FormatLocaleFile(stderr, "expand_clear: %.20gx%.20g%+.20g%+.20g%s\n",
                 (double) try_bounds.width,(double) try_bounds.height,
                 (double) try_bounds.x,(double) try_bounds.y,
-                try_bounds.x<0?"  (no expand nessary)":"");
+                try_bounds.x<0?"  (no expand necessary)":"");
 #endif
             if ( bgnd_bounds.x < 0 )
               bgnd_bounds = try_bounds;
@@ -1247,7 +1234,7 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
 #if DEBUG_OPT_FRAME
 /* Something strange is happening with a specific animation
  * CompareAnyLayers (normal method) and CompareClearLayers returns the whole
- * image, which is not posibly correct!  As verified by previous tests.
+ * image, which is not possibly correct!  As verified by previous tests.
  * Something changed beyond the bgnd_bounds clearing.  But without being able
  * to see, or writet he image at this point it is hard to tell what is wrong!
  * Only CompareOverlay seemed to return something sensible.
@@ -1274,7 +1261,7 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
           }
         /*
           Test if this background dispose is smaller than any of the
-          other methods we tryed before this (including duplicated frame)
+          other methods we tried before this (including duplicated frame)
         */
         if ( cleared ||
               bgnd_bounds.width*bgnd_bounds.height
@@ -1344,7 +1331,7 @@ static Image *OptimizeLayerFrames(const Image *image,const LayerMethod method,
          (double) bounds[i-1].x,(double) bounds[i-1].y );
 #endif
 #if DEBUG_OPT_FRAME
-    (void) FormatLocaleFile(stderr, "interum %.20g : %s  %.20gx%.20g%+.20g%+.20g\n",
+    (void) FormatLocaleFile(stderr, "interim %.20g : %s  %.20gx%.20g%+.20g%+.20g\n",
          (double) i,
          CommandOptionToMnemonic(MagickDisposeOptions,disposals[i]),
          (double) bounds[i].width,(double) bounds[i].height,
@@ -1492,9 +1479,9 @@ MagickExport Image *OptimizePlusImageLayers(const Image *image,
 %  WARNING: This modifies the current images directly, rather than generate
 %  a new image sequence.
 %
-%  The format of the OptimizeImageTransperency method is:
+%  The format of the OptimizeImageTransparency method is:
 %
-%      void OptimizeImageTransperency(Image *image,ExceptionInfo *exception)
+%      void OptimizeImageTransparency(Image *image,ExceptionInfo *exception)
 %
 %  A description of each parameter follows:
 %
@@ -1517,10 +1504,10 @@ MagickExport void OptimizeImageTransparency(const Image *image,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   next=GetFirstImageInList(image);
   dispose_image=CloneImage(next,next->page.width,next->page.height,
     MagickTrue,exception);
@@ -1618,7 +1605,7 @@ MagickExport void OptimizeImageTransparency(const Image *image,
 %  No check is made with regards to image disposal setting, though it is the
 %  dispose setting of later image that is kept.  Also any time delays are also
 %  added together. As such coalesced image animations should still produce the
-%  same result, though with duplicte frames merged into a single frame.
+%  same result, though with duplicate frames merged into a single frame.
 %
 %  The format of the RemoveDuplicateLayers method is:
 %
@@ -1642,11 +1629,11 @@ MagickExport void RemoveDuplicateLayers(Image **images,ExceptionInfo *exception)
 
   assert((*images) != (const Image *) NULL);
   assert((*images)->signature == MagickCoreSignature);
-  if ((*images)->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      (*images)->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      (*images)->filename);
   image=GetFirstImageInList(*images);
   for ( ; (next=GetNextImageInList(image)) != (Image *) NULL; image=next)
   {
@@ -1724,11 +1711,11 @@ MagickExport void RemoveZeroDelayLayers(Image **images,
 
   assert((*images) != (const Image *) NULL);
   assert((*images)->signature == MagickCoreSignature);
-  if ((*images)->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",(*images)->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      (*images)->filename);
   i=GetFirstImageInList(*images);
   for ( ; i != (Image *) NULL; i=GetNextImageInList(i))
     if ( i->delay != 0L ) break;
@@ -1771,13 +1758,13 @@ MagickExport void RemoveZeroDelayLayers(Image **images,
 %
 %  Composition uses given x and y offsets, as the 'origin' location of the
 %  source images virtual canvas (not the real image) allowing you to compose a
-%  list of 'layer images' into the destiantioni images.  This makes it well
-%  sutiable for directly composing 'Clears Frame Animations' or 'Coaleased
-%  Animations' onto a static or other 'Coaleased Animation' destination image
+%  list of 'layer images' into the destination images.  This makes it well
+%  suitable for directly composing 'Clears Frame Animations' or 'Coalesced
+%  Animations' onto a static or other 'Coalesced Animation' destination image
 %  list.  GIF disposal handling is not looked at.
 %
 %  Special case:- If one of the image sequences is the last image (just a
-%  single image remaining), that image is repeatally composed with all the
+%  single image remaining), that image is repeatedly composed with all the
 %  images in the other image list.  Either the source or destination lists may
 %  be the single image, for this situation.
 %
@@ -1785,7 +1772,7 @@ MagickExport void RemoveZeroDelayLayers(Image **images,
 %  will ve cloned to match the number of images remaining in the source image
 %  list.
 %
-%  This is equivelent to the "-layer Composite" Shell API operator.
+%  This is equivalent to the "-layer Composite" Shell API operator.
 %
 %
 %  The format of the CompositeLayers method is:
@@ -1831,12 +1818,11 @@ MagickExport void CompositeLayers(Image *destination,
   assert(source->signature == MagickCoreSignature);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
-  if (source->debug != MagickFalse || destination->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s - %s",
       source->filename,destination->filename);
-
   /*
-    Overlay single source image over destation image/list
+    Overlay single source image over destination image/list
   */
   if ( source->next == (Image *) NULL )
     while ( destination != (Image *) NULL )
@@ -1915,7 +1901,7 @@ MagickExport void CompositeLayers(Image *destination,
 %
 %  The inital canvas's size depends on the given LayerMethod, and is
 %  initialized using the first images background color.  The images
-%  are then compositied onto that image in sequence using the given
+%  are then composited onto that image in sequence using the given
 %  composition that has been assigned to each individual image.
 %
 %  The format of the MergeImageLayers is:
@@ -1979,10 +1965,10 @@ MagickExport Image *MergeImageLayers(Image *image,const LayerMethod method,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Determine canvas image size, and its virtual canvas size and offset
   */

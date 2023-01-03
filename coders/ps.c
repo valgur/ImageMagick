@@ -83,7 +83,7 @@
 #include "coders/ghostscript-private.h"
 
 /*
-  Typedef declaractions.
+  Typedef declarations.
 */
 typedef struct _PSInfo
 {
@@ -605,10 +605,8 @@ static Image *ReadPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
     page;
 
   ssize_t
+    count,
     i;
-
-  ssize_t
-    count;
 
   unsigned long
     scene;
@@ -618,11 +616,11 @@ static Image *ReadPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -703,6 +701,7 @@ static Image *ReadPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
           (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
             "InvalidGeometry","`%s'",option);
           page_geometry=DestroyString(page_geometry);
+          CleanupPSInfo(&info);
           image=DestroyImage(image);
           return((Image *) NULL);
         }
@@ -1426,16 +1425,13 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
     media_info,
     page_info;
 
-  unsigned char
-    *q;
-
   SegmentInfo
     bounds;
 
   size_t
     bit,
     byte,
-    imageListLength,
+    number_scenes,
     length,
     page,
     text_size;
@@ -1450,7 +1446,9 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
     timer;
 
   unsigned char
-    pixels[2048];
+    pixels[2048],
+    *q;
+
 
   /*
     Open output image file.
@@ -1459,10 +1457,10 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -1472,7 +1470,7 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
     compression=image_info->compression;
   page=1;
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     ImageType
@@ -1569,7 +1567,7 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
         bounds.x1=(double) geometry.x;
         bounds.y1=(double) geometry.y;
         bounds.x2=(double) geometry.x+scale.x;
-        bounds.y2=(double) geometry.y+(geometry.height+text_size);
+        bounds.y2=(double) geometry.y+(scale.y+text_size);
         if ((image_info->adjoin != MagickFalse) &&
             (GetNextImageInList(image) != (Image *) NULL))
           (void) CopyMagickString(buffer,"%%%%BoundingBox: (atend)\n",
@@ -1622,7 +1620,7 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
             (void) WriteBlobString(image,"%%PageOrder: Ascend\n");
             (void) FormatLocaleString(buffer,MagickPathExtent,
               "%%%%Pages: %.20g\n",image_info->adjoin != MagickFalse ?
-              (double) imageListLength : 1.0);
+              (double) number_scenes : 1.0);
             (void) WriteBlobString(image,buffer);
           }
         (void) WriteBlobString(image,"%%EndComments\n");
@@ -2162,7 +2160,7 @@ static MagickBooleanType WritePSImage(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

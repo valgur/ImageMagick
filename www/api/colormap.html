@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,19 +87,27 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="colormap.html#AcquireImageColormap">AcquireImageColormap</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="colormap.html#AcquireImageColormap">AcquireImageColormap</a> &#8226; <a href="colormap.html#CycleColormap">CycleColormap</a></p>
-
 <h2><a href="../../api/MagickCore/colormap_8c.html" id="AcquireImageColormap">AcquireImageColormap</a></h2>
 
 <p>AcquireImageColormap() allocates an image colormap and initializes it to a linear gray colorspace.  If the image already has a colormap, it is replaced.  AcquireImageColormap() returns MagickTrue if successful, otherwise MagickFalse if there is not enough memory.</p>
 
 <p>The format of the AcquireImageColormap method is:</p>
 
-<pre class="text">
-MagickBooleanType AcquireImageColormap(Image *image,const size_t colors,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType AcquireImageColormap(Image *image,const size_t colors,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -132,10 +137,9 @@ MagickBooleanType AcquireImageColormap(Image *image,const size_t colors,
 
 <p>The format of the CycleColormapImage method is:</p>
 
-<pre class="text">
-MagickBooleanType CycleColormapImage(Image *image,const ssize_t displace,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType CycleColormapImage(Image *image,const ssize_t displace,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

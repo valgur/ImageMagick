@@ -259,11 +259,11 @@ static Image *ReadVIFFImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -751,11 +751,7 @@ static Image *ReadVIFFImage(const ImageInfo *image_info,
     if (image->storage_class == PseudoClass)
       (void) SyncImage(image,exception);
     if (EOFBlob(image) != MagickFalse)
-      {
-        ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
-          image->filename);
-        break;
-      }
+      ThrowReaderException(CorruptImageError,"UnexpectedEndOfFile");
     /*
       Proceed to next image.
     */
@@ -938,6 +934,9 @@ static MagickBooleanType WriteVIFFImage(const ImageInfo *image_info,
   const char
     *value;
 
+  const Quantum
+    *p;
+
   MagickBooleanType
     status;
 
@@ -951,26 +950,17 @@ static MagickBooleanType WriteVIFFImage(const ImageInfo *image_info,
   MemoryInfo
     *pixel_info;
 
-  const Quantum
-    *p;
-
-  ssize_t
-    x;
-
-  ssize_t
-    i;
-
-  unsigned char
-    *q;
-
   size_t
-    imageListLength;
+    number_scenes;
 
   ssize_t
+    i,
+    x,
     y;
 
   unsigned char
-    *pixels;
+    *pixels,
+    *q;
 
   ViffInfo
     viff_info;
@@ -982,16 +972,16 @@ static MagickBooleanType WriteVIFFImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
   (void) memset(&viff_info,0,sizeof(ViffInfo));
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     MagickBooleanType
@@ -1263,7 +1253,7 @@ static MagickBooleanType WriteVIFFImage(const ImageInfo *image_info,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

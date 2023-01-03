@@ -5225,9 +5225,9 @@ int main(int argc,char **argv)
     p=getenv("SRCDIR");
     if (p != (char *) NULL)
       {
-        (void) strcpy(path,p);
+        (void) CopyMagickString(path,p,MagickPathExtent);
         if (path[strlen(path)-1] != '/')
-          (void) strcat(path,"/");
+          (void) ConcatenateMagickString(path,"/",MagickPathExtent);
       }
     (void) strcat(path,"sequence.miff");
     status=MagickReadImage(magick_wand,path);
@@ -5373,7 +5373,7 @@ int main(int argc,char **argv)
   MagickResetIterator(magick_wand);
   (void) MagickSetIteratorIndex(magick_wand,4);
   (void) FormatLocaleFile(stdout,
-    "Utilitize pixel iterator to draw diagonal...\n");
+    "Utilize pixel iterator to draw diagonal...\n");
   iterator=NewPixelIterator(magick_wand);
   if (iterator == (PixelIterator *) NULL)
     ThrowAPIException(magick_wand);

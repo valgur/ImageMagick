@@ -128,7 +128,7 @@ static MagickBooleanType CompareUsage(void)
       "  -fuzz distance       colors within this distance are considered equal\n"
       "  -gravity type        horizontal and vertical text placement\n"
       "  -highlight-color color\n"
-      "                       empasize pixel differences with this color\n"
+      "                       emphasize pixel differences with this color\n"
       "  -identify            identify the format and characteristics of the image\n"
       "  -interlace type      type of image interlacing scheme\n"
       "  -limit type value    pixel cache resource limit\n"
@@ -278,9 +278,9 @@ WandExport MagickBooleanType CompareImagesCommand(ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (argc == 2)
     {
       option=argv[1];
@@ -1252,9 +1252,14 @@ WandExport MagickBooleanType CompareImagesCommand(ImageInfo *image_info,
                 QuantumRange*distortion,GetMagickPrecision(),distortion);
               break;
             }
+            case PeakSignalToNoiseRatioErrorMetric:
+            {
+              (void) FormatLocaleFile(stderr,"%.*g (%.*g)",GetMagickPrecision(),
+                distortion,GetMagickPrecision(),0.01*distortion);
+              break;
+            }
             case AbsoluteErrorMetric:
             case NormalizedCrossCorrelationErrorMetric:
-            case PeakSignalToNoiseRatioErrorMetric:
             case PerceptualHashErrorMetric:
             case StructuralSimilarityErrorMetric:
             case StructuralDissimilarityErrorMetric:

@@ -62,7 +62,7 @@
 #include "MagickCore/module.h"
 
 /* 
-Tyedef declarations
+Typedef declarations
  */
 
 typedef struct _IPLInfo
@@ -203,11 +203,11 @@ static Image *ReadIPLImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if ( image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent, GetMagickModule(), "%s",
-                image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -529,7 +529,7 @@ static MagickBooleanType WriteIPLImage(const ImageInfo *image_info,Image *image,
     *quantum_info;
 
   size_t
-    imageListLength;
+    number_scenes;
 
   ssize_t
     y;
@@ -544,10 +544,10 @@ static MagickBooleanType WriteIPLImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -587,8 +587,8 @@ static MagickBooleanType WriteIPLImage(const ImageInfo *image_info,Image *image,
     break;
     
   }
-  imageListLength=GetImageListLength(image);
-  ipl_info.z = (unsigned int) imageListLength;
+  number_scenes=GetImageListLength(image);
+  ipl_info.z = (unsigned int) number_scenes;
   /* There is no current method for detecting whether we have T or Z stacks */
   ipl_info.time = 1;
   ipl_info.width = (unsigned int) image->columns;
@@ -688,7 +688,7 @@ static MagickBooleanType WriteIPLImage(const ImageInfo *image_info,Image *image,
   if (GetNextImageInList(image) == (Image *) NULL)
     break;
       image=SyncNextImageInList(image);
-      status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+      status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
       if (status == MagickFalse)
         break;
     }while (image_info->adjoin != MagickFalse);

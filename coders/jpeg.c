@@ -108,6 +108,7 @@
 #define IPTC_MARKER  (JPEG_APP0+IPTC_INDEX)
 #define XML_INDEX  1
 #define XML_MARKER  (JPEG_APP0+XML_INDEX)
+#define MaxJPEGProfiles  16
 #define MaxJPEGScans  1024
 
 /*
@@ -138,7 +139,7 @@ typedef struct _JPEGClientInfo
     finished;
 
   StringInfo
-    *profiles[16];
+    *profiles[MaxJPEGProfiles+1];
 
   ExceptionInfo
     *exception;
@@ -415,7 +416,7 @@ static void JPEGWarningHandler(j_common_ptr jpeg_info,int level)
       }
 }
 
-static boolean ReadProfileData(j_decompress_ptr jpeg_info,const size_t index,
+static boolean ReadProfileData(j_decompress_ptr jpeg_info,const int index,
   const size_t length)
 {
   ExceptionInfo
@@ -436,15 +437,19 @@ static boolean ReadProfileData(j_decompress_ptr jpeg_info,const size_t index,
   client_info=(JPEGClientInfo *) jpeg_info->client_data;
   exception=client_info->exception;
   image=client_info->image;
+  if ((index < 0) || (index > MaxJPEGProfiles))
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),
+        CorruptImageError,"TooManyProfiles","`%s'",image->filename);
+      return(FALSE);
+    }
   if (client_info->profiles[index] == (StringInfo *) NULL)
     {
-      client_info->profiles[index]=BlobToStringInfo((const void *) NULL,
-        length);
+      client_info->profiles[index]=BlobToStringInfo((const void *) NULL,length);
       if (client_info->profiles[index] == (StringInfo *) NULL)
         {
           (void) ThrowMagickException(exception,GetMagickModule(),
-            ResourceLimitError,"MemoryAllocationFailed","`%s'",
-            image->filename);
+            ResourceLimitError,"MemoryAllocationFailed","`%s'",image->filename);
           return(FALSE);
         }
       p=GetStringInfoDatum(client_info->profiles[index]);
@@ -455,8 +460,7 @@ static boolean ReadProfileData(j_decompress_ptr jpeg_info,const size_t index,
         current_length;
 
       current_length=GetStringInfoLength(client_info->profiles[index]);
-      SetStringInfoLength(client_info->profiles[index],current_length+
-        length);
+      SetStringInfoLength(client_info->profiles[index],current_length+length);
       p=GetStringInfoDatum(client_info->profiles[index])+current_length;
     }
   for (i=0; i < (ssize_t) length; i++)
@@ -472,8 +476,7 @@ static boolean ReadProfileData(j_decompress_ptr jpeg_info,const size_t index,
   if (i != (ssize_t) length)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
-        CorruptImageError,"InsufficientImageDataInFile","`%s'",
-        image->filename);
+        CorruptImageError,"InsufficientImageDataInFile","`%s'",image->filename);
       return(FALSE);
     }
   *p='\0';
@@ -486,16 +489,22 @@ static boolean ReadProfileData(j_decompress_ptr jpeg_info,const size_t index,
 static boolean ReadComment(j_decompress_ptr jpeg_info)
 {
 #define GetProfileLength(jpeg_info,length) \
+do \
 { \
   int \
-    c[2]; \
-\
-  length=0; \
-  c[0]=GetCharacter(jpeg_info); \
-  c[1]=GetCharacter(jpeg_info); \
-  if ((c[0] >= 0) && (c[1] >= 0)) \
-    length=(size_t) ((c[0] << 8) | c[1]); \
-}
+    c; \
+ \
+  if (((c=GetCharacter(jpeg_info)) == EOF) || (c < 0)) \
+    length=0; \
+  else \
+    { \
+      length=256*c; \
+      if (((c=GetCharacter(jpeg_info)) == EOF) || (c < 0)) \
+        length=0; \
+      else \
+        length+=c; \
+    } \
+} while(0)
 
   size_t
     length;
@@ -868,7 +877,7 @@ static void JPEGSetImageQuality(struct jpeg_decompress_struct *jpeg_info,
             if ((qvalue < hash[i]) && (sum < sums[i]))
               continue;
             if (((qvalue <= hash[i]) && (sum <= sums[i])) || (i >= 50))
-              image->quality=(size_t)i+1;
+              image->quality=(size_t) i+1;
             if (image->debug != MagickFalse)
               (void) LogMagickEvent(CoderEvent,GetMagickModule(),
                 "Quality: %.20g (%s)",(double) i+1,(qvalue <= hash[i]) &&
@@ -1090,11 +1099,11 @@ static Image *ReadJPEGImage_(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -1346,7 +1355,7 @@ static Image *ReadJPEGImage_(const ImageInfo *image_info,
   (void) SetImageProperty(image,"jpeg:colorspace",value,exception);
 #if defined(D_ARITH_CODING_SUPPORTED)
   if (jpeg_info->arith_code == TRUE)
-    (void) SetImageProperty(image,"jpeg:coding","arithmetic",exception);
+    (void) SetImageProperty(image,"jpeg:arithmetic-coding","true",exception);
 #endif
   if (JPEGSetImageProfiles(client_info) == MagickFalse)
     {
@@ -2113,7 +2122,7 @@ static void WriteProfiles(j_compress_ptr jpeg_info,Image *image,
         }
       }
    if ((LocaleCompare(name,"XMP") == 0) &&
-       (GetStringInfoLength(profile) < (65533 - sizeof(xmp_namespace))))
+       (GetStringInfoLength(profile) < (65533-sizeof(xmp_namespace))))
       {
         StringInfo
           *xmp_profile;
@@ -2260,10 +2269,10 @@ static MagickBooleanType WriteJPEGImage_(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if ((LocaleCompare(image_info->magick,"JPS") == 0) &&
       (image->next != (Image *) NULL))
     image=AppendImages(image,MagickFalse,exception);
@@ -2788,8 +2797,10 @@ static MagickBooleanType WriteJPEGImage_(const ImageInfo *image_info,
       return(MagickFalse);
     }
   scanline[0]=(JSAMPROW) jpeg_pixels;
-  scale=65535/(unsigned short) GetQuantumRange((size_t)
-    jpeg_info->data_precision);
+  scale=0;
+  if (GetQuantumRange((size_t) jpeg_info->data_precision) != 0)
+    scale=65535/(unsigned short) GetQuantumRange((size_t)
+      jpeg_info->data_precision);
   if (scale == 0)
     scale=1;
   if (jpeg_info->data_precision <= 8)

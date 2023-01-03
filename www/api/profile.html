@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,19 +87,35 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="profile.html#CloneImageProfiles">CloneImageProfiles</a></li>
+  <li><a href="profile.html#DeleteImageProfile">DeleteImageProfile</a></li>
+  <li><a href="profile.html#DestroyImageProfiles">DestroyImageProfiles</a></li>
+  <li><a href="profile.html#GetImageProfile">GetImageProfile</a></li>
+  <li><a href="profile.html#GetNextImageProfile">GetNextImageProfile</a></li>
+  <li><a href="profile.html#ProfileImage">ProfileImage</a></li>
+  <li><a href="profile.html#RemoveImageProfile">RemoveImageProfile</a></li>
+  <li><a href="profile.html#ResetImageProfileIterator">ResetImageProfileIterator</a></li>
+  <li><a href="profile.html#SetImageProfile">SetImageProfile</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="profile.html#CloneImageProfiles">CloneImageProfiles</a> &#8226; <a href="profile.html#DeleteImageProfile">DeleteImageProfile</a> &#8226; <a href="profile.html#DestroyImageProfiles">DestroyImageProfiles</a> &#8226; <a href="profile.html#GetImageProfile">GetImageProfile</a> &#8226; <a href="profile.html#GetNextImageProfile">GetNextImageProfile</a> &#8226; <a href="profile.html#ProfileImage">ProfileImage</a> &#8226; <a href="profile.html#RemoveImageProfile">RemoveImageProfile</a> &#8226; <a href="profile.html#ResetImageProfileIterator">ResetImageProfileIterator</a> &#8226; <a href="profile.html#SetImageProfile">SetImageProfile</a> &#8226; <a href="profile.html#SyncImageProfiles">SyncImageProfiles</a></p>
-
 <h2><a href="../../api/MagickCore/profile_8c.html" id="CloneImageProfiles">CloneImageProfiles</a></h2>
 
 <p>CloneImageProfiles() clones one or more image profiles.</p>
 
 <p>The format of the CloneImageProfiles method is:</p>
 
-<pre class="text">
-MagickBooleanType CloneImageProfiles(Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType CloneImageProfiles(Image *image,
   const Image *clone_image)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -126,9 +139,8 @@ MagickBooleanType CloneImageProfiles(Image *image,
 
 <p>The format of the DeleteImageProfile method is:</p>
 
-<pre class="text">
-MagickBooleanTyupe DeleteImageProfile(Image *image,const char *name)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType DeleteImageProfile(Image *image,const char *name)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -152,9 +164,8 @@ MagickBooleanTyupe DeleteImageProfile(Image *image,const char *name)
 
 <p>The format of the DestroyProfiles method is:</p>
 
-<pre class="text">
-void DestroyImageProfiles(Image *image)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>void DestroyImageProfiles(Image *image)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -174,9 +185,8 @@ void DestroyImageProfiles(Image *image)
 
 <p>The format of the GetImageProfile method is:</p>
 
-<pre class="text">
-const StringInfo *GetImageProfile(const Image *image,const char *name)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>const StringInfo *GetImageProfile(const Image *image,const char *name)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -200,9 +210,8 @@ const StringInfo *GetImageProfile(const Image *image,const char *name)
 
 <p>The format of the GetNextImageProfile method is:</p>
 
-<pre class="text">
-char *GetNextImageProfile(const Image *image)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>char *GetNextImageProfile(const Image *image)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -224,10 +233,9 @@ char *GetNextImageProfile(const Image *image)
 
 <p>The format of the ProfileImage method is:</p>
 
-<pre class="text">
-MagickBooleanType ProfileImage(Image *image,const char *name,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType ProfileImage(Image *image,const char *name,
   const void *datum,const size_t length,const MagickBooleanType clone)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -263,9 +271,8 @@ MagickBooleanType ProfileImage(Image *image,const char *name,
 
 <p>The format of the RemoveImageProfile method is:</p>
 
-<pre class="text">
-void *RemoveImageProfile(Image *image,const char *name)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>void *RemoveImageProfile(Image *image,const char *name)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -289,9 +296,8 @@ void *RemoveImageProfile(Image *image,const char *name)
 
 <p>The format of the ResetImageProfileIterator method is:</p>
 
-<pre class="text">
-ResetImageProfileIterator(Image *image)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>ResetImageProfileIterator(Image *image)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -311,10 +317,9 @@ ResetImageProfileIterator(Image *image)
 
 <p>The format of the SetImageProfile method is:</p>
 
-<pre class="text">
-MagickBooleanType SetImageProfile(Image *image,const char *name,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SetImageProfile(Image *image,const char *name,
   const StringInfo *profile)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -342,9 +347,8 @@ MagickBooleanType SetImageProfile(Image *image,const char *name,
 
 <p>The format of the SyncImageProfiles method is:</p>
 
-<pre class="text">
-MagickBooleanType SyncImageProfiles(Image *image)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType SyncImageProfiles(Image *image)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

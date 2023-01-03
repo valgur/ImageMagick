@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,19 +87,44 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="effect.html#AdaptiveBlurImage">AdaptiveBlurImage</a></li>
+  <li><a href="effect.html#AdaptiveSharpenImage">AdaptiveSharpenImage</a></li>
+  <li><a href="effect.html#BlurImage">BlurImage</a></li>
+  <li><a href="effect.html#BilateralBlurImage">BilateralBlurImage</a></li>
+  <li><a href="effect.html#ConvolveImage">ConvolveImage</a></li>
+  <li><a href="effect.html#DespeckleImage">DespeckleImage</a></li>
+  <li><a href="effect.html#EdgeImage">EdgeImage</a></li>
+  <li><a href="effect.html#EmbossImage">EmbossImage</a></li>
+  <li><a href="effect.html#GaussianBlurImage">GaussianBlurImage</a></li>
+  <li><a href="effect.html#KuwaharaImage">KuwaharaImage</a></li>
+  <li><a href="effect.html#LocalContrastImage">LocalContrastImage</a></li>
+  <li><a href="effect.html#MotionBlurImage">MotionBlurImage</a></li>
+  <li><a href="effect.html#PreviewImage">PreviewImage</a></li>
+  <li><a href="effect.html#RotationalBlurImage">RotationalBlurImage</a></li>
+  <li><a href="effect.html#SelectiveBlurImage">SelectiveBlurImage</a></li>
+  <li><a href="effect.html#ShadeImage">ShadeImage</a></li>
+  <li><a href="effect.html#SharpenImage">SharpenImage</a></li>
+  <li><a href="effect.html#SpreadImage">SpreadImage</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="effect.html#AdaptiveBlurImage">AdaptiveBlurImage</a> &#8226; <a href="effect.html#AdaptiveSharpenImage">AdaptiveSharpenImage</a> &#8226; <a href="effect.html#BlurImage">BlurImage</a> &#8226; <a href="effect.html#BilateralBlurImage">BilateralBlurImage</a> &#8226; <a href="effect.html#ConvolveImage">ConvolveImage</a> &#8226; <a href="effect.html#DespeckleImage">DespeckleImage</a> &#8226; <a href="effect.html#EdgeImage">EdgeImage</a> &#8226; <a href="effect.html#EmbossImage">EmbossImage</a> &#8226; <a href="effect.html#GaussianBlurImage">GaussianBlurImage</a> &#8226; <a href="effect.html#KuwaharaImage">KuwaharaImage</a> &#8226; <a href="effect.html#LocalContrastImage">LocalContrastImage</a> &#8226; <a href="effect.html#MotionBlurImage">MotionBlurImage</a> &#8226; <a href="effect.html#PreviewImage">PreviewImage</a> &#8226; <a href="effect.html#RotationalBlurImage">RotationalBlurImage</a> &#8226; <a href="effect.html#SelectiveBlurImage">SelectiveBlurImage</a> &#8226; <a href="effect.html#ShadeImage">ShadeImage</a> &#8226; <a href="effect.html#SharpenImage">SharpenImage</a> &#8226; <a href="effect.html#SpreadImage">SpreadImage</a> &#8226; <a href="effect.html#UnsharpMaskImage">UnsharpMaskImage</a></p>
-
 <h2><a href="../../api/MagickCore/effect_8c.html" id="AdaptiveBlurImage">AdaptiveBlurImage</a></h2>
 
 <p>AdaptiveBlurImage() adaptively blurs the image by blurring less intensely near image edges and more intensely far from edges.  We blur the image with a Gaussian operator of the given radius and standard deviation (sigma).  For reasonable results, radius should be larger than sigma.  Use a radius of 0 and AdaptiveBlurImage() selects a suitable radius for you.</p>
 
 <p>The format of the AdaptiveBlurImage method is:</p>
 
-<pre class="text">
-Image *AdaptiveBlurImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *AdaptiveBlurImage(const Image *image,const double radius,
   const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -134,10 +156,9 @@ Image *AdaptiveBlurImage(const Image *image,const double radius,
 
 <p>The format of the AdaptiveSharpenImage method is:</p>
 
-<pre class="text">
-Image *AdaptiveSharpenImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *AdaptiveSharpenImage(const Image *image,const double radius,
   const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -169,10 +190,9 @@ Image *AdaptiveSharpenImage(const Image *image,const double radius,
 
 <p>The format of the BlurImage method is:</p>
 
-<pre class="text">
-Image *BlurImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *BlurImage(const Image *image,const double radius,
   const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -204,11 +224,10 @@ Image *BlurImage(const Image *image,const double radius,
 
 <p>The format of the BilateralBlurImage method is:</p>
 
-<pre class="text">
-Image *BilateralBlurImage(const Image *image,const size_t width,
+<pre class="bg-light text-dark mx-4"><samp>Image *BilateralBlurImage(const Image *image,const size_t width,
   const size_t height,const double intensity_sigma,
   const double spatial_sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -234,7 +253,7 @@ Image *BilateralBlurImage(const Image *image,const size_t width,
 
 <dd> </dd>
 <dt>spatial_sigma</dt>
-<dd>sigma in the coordinate space. A larger value means that farther pixels influence each other as long as their colors are close enough (see intensity_sigma ). When the neigborhood diameter is greater than zero, it specifies the neighborhood size regardless of spatial_sigma. Otherwise, the neigborhood diameter is proportional to spatial_sigma. </dd>
+<dd>sigma in the coordinate space. A larger value means that farther pixels influence each other as long as their colors are close enough (see intensity_sigma ). When the neighborhood diameter is greater than zero, it specifies the neighborhood size regardless of spatial_sigma. Otherwise, the neighborhood diameter is proportional to spatial_sigma. </dd>
 
 <dd> </dd>
 <dt>exception</dt>
@@ -248,10 +267,9 @@ Image *BilateralBlurImage(const Image *image,const size_t width,
 
 <p>The format of the ConvolveImage method is:</p>
 
-<pre class="text">
-Image *ConvolveImage(const Image *image,const KernelInfo *kernel,
+<pre class="bg-light text-dark mx-4"><samp>Image *ConvolveImage(const Image *image,const KernelInfo *kernel,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -275,13 +293,12 @@ Image *ConvolveImage(const Image *image,const KernelInfo *kernel,
 </dl>
 <h2><a href="../../api/MagickCore/effect_8c.html" id="DespeckleImage">DespeckleImage</a></h2>
 
-<p>DespeckleImage() reduces the speckle noise in an image while perserving the edges of the original image.  A speckle removing filter uses a complementary hulling technique (raising pixels that are darker than their surrounding neighbors, then complementarily lowering pixels that are brighter than their surrounding neighbors) to reduce the speckle index of that image (reference Crimmins speckle removal).</p>
+<p>DespeckleImage() reduces the speckle noise in an image while preserving the edges of the original image.  A speckle removing filter uses a complementary hulling technique (raising pixels that are darker than their surrounding neighbors, then complementarily lowering pixels that are brighter than their surrounding neighbors) to reduce the speckle index of that image (reference Crimmins speckle removal).</p>
 
 <p>The format of the DespeckleImage method is:</p>
 
-<pre class="text">
-Image *DespeckleImage(const Image *image,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>Image *DespeckleImage(const Image *image,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -305,10 +322,9 @@ Image *DespeckleImage(const Image *image,ExceptionInfo *exception)
 
 <p>The format of the EdgeImage method is:</p>
 
-<pre class="text">
-Image *EdgeImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *EdgeImage(const Image *image,const double radius,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -336,10 +352,9 @@ Image *EdgeImage(const Image *image,const double radius,
 
 <p>The format of the EmbossImage method is:</p>
 
-<pre class="text">
-Image *EmbossImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *EmbossImage(const Image *image,const double radius,
   const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -371,10 +386,9 @@ Image *EmbossImage(const Image *image,const double radius,
 
 <p>The format of the GaussianBlurImage method is:</p>
 
-<pre class="text">
-Image *GaussianBlurImage(const Image *image,onst double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *GaussianBlurImage(const Image *image,const double radius,
   const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -406,10 +420,9 @@ Image *GaussianBlurImage(const Image *image,onst double radius,
 
 <p>The format of the KuwaharaImage method is:</p>
 
-<pre class="text">
-Image *KuwaharaImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *KuwaharaImage(const Image *image,const double radius,
   const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -441,10 +454,9 @@ Image *KuwaharaImage(const Image *image,const double radius,
 
 <p>The format of the LocalContrastImage method is:</p>
 
-<pre class="text">
-Image *LocalContrastImage(const Image *image, const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *LocalContrastImage(const Image *image, const double radius,
   const double strength,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -478,10 +490,9 @@ Image *LocalContrastImage(const Image *image, const double radius,
 
 <p>The format of the MotionBlurImage method is:</p>
 
-<pre class="text">
-    Image *MotionBlurImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>    Image *MotionBlurImage(const Image *image,const double radius,
 const double sigma,const double angle,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -517,10 +528,9 @@ const double sigma,const double angle,ExceptionInfo *exception)
 
 <p>The format of the PreviewImages method is:</p>
 
-<pre class="text">
-Image *PreviewImages(const Image *image,const PreviewType preview,
+<pre class="bg-light text-dark mx-4"><samp>Image *PreviewImages(const Image *image,const PreviewType preview,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -550,10 +560,9 @@ Image *PreviewImages(const Image *image,const PreviewType preview,
 
 <p>The format of the RotationalBlurImage method is:</p>
 
-<pre class="text">
-    Image *RotationalBlurImage(const Image *image,const double angle,
+<pre class="bg-light text-dark mx-4"><samp>    Image *RotationalBlurImage(const Image *image,const double angle,
 ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -585,10 +594,9 @@ ExceptionInfo *exception)
 
 <p>The format of the SelectiveBlurImage method is:</p>
 
-<pre class="text">
-Image *SelectiveBlurImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>Image *SelectiveBlurImage(const Image *image,const double radius,
   const double sigma,const double threshold,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -624,10 +632,9 @@ Image *SelectiveBlurImage(const Image *image,const double radius,
 
 <p>The format of the ShadeImage method is:</p>
 
-<pre class="text">
-Image *ShadeImage(const Image *image,const MagickBooleanType gray,
+<pre class="bg-light text-dark mx-4"><samp>Image *ShadeImage(const Image *image,const MagickBooleanType gray,
   const double azimuth,const double elevation,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -661,10 +668,9 @@ Image *ShadeImage(const Image *image,const MagickBooleanType gray,
 
 <p>The format of the SharpenImage method is:</p>
 
-<pre class="text">
-    Image *SharpenImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>    Image *SharpenImage(const Image *image,const double radius,
 const double sigma,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -696,11 +702,10 @@ const double sigma,ExceptionInfo *exception)
 
 <p>The format of the SpreadImage method is:</p>
 
-<pre class="text">
-Image *SpreadImage(const Image *image,
+<pre class="bg-light text-dark mx-4"><samp>Image *SpreadImage(const Image *image,
   const PixelInterpolateMethod method,const double radius,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -714,7 +719,7 @@ Image *SpreadImage(const Image *image,
 
 <dd> </dd>
 <dt>method</dt>
-<dd> intepolation method. </dd>
+<dd> interpolation method. </dd>
 
 <dd> </dd>
 <dt>radius</dt>
@@ -732,11 +737,10 @@ Image *SpreadImage(const Image *image,
 
 <p>The format of the UnsharpMaskImage method is:</p>
 
-<pre class="text">
-    Image *UnsharpMaskImage(const Image *image,const double radius,
+<pre class="bg-light text-dark mx-4"><samp>    Image *UnsharpMaskImage(const Image *image,const double radius,
 const double sigma,const double amount,const double threshold,
 ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -762,7 +766,7 @@ ExceptionInfo *exception)
 
 <dd> </dd>
 <dt>threshold</dt>
-<dd>the threshold in pixels needed to apply the diffence gain. </dd>
+<dd>the threshold in pixels needed to apply the difference gain. </dd>
 
 <dd> </dd>
 <dt>exception</dt>

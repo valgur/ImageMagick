@@ -171,7 +171,7 @@ MagickPrivate void ConvertHCLToRGB(const double hue,const double chroma,
 %
 %  A description of each parameter follows:
 %
-%    o hue, chroma, luma: A double value representing a componenet of the
+%    o hue, chroma, luma: A double value representing a component of the
 %      HCLp color space.
 %
 %    o red, green, blue: A pointer to a pixel component of type Quantum.
@@ -1483,7 +1483,7 @@ MagickExport double ExpandAffine(const AffineMatrix *affine)
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  GenerateDifferentialNoise() generates differentual noise.
+%  GenerateDifferentialNoise() generates differential noise.
 %
 %  The format of the GenerateDifferentialNoise method is:
 %
@@ -1650,16 +1650,15 @@ MagickPrivate size_t GetOptimalKernelWidth1D(const double radius,
     normalize,
     value;
 
-  ssize_t
-    i;
-
   size_t
     width;
 
   ssize_t
+    i,
     j;
-
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+ 
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (radius > MagickEpsilon)
     return((size_t) (2.0*ceil(radius)+1.0));
   gamma=fabs(sigma);
@@ -1699,7 +1698,8 @@ MagickPrivate size_t GetOptimalKernelWidth2D(const double radius,
     u,
     v;
 
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (radius > MagickEpsilon)
     return((size_t) (2.0*ceil(radius)+1.0));
   gamma=fabs(sigma);

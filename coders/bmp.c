@@ -107,7 +107,7 @@
 #endif
 
 /*
-  Enumerated declaractions.
+  Enumerated declarations.
 */
 typedef enum
 {
@@ -219,9 +219,9 @@ static MagickBooleanType DecodeImage(Image *image,const size_t compression,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(pixels != (unsigned char *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   (void) memset(pixels,0,number_pixels*sizeof(*pixels));
   byte=0;
   x=0;
@@ -286,8 +286,14 @@ static MagickBooleanType DecodeImage(Image *image,const size_t compression,
             /*
               Delta mode.
             */
-            x+=ReadBlobByte(image);
-            y+=ReadBlobByte(image);
+            byte=ReadBlobByte(image);
+            if (byte == EOF)
+              return(MagickFalse);
+            x+=byte;
+            byte=ReadBlobByte(image);
+            if (byte == EOF)
+              return(MagickFalse);
+            y+=byte;
             p=pixels+y*image->columns+x;
             break;
           }
@@ -401,10 +407,10 @@ static size_t EncodeImage(Image *image,const size_t bytes_per_line,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(pixels != (const unsigned char *) NULL);
   assert(compressed_pixels != (unsigned char *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   p=pixels;
   q=compressed_pixels;
   i=0;
@@ -567,7 +573,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
@@ -627,6 +633,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
         "  BMP header size: %u",bmp_info.size);
     if (bmp_info.size > 124)
       ThrowReaderException(CorruptImageError,"ImproperImageHeader");
+    bmp_info.offset_bits=MagickMax(14+bmp_info.size,bmp_info.offset_bits);
     profile_data=0;
     profile_size=0;
     if (bmp_info.size == 12)
@@ -1021,7 +1028,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
           We should ignore the alpha value in BMP3 files but there have been
           reports about 32 bit files with alpha. We do a quick check to see if
           the alpha channel contains a value that is not zero (default value).
-          If we find a non zero value we asume the program that wrote the file
+          If we find a non zero value we assume the program that wrote the file
           wants to use the alpha channel.
         */
         if ((image->alpha_trait == UndefinedPixelTrait) &&
@@ -1457,7 +1464,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
           }
       }
     /*
-      Read embeded ICC profile
+      Read embedded ICC profile
     */
     if ((bmp_info.colorspace == 0x4D424544L) && (profile_data > 0) &&
         (profile_size > 0))
@@ -1656,6 +1663,9 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
   const char
     *option;
 
+  const Quantum
+    *p;
+
   const StringInfo
     *profile;
 
@@ -1664,37 +1674,28 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
     status;
 
   MagickOffsetType
+    profile_data,
+    profile_size,
+    profile_size_pad,
     scene;
 
   MemoryInfo
     *pixel_info;
 
-  const Quantum
-    *p;
-
-  ssize_t
-    i,
-    x;
-
-  unsigned char
-    *q;
-
   size_t
     bytes_per_line,
-    imageListLength,
+    number_scenes,
     type;
 
   ssize_t
+    i,
+    x,
     y;
 
   unsigned char
     *bmp_data,
-    *pixels;
-
-  MagickOffsetType
-    profile_data,
-    profile_size,
-    profile_size_pad;
+    *pixels,
+    *q;
 
   /*
     Open output image file.
@@ -1703,10 +1704,10 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -1732,7 +1733,7 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
         type=4;
     }
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     /*
@@ -2466,8 +2467,9 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
       {
         if (image->debug != MagickFalse)
           (void) LogMagickEvent(CoderEvent,GetMagickModule(),
-                                "  Profile:  %g bytes",(double) profile_size+profile_size_pad);
-        (void) WriteBlob(image,(size_t) profile_size,GetStringInfoDatum(profile));
+            "  Profile:  %g bytes",(double) profile_size+profile_size_pad);
+        (void) WriteBlob(image,(size_t) profile_size,
+          GetStringInfoDatum(profile));
         if (profile_size_pad > 0)  /* padding for 4 bytes multiple */
           (void) WriteBlob(image,(size_t) profile_size_pad,"\0\0\0");
       }
@@ -2475,7 +2477,7 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

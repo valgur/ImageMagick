@@ -121,7 +121,7 @@ static const PICTCode
   codes[] =
   {
     /* 0x00 */ { "NOP", 0, "nop" },
-    /* 0x01 */ { "Clip", 0, "clip" },
+    /* 0x01 */ { "ClipRgn", 0, "clip" },
     /* 0x02 */ { "BkPat", 8, "background pattern" },
     /* 0x03 */ { "TxFont", 2, "text font (word)" },
     /* 0x04 */ { "TxFace", 1, "text face (byte)" },
@@ -611,10 +611,10 @@ static size_t EncodeImage(Image *image,const unsigned char *scanline,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(scanline != (unsigned char *) NULL);
   assert(pixels != (unsigned char *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   count=0;
   runlength=0;
   p=scanline+(bytes_per_line-1);
@@ -882,7 +882,7 @@ static Image *ReadPICTImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
@@ -1659,12 +1659,15 @@ static MagickBooleanType WritePICTImage(const ImageInfo *image_info,
 #define PictPICTOp  0x98
 #define PictVersion  0x11
 
+  const Quantum
+    *p;
+
   const StringInfo
     *profile;
 
   double
-    x_resolution,
-    y_resolution;
+    x_resolution = DefaultResolution,
+    y_resolution = DefaultResolution;
 
   MagickBooleanType
     status;
@@ -1683,13 +1686,6 @@ static MagickBooleanType WritePICTImage(const ImageInfo *image_info,
     size_rectangle,
     source_rectangle;
 
-  const Quantum
-    *p;
-
-  ssize_t
-    i,
-    x;
-
   size_t
     bytes_per_line,
     count,
@@ -1697,6 +1693,8 @@ static MagickBooleanType WritePICTImage(const ImageInfo *image_info,
     storage_class;
 
   ssize_t
+    i,
+    x,
     y;
 
   unsigned char
@@ -1715,12 +1713,12 @@ static MagickBooleanType WritePICTImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  assert(exception != (ExceptionInfo *) NULL);
+  assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if ((image->columns > 65535L) || (image->rows > 65535L))
     ThrowWriterException(ImageError,"WidthOrHeightExceedsLimit");
-  assert(exception != (ExceptionInfo *) NULL);
-  assert(exception->signature == MagickCoreSignature);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -1754,8 +1752,6 @@ static MagickBooleanType WritePICTImage(const ImageInfo *image_info,
   pixmap.table=0;
   pixmap.reserved=0;
   transfer_mode=0;
-  x_resolution=0.0;
-  y_resolution=0.0;
   if ((image->resolution.x > MagickEpsilon) &&
       (image->resolution.y > MagickEpsilon))
     {

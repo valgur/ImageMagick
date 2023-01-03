@@ -74,7 +74,7 @@
 #endif
 
 /*
-  Typdef declarations.
+  Typedef declarations.
 */
 
 /*
@@ -173,7 +173,7 @@ static int MagickDLLCall NTGhostscriptNewInstance(gs_main_instance **pinstance,
   return(status);
 }
 
-static inline char *create_utf8_string(const wchar_t *wideChar)
+static inline char *create_utf8_string(const wchar_t *wide)
 {
   char
     *utf8;
@@ -181,16 +181,16 @@ static inline char *create_utf8_string(const wchar_t *wideChar)
   int
     count;
 
-  count=WideCharToMultiByte(CP_UTF8,0,wideChar,-1,NULL,0,NULL,NULL);
-  if (count < 0)
+  count=WideCharToMultiByte(CP_UTF8,0,wide,-1,NULL,0,NULL,NULL);
+  if (count == 0)
     return((char *) NULL);
-  utf8=(char *) AcquireQuantumMemory(count+1,sizeof(*utf8));
+  utf8=(char *) NTAcquireQuantumMemory(count+1,sizeof(*utf8));
   if (utf8 == (char *) NULL)
     return((char *) NULL);
-  count=WideCharToMultiByte(CP_UTF8,0,wideChar,-1,utf8,count,NULL,NULL);
+  count=WideCharToMultiByte(CP_UTF8,0,wide,-1,utf8,count,NULL,NULL);
   if (count == 0)
     {
-      utf8=DestroyString(utf8);
+      utf8=(char *) RelinquishMagickMemory(utf8);
       return((char *) NULL);
     }
   utf8[count]=0;
@@ -231,7 +231,7 @@ static unsigned char *NTGetRegistryValue(HKEY root,const char *key,DWORD flags,
       LPBYTE
         wide;
 
-      wide=(LPBYTE) AcquireQuantumMemory((const size_t) size,sizeof(*wide));
+      wide=(LPBYTE) NTAcquireQuantumMemory((const size_t) size,sizeof(*wide));
       if (wide != (LPBYTE) NULL)
         {
           status=RegQueryValueExW(registry_key,wide_name,0,&type,wide,&size);
@@ -304,7 +304,7 @@ BOOL WINAPI DllMain(HINSTANCE handle,DWORD reason,LPVOID lpvReserved)
         *wide_path;
 
       MagickCoreGenesis((const char *) NULL,MagickFalse);
-      wide_path=(wchar_t *) AcquireQuantumMemory(MagickPathExtent,
+      wide_path=(wchar_t *) NTAcquireQuantumMemory(MagickPathExtent,
         sizeof(*wide_path));
       if (wide_path == (wchar_t *) NULL)
         return(FALSE);
@@ -321,7 +321,8 @@ BOOL WINAPI DllMain(HINSTANCE handle,DWORD reason,LPVOID lpvReserved)
                 module_path[count+1]='\0';
                 break;
               }
-          path=(char *) AcquireQuantumMemory(MagickPathExtent,16*sizeof(*path));
+          path=(char *) NTAcquireQuantumMemory(MagickPathExtent,
+            16*sizeof(*path));
           if (path == (char *) NULL)
             {
               module_path=DestroyString(module_path);
@@ -337,7 +338,7 @@ BOOL WINAPI DllMain(HINSTANCE handle,DWORD reason,LPVOID lpvReserved)
                   char
                     *variable;
 
-                  variable=(char *) AcquireQuantumMemory(MagickPathExtent,
+                  variable=(char *) NTAcquireQuantumMemory(MagickPathExtent,
                     16*sizeof(*variable));
                   if (variable == (char *) NULL)
                     {
@@ -470,7 +471,7 @@ MagickPrivate char **NTArgvToUTF8(const int argc,wchar_t **argv)
   ssize_t
     i;
 
-  utf8=(char **) AcquireQuantumMemory(argc,sizeof(*utf8));
+  utf8=(char **) NTAcquireQuantumMemory(argc,sizeof(*utf8));
   if (utf8 == (char **) NULL)
     ThrowFatalException(ResourceLimitFatalError,"UnableToConvertStringToARGV");
   for (i=0; i < (ssize_t) argc; i++)
@@ -512,8 +513,9 @@ MagickPrivate char **NTArgvToUTF8(const int argc,wchar_t **argv)
 */
 MagickPrivate int NTCloseDirectory(DIR *entry)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(entry != (DIR *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   FindClose(entry->hSearch);
   entry=(DIR *) RelinquishMagickMemory(entry);
   return(0);
@@ -1234,7 +1236,7 @@ static MagickBooleanType NTGhostscriptGetString(const char *name,
     return(MagickFalse);
   if (is_64_bit != NULL)
     *is_64_bit=is_64_bit_version;
-  (void) FormatLocaleString(buffer,MagickPathExtent,"SOFTWARE\\%s\\%d.%d.%d",
+  (void) FormatLocaleString(buffer,MagickPathExtent,"SOFTWARE\\%s\\%d.%.2d.%d",
     product_family,major_version,minor_version,patch_version);
   registry_value=NTGetRegistryValue(registry_roots[root_index].hkey,buffer,
     flags,name);
@@ -1328,6 +1330,8 @@ MagickPrivate const GhostInfo *NTGhostscriptDLLVectors(void)
   ghost_info.new_instance=NTGhostscriptNewInstance;
   ghost_info.run_string=(int (MagickDLLCall *)(gs_main_instance *,const char *,
     int,int *)) (lt_dlsym(ghost_handle,"gsapi_run_string"));
+  ghost_info.set_arg_encoding=(int (MagickDLLCall*)(gs_main_instance*, int)) (
+    lt_dlsym(ghost_handle, "gsapi_set_arg_encoding"));
   ghost_info.set_stdio=(int (MagickDLLCall *)(gs_main_instance *,int(
     MagickDLLCall *)(void *,char *,int),int(MagickDLLCall *)(void *,
     const char *,int),int(MagickDLLCall *)(void *,const char *,int)))
@@ -1835,16 +1839,20 @@ static UINT ChangeErrorMode(void)
 
 static inline void *NTLoadLibrary(const char *filename)
 {
-  int
-    length;
+  void
+    *library;
 
   wchar_t
-    path[MagickPathExtent];
+    *path;
 
-  length=MultiByteToWideChar(CP_UTF8,0,filename,-1,path,MagickPathExtent);
-  if (length == 0)
-    return((void *) NULL);
-  return (void *) LoadLibraryExW(path,NULL,LOAD_WITH_ALTERED_SEARCH_PATH);
+  library=(void *) NULL;
+  path=create_wchar_path(filename);
+  if (path != (wchar_t *) NULL)
+    {
+      library=LoadLibraryExW(path,NULL,LOAD_WITH_ALTERED_SEARCH_PATH);
+      path=(wchar_t *) RelinquishMagickMemory(path);
+    }
+  return(library);
 }
 
 MagickPrivate void *NTOpenLibrary(const char *filename)
@@ -1951,7 +1959,7 @@ MagickPrivate struct dirent *NTReadDirectory(DIR *entry)
 %  installed ImageMagick version so that multiple Image Magick installations
 %  may coexist.
 %
-%  Values are stored in the registry under a base path path similar to
+%  Values are stored in the registry under a base path similar to
 %  "HKEY_LOCAL_MACHINE/SOFTWARE\ImageMagick\6.7.4\Q:16" or
 %  "HKEY_CURRENT_USER/SOFTWARE\ImageMagick\6.7.4\Q:16". The provided subkey
 %  is appended to this base path to form the full key.
@@ -1970,7 +1978,7 @@ MagickPrivate struct dirent *NTReadDirectory(DIR *entry)
 MagickPrivate unsigned char *NTRegistryKeyLookup(const char *subkey)
 {
   char
-    package_key[MagickPathExtent];
+    package_key[MagickPathExtent] = "";
 
   unsigned char
     *value;
@@ -2081,7 +2089,8 @@ MagickPrivate unsigned char *NTResourceToBlob(const char *id)
     *value;
 
   assert(id != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",id);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",id);
 #ifdef MAGICKCORE_LIBRARY_NAME
   handle=GetModuleHandle(MAGICKCORE_LIBRARY_NAME);
 #else
@@ -2615,6 +2624,7 @@ MagickPrivate void NTWindowsGenesis(void)
     *mode;
 
   SetUnhandledExceptionFilter(NTUncaughtException);
+  SetConsoleOutputCP(CP_UTF8);
   mode=GetEnvironmentValue("MAGICK_ERRORMODE");
   if (mode != (char *) NULL)
     {
@@ -2646,16 +2656,15 @@ MagickPrivate void NTWindowsGenesis(void)
     path=NTRegistryKeyLookup("LibPath");
     if (path != (unsigned char *) NULL)
       {
-        size_t
-          length;
-
         wchar_t
-          lib_path[MagickPathExtent];
+          *lib_path;
 
-        length=MultiByteToWideChar(CP_UTF8,0,(char *) path,-1,lib_path,
-          MagickPathExtent);
-        if (length != 0)
-          SetDllDirectoryW(lib_path);
+        lib_path=create_wchar_path((const char *) path);
+        if (lib_path != (wchar_t *) NULL)
+          {
+            SetDllDirectoryW(lib_path);
+            lib_path=(wchar_t *) RelinquishMagickMemory(lib_path);
+          }
         path=(unsigned char *) RelinquishMagickMemory(path);
       }
   }

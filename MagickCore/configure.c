@@ -47,6 +47,7 @@
 #include "MagickCore/exception.h"
 #include "MagickCore/exception-private.h"
 #include "MagickCore/linked-list.h"
+#include "MagickCore/linked-list-private.h"
 #include "MagickCore/log.h"
 #include "MagickCore/memory_.h"
 #include "MagickCore/semaphore.h"
@@ -353,6 +354,9 @@ MagickExport const ConfigureInfo *GetConfigureInfo(const char *name,
   ExceptionInfo *exception)
 {
   const ConfigureInfo
+    *option;
+
+  ElementInfo
     *p;
 
   assert(exception != (ExceptionInfo *) NULL);
@@ -361,25 +365,29 @@ MagickExport const ConfigureInfo *GetConfigureInfo(const char *name,
   /*
     Search for configure tag.
   */
+  option=(const ConfigureInfo *) NULL;
   LockSemaphoreInfo(configure_semaphore);
-  ResetLinkedListIterator(configure_cache);
-  p=(const ConfigureInfo *) GetNextValueInLinkedList(configure_cache);
+  p=GetHeadElementInLinkedList(configure_cache);
   if ((name == (const char *) NULL) || (LocaleCompare(name,"*") == 0))
     {
       UnlockSemaphoreInfo(configure_semaphore);
-      return(p);
+      if (p != (ElementInfo *) NULL)
+        option=(const ConfigureInfo *) p->value;
+      return(option);
     }
-  while (p != (const ConfigureInfo *) NULL)
+  while (p != (ElementInfo *) NULL)
   {
-    if (LocaleCompare(name,p->name) == 0)
+    option=(const ConfigureInfo *) p->value;
+    if (LocaleCompare(name,option->name) == 0)
       break;
-    p=(const ConfigureInfo *) GetNextValueInLinkedList(configure_cache);
+    p=p->next;
   }
-  if (p != (ConfigureInfo *) NULL)
-    (void) InsertValueInLinkedList(configure_cache,0,
-      RemoveElementByValueFromLinkedList(configure_cache,p));
+  if (p == (ElementInfo *) NULL)
+    option=(const ConfigureInfo *) NULL;
+  else
+    SetHeadElementInLinkedList(configure_cache,p);
   UnlockSemaphoreInfo(configure_semaphore);
-  return(p);
+  return(option);
 }
 
 /*
@@ -439,42 +447,44 @@ MagickExport const ConfigureInfo **GetConfigureInfoList(const char *pattern,
   const ConfigureInfo
     **options;
 
-  const ConfigureInfo
+  ElementInfo
     *p;
 
   ssize_t
     i;
 
-  /*
-    Allocate configure list.
-  */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_options != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_options=0;
-  p=GetConfigureInfo("*",exception);
-  if (p == (const ConfigureInfo *) NULL)
+  if (IsConfigureCacheInstantiated(exception) == MagickFalse)
     return((const ConfigureInfo **) NULL);
   options=(const ConfigureInfo **) AcquireQuantumMemory((size_t)
     GetNumberOfElementsInLinkedList(configure_cache)+1UL,sizeof(*options));
   if (options == (const ConfigureInfo **) NULL)
     return((const ConfigureInfo **) NULL);
-  /*
-    Generate configure list.
-  */
   LockSemaphoreInfo(configure_semaphore);
-  ResetLinkedListIterator(configure_cache);
-  p=(const ConfigureInfo *) GetNextValueInLinkedList(configure_cache);
-  for (i=0; p != (const ConfigureInfo *) NULL; )
+  p=GetHeadElementInLinkedList(configure_cache);
+  for (i=0; p != (ElementInfo *) NULL; )
   {
-    if ((p->stealth == MagickFalse) &&
-        (GlobExpression(p->name,pattern,MagickFalse) != MagickFalse))
-      options[i++]=p;
-    p=(const ConfigureInfo *) GetNextValueInLinkedList(configure_cache);
+    const ConfigureInfo
+      *option;
+
+    option=(const ConfigureInfo *) p->value;
+    if ((option->stealth == MagickFalse) &&
+        (GlobExpression(option->name,pattern,MagickFalse) != MagickFalse))
+      options[i++]=option;
+    p=p->next;
   }
   UnlockSemaphoreInfo(configure_semaphore);
-  qsort((void *) options,(size_t) i,sizeof(*options),ConfigureInfoCompare);
-  options[i]=(ConfigureInfo *) NULL;
+  if (i == 0)
+    options=(const ConfigureInfo **) RelinquishMagickMemory((void*) options);
+  else
+    {
+      qsort((void *) options,(size_t) i,sizeof(*options),ConfigureInfoCompare);
+      options[i]=(ConfigureInfo *) NULL;
+    }
   *number_options=(size_t) i;
   return(options);
 }
@@ -533,39 +543,44 @@ MagickExport char **GetConfigureList(const char *pattern,
   char
     **options;
 
-  const ConfigureInfo
+  ElementInfo
     *p;
 
   ssize_t
     i;
 
-  /*
-    Allocate configure list.
-  */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_options != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_options=0;
-  p=GetConfigureInfo("*",exception);
-  if (p == (const ConfigureInfo *) NULL)
+  if (IsConfigureCacheInstantiated(exception) == MagickFalse)
     return((char **) NULL);
   options=(char **) AcquireQuantumMemory((size_t)
     GetNumberOfElementsInLinkedList(configure_cache)+1UL,sizeof(*options));
   if (options == (char **) NULL)
     return((char **) NULL);
   LockSemaphoreInfo(configure_semaphore);
-  ResetLinkedListIterator(configure_cache);
-  p=(const ConfigureInfo *) GetNextValueInLinkedList(configure_cache);
-  for (i=0; p != (const ConfigureInfo *) NULL; )
+  p=GetHeadElementInLinkedList(configure_cache);
+  for (i=0; p != (ElementInfo *) NULL; )
   {
-    if ((p->stealth == MagickFalse) &&
-        (GlobExpression(p->name,pattern,MagickFalse) != MagickFalse))
-      options[i++]=ConstantString(p->name);
-    p=(const ConfigureInfo *) GetNextValueInLinkedList(configure_cache);
+    const ConfigureInfo
+      *option;
+
+    option=(const ConfigureInfo *) p->value;
+    if ((option->stealth == MagickFalse) &&
+        (GlobExpression(option->name,pattern,MagickFalse) != MagickFalse))
+      options[i++]=ConstantString(option->name);
+    p=p->next;
   }
   UnlockSemaphoreInfo(configure_semaphore);
-  qsort((void *) options,(size_t) i,sizeof(*options),ConfigureCompare);
-  options[i]=(char *) NULL;
+  if (i == 0)
+    options=(char **) RelinquishMagickMemory(options);
+  else
+    {
+      qsort((void *) options,(size_t) i,sizeof(*options),ConfigureCompare);
+      options[i]=(char *) NULL;
+    }
   *number_options=(size_t) i;
   return(options);
 }
@@ -604,7 +619,8 @@ MagickExport char *GetConfigureOption(const char *option)
     *exception;
 
   assert(option != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",option);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",option);
   exception=AcquireExceptionInfo();
   configure_info=GetConfigureInfo(option,exception);
   exception=DestroyExceptionInfo(exception);
@@ -659,8 +675,9 @@ MagickExport LinkedListInfo *GetConfigureOptions(const char *filename,
     *xml;
 
   assert(filename != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   (void) CopyMagickString(path,filename,MagickPathExtent);
   /*
     Load XML from configuration files to linked-list.
@@ -737,10 +754,6 @@ MagickExport LinkedListInfo *GetConfigureOptions(const char *filename,
 MagickExport LinkedListInfo *GetConfigurePaths(const char *filename,
   ExceptionInfo *exception)
 {
-#define RegistryKey  "ConfigurePath"
-#define MagickCoreDLL  "CORE_RL_MagickCore_.dll"
-#define MagickCoreDebugDLL  "CORE_DB_MagickCore_.dll"
-
   char
     path[MagickPathExtent];
 
@@ -748,8 +761,9 @@ MagickExport LinkedListInfo *GetConfigurePaths(const char *filename,
     *paths;
 
   assert(filename != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   (void) CopyMagickString(path,filename,MagickPathExtent);
   paths=NewLinkedList(0);
   {
@@ -806,7 +820,7 @@ MagickExport LinkedListInfo *GetConfigurePaths(const char *filename,
     /*
       Locate file via registry key.
     */
-    key_value=NTRegistryKeyLookup(RegistryKey);
+    key_value=NTRegistryKeyLookup("ConfigurePath");
     if (key_value != (unsigned char *) NULL)
       {
         (void) FormatLocaleString(path,MagickPathExtent,"%s%s",(char *)
@@ -917,8 +931,9 @@ MagickExport LinkedListInfo *GetConfigurePaths(const char *filename,
     char
       module_path[MagickPathExtent];
 
-    if ((NTGetModulePath(MagickCoreDLL,module_path) != MagickFalse) ||
-        (NTGetModulePath(MagickCoreDebugDLL,module_path) != MagickFalse))
+#if defined(_MAGICKDLL_)
+    if ((NTGetModulePath("CORE_RL_MagickCore_.dll",module_path) != MagickFalse) ||
+        (NTGetModulePath("CORE_DB_MagickCore_.dll",module_path) != MagickFalse))
       {
         unsigned char
           *key_value;
@@ -928,12 +943,13 @@ MagickExport LinkedListInfo *GetConfigurePaths(const char *filename,
         */
         (void) FormatLocaleString(path,MagickPathExtent,"%s%s",module_path,
           DirectorySeparator);
-        key_value=NTRegistryKeyLookup(RegistryKey);
+        key_value=NTRegistryKeyLookup("ConfigurePath");
         if (key_value == (unsigned char *) NULL)
           (void) AppendValueToLinkedList(paths,ConstantString(path));
         else
           key_value=(unsigned char *) RelinquishMagickMemory(key_value);
       }
+#endif
     if (NTGetModulePath("Magick.dll",module_path) != MagickFalse)
       {
         /*
@@ -978,7 +994,8 @@ MagickExport LinkedListInfo *GetConfigurePaths(const char *filename,
 */
 MagickExport const char *GetConfigureValue(const ConfigureInfo *configure_info)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(configure_info != (ConfigureInfo *) NULL);
   assert(configure_info->signature == MagickCoreSignature);
   return(configure_info->value);

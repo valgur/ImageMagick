@@ -196,6 +196,7 @@
 #include "MagickCore/monitor-private.h"
 #include "MagickCore/option.h"
 #include "MagickCore/pixel-accessor.h"
+#include "MagickCore/property.h"
 #include "MagickCore/quantize.h"
 #include "MagickCore/quantum.h"
 #include "MagickCore/quantum-private.h"
@@ -220,7 +221,7 @@
 #define NodesInAList  1920
 
 /*
-  Typdef declarations.
+  Typedef declarations.
 */
 typedef struct _DoublePixelPacket
 {
@@ -1108,14 +1109,15 @@ static void ClosestColor(const Image *image,CubeInfo *cube_info,
       ClosestColor(image,cube_info,node_info->child[i]);
   if (node_info->number_unique != 0)
     {
-      double
-        alpha,
-        beta,
-        distance,
+      MagickRealType
         pixel;
 
       DoublePixelPacket
         *magick_restrict q;
+
+      MagickRealType
+        alpha,
+        distance;
 
       PixelInfo
         *magick_restrict p;
@@ -1126,34 +1128,32 @@ static void ClosestColor(const Image *image,CubeInfo *cube_info,
       p=image->colormap+node_info->color_number;
       q=(&cube_info->target);
       alpha=1.0;
-      beta=1.0;
       if (cube_info->associate_alpha != MagickFalse)
+        alpha=(MagickRealType) (QuantumScale*p->alpha*QuantumScale*q->alpha);
+      pixel=p->red-q->red;
+      if (IsHueCompatibleColorspace(image->colorspace) != MagickFalse)
         {
-          alpha=(MagickRealType) (QuantumScale*p->alpha);
-          beta=(MagickRealType) (QuantumScale*q->alpha);
+          /*
+            Compute an arc distance for hue.  It should be a vector angle of
+            'S'/'W' length with 'L'/'B' forming appropriate cones.
+          */
+          if (fabs((double) pixel) > (QuantumRange/2))
+            pixel-=QuantumRange;
+          pixel*=2.0;
         }
-      pixel=alpha*p->red-beta*q->red;
-      distance=pixel*pixel;
+      distance=alpha*pixel*pixel;
       if (distance <= cube_info->distance)
         {
-          pixel=alpha*p->green-beta*q->green;
-          distance+=pixel*pixel;
+          pixel=p->green-q->green;
+          distance+=alpha*pixel*pixel;
           if (distance <= cube_info->distance)
             {
-              pixel=alpha*p->blue-beta*q->blue;
-              distance+=pixel*pixel;
+              pixel=p->blue-q->blue;
+              distance+=alpha*pixel*pixel;
               if (distance <= cube_info->distance)
                 {
-                  if (cube_info->associate_alpha != MagickFalse)
-                    {
-                      pixel=p->alpha-q->alpha;
-                      distance+=pixel*pixel;
-                    }
-                  if (distance <= cube_info->distance)
-                    {
-                      cube_info->distance=distance;
-                      cube_info->color_number=node_info->color_number;
-                    }
+                  cube_info->distance=distance;
+                  cube_info->color_number=node_info->color_number;
                 }
             }
         }
@@ -1194,7 +1194,7 @@ MagickExport MagickBooleanType CompressImageColormap(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (IsPaletteImage(image) == MagickFalse)
     return(MagickFalse);
@@ -1384,9 +1384,10 @@ static void DestroyCubeInfo(CubeInfo *cube_info)
 */
 MagickExport QuantizeInfo *DestroyQuantizeInfo(QuantizeInfo *quantize_info)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(quantize_info != (QuantizeInfo *) NULL);
   assert(quantize_info->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   quantize_info->signature=(~MagickCoreSignature);
   quantize_info=(QuantizeInfo *) RelinquishMagickMemory(quantize_info);
   return(quantize_info);
@@ -2186,7 +2187,7 @@ static NodeInfo *GetNodeInfo(CubeInfo *cube_info,const size_t id,
 %      measure is normalized to a range between 0 and 1.  It is independent
 %      of the range of red, green, and blue values in the image.
 %
-%    o normalized_maximum_square_error:  Thsi value is the normalized
+%    o normalized_maximum_square_error:  This value is the normalized
 %      maximum quantization error for any single pixel in the image.  This
 %      distance measure is normalized to a range between 0 and 1.  It is
 %      independent of the range of red, green, and blue values in your image.
@@ -2224,7 +2225,7 @@ MagickExport MagickBooleanType GetImageQuantizeError(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   image->total_colors=GetNumberColors(image,(FILE *) NULL,exception);
   (void) memset(&image->error,0,sizeof(image->error));
@@ -2309,8 +2310,9 @@ MagickExport MagickBooleanType GetImageQuantizeError(Image *image,
 */
 MagickExport void GetQuantizeInfo(QuantizeInfo *quantize_info)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(quantize_info != (QuantizeInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   (void) memset(quantize_info,0,sizeof(*quantize_info));
   quantize_info->number_colors=256;
   quantize_info->dither_method=RiemersmaDitherMethod;
@@ -2376,6 +2378,17 @@ static KmeansInfo **DestroyKmeansTLS(KmeansInfo **kmeans_info)
       kmeans_info[i]=(KmeansInfo *) RelinquishMagickMemory(kmeans_info[i]);
   kmeans_info=(KmeansInfo **) RelinquishMagickMemory(kmeans_info);
   return(kmeans_info);
+}
+
+static int DominantColorCompare(const void *x,const void *y)
+{
+  PixelInfo
+    *pixel_1,
+    *pixel_2;
+
+  pixel_1=(PixelInfo *) x;
+  pixel_2=(PixelInfo *) y;
+  return((int) pixel_2->count-(int) pixel_1->count);
 }
 
 static KmeansInfo **AcquireKmeansTLS(const size_t number_colors)
@@ -2459,11 +2472,17 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
   CacheView
     *image_view;
 
+  char
+    tuple[MagickPathExtent];
+
   const char
     *colors;
 
   double
     previous_tolerance;
+
+  Image
+    *dominant_image;
 
   KmeansInfo
     **kmeans_pixels;
@@ -2472,18 +2491,20 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
     verbose,
     status;
 
-  ssize_t
-    n;
-
   size_t
     number_threads;
 
+  ssize_t
+    n;
+
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
+  if (max_iterations == 0)
+    return(MagickFalse);
   colors=GetImageArtifact(image,"kmeans:seed-colors");
   if (colors == (const char *) NULL)
     {
@@ -2503,7 +2524,7 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
       quantize_info->colorspace=image->colorspace;
       quantize_info->number_colors=number_colors;
       quantize_info->dither_method=NoDitherMethod;
-      n=number_colors;
+      n=(ssize_t) number_colors;
       for (depth=1; n != 0; depth++)
         n>>=2;
       cube_info=GetCubeInfo(quantize_info,depth,number_colors);
@@ -2590,7 +2611,7 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
   previous_tolerance=0.0;
-  verbose=IsStringTrue(GetImageArtifact(image,"debug"));
+  verbose=IsStringTrue(GetImageArtifact(image,"verbose"));
   number_threads=(size_t) GetMagickResourceLimit(ThreadResource);
   image_view=AcquireAuthenticCacheView(image,exception);
   for (n=0; n < (ssize_t) max_iterations; n++)
@@ -2710,12 +2731,13 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
         image->colormap[j].alpha=gamma*QuantumRange*kmeans_pixels[0][j].alpha;
       if (image->colorspace == CMYKColorspace)
         image->colormap[j].black=gamma*QuantumRange*kmeans_pixels[0][j].black;
+      image->colormap[j].count=(MagickSizeType) kmeans_pixels[0][j].count;
       distortion+=kmeans_pixels[0][j].distortion;
     }
-    if (verbose != MagickFalse)
-      (void) FormatLocaleFile(stderr,"distortion[%.20g]: %*g %*g\n",(double) n,
-        GetMagickPrecision(),distortion,GetMagickPrecision(),
-        fabs(distortion-previous_tolerance));
+    if (image->debug != MagickFalse)
+      (void) LogMagickEvent(ImageEvent,GetMagickModule(),
+        "distortion[%.20g]: %*g %*g\n",(double) n,GetMagickPrecision(),
+        distortion,GetMagickPrecision(),fabs(distortion-previous_tolerance));
     if (fabs(distortion-previous_tolerance) <= tolerance)
       break;
     previous_tolerance=distortion;
@@ -2731,6 +2753,25 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
       }
   }
   image_view=DestroyCacheView(image_view);
+  if (verbose != MagickFalse)
+    for (n=0; n < (ssize_t) image->colors; n++)
+    {
+      GetColorTuple(image->colormap+n,MagickTrue,tuple);
+      (void) FormatLocaleFile(stderr,"%s %.20g\n",tuple,(double)
+        image->colormap[n].count);
+    }
+  dominant_image=CloneImage(image,0,0,MagickTrue,exception);
+  if (dominant_image != (Image *) NULL)
+    {
+      /*
+        Note dominant color.
+      */
+      qsort((void *) dominant_image->colormap,dominant_image->colors,
+        sizeof(*dominant_image->colormap),DominantColorCompare);
+      GetColorTuple(dominant_image->colormap,MagickTrue,tuple);
+      dominant_image=DestroyImage(dominant_image);
+      (void) SetImageProperty(image,"dominant-color",tuple,exception);
+    }
   kmeans_pixels=DestroyKmeansTLS(kmeans_pixels);
   if (image->progress_monitor != (MagickProgressMonitor) NULL)
     (void) SetImageProgress(image,KmeansImageTag,(MagickOffsetType)
@@ -2810,10 +2851,10 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->storage_class == PseudoClass)
 #if defined(MAGICKCORE_OPENMP_SUPPORT)
     #pragma omp parallel for schedule(static) shared(progress,status) \
@@ -3104,10 +3145,10 @@ MagickExport MagickBooleanType QuantizeImage(const QuantizeInfo *quantize_info,
   assert(quantize_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   maximum_colors=quantize_info->number_colors;
   if (maximum_colors == 0)
     maximum_colors=MaxColormapSize;
@@ -3214,10 +3255,10 @@ MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
   assert(quantize_info->signature == MagickCoreSignature);
   assert(images != (Image *) NULL);
   assert(images->signature == MagickCoreSignature);
-  if (images->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   if (GetNextImageInList(images) == (Image *) NULL)
     {
       /*
@@ -3573,17 +3614,18 @@ MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(remap_image != (Image *) NULL);
   assert(remap_image->signature == MagickCoreSignature);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cube_info=GetCubeInfo(quantize_info,MaxTreeDepth,
     quantize_info->number_colors);
   if (cube_info == (CubeInfo *) NULL)
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
+  cube_info->quantize_info->colorspace=remap_image->colorspace;
   status=ClassifyImageColors(cube_info,remap_image,exception);
   if (status != MagickFalse)
     {
@@ -3641,10 +3683,10 @@ MagickExport MagickBooleanType RemapImages(const QuantizeInfo *quantize_info,
 
   assert(images != (Image *) NULL);
   assert(images->signature == MagickCoreSignature);
-  if (images->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",images->filename);
   image=images;
   if (remap_image == (Image *) NULL)
     {

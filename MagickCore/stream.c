@@ -17,7 +17,7 @@
 %                                 March 2000                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2000 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -64,7 +64,7 @@
 #include "MagickCore/string_.h"
 
 /*
-  Typedef declaractions.
+  Typedef declarations.
 */
 struct _StreamInfo
 {
@@ -127,9 +127,6 @@ static Quantum
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
-
-static ssize_t
-  cache_anonymous_memory = (-1);
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -204,14 +201,17 @@ static inline void RelinquishStreamPixels(CacheInfo *cache_info)
   if (cache_info->pixels != (Quantum *) NULL)
     {
       if (cache_info->mapped == MagickFalse)
-        (void) RelinquishAlignedMemory(cache_info->pixels);
+        cache_info->pixels=(Quantum *) RelinquishAlignedMemory(
+          cache_info->pixels);
       else
-        (void) UnmapBlob(cache_info->pixels,(size_t) cache_info->length);
+        {
+          (void) UnmapBlob(cache_info->pixels,(size_t) cache_info->length);
+          cache_info->pixels=(Quantum *) NULL;
+        }
     }
-  cache_info->pixels=(Quantum *) NULL;
+  cache_info->mapped=MagickFalse;
   cache_info->metacontent=(void *) NULL;
   cache_info->length=0;
-  cache_info->mapped=MagickFalse;
 }
 
 static void DestroyPixelStream(Image *image)
@@ -224,7 +224,7 @@ static void DestroyPixelStream(Image *image)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cache_info=(CacheInfo *) image->cache;
   assert(cache_info->signature == MagickCoreSignature);
@@ -272,9 +272,10 @@ static void DestroyPixelStream(Image *image)
 */
 MagickExport StreamInfo *DestroyStreamInfo(StreamInfo *stream_info)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(stream_info != (StreamInfo *) NULL);
   assert(stream_info->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (stream_info->map != (char *) NULL)
     stream_info->map=DestroyString(stream_info->map);
   if (stream_info->pixels != (unsigned char *) NULL)
@@ -323,7 +324,7 @@ static void *GetAuthenticMetacontentFromStream(const Image *image)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cache_info=(CacheInfo *) image->cache;
   assert(cache_info->signature == MagickCoreSignature);
@@ -371,7 +372,7 @@ static Quantum *GetAuthenticPixelsStream(Image *image,const ssize_t x,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   pixels=QueueAuthenticPixelsStream(image,x,y,columns,rows,exception);
   return(pixels);
@@ -407,7 +408,7 @@ static Quantum *GetAuthenticPixelsFromStream(const Image *image)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cache_info=(CacheInfo *) image->cache;
   assert(cache_info->signature == MagickCoreSignature);
@@ -601,7 +602,7 @@ static const Quantum *GetVirtualPixelsStream(const Image *image)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cache_info=(CacheInfo *) image->cache;
   assert(cache_info->signature == MagickCoreSignature);
@@ -639,7 +640,7 @@ static const void *GetVirtualMetacontentFromStream(const Image *image)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cache_info=(CacheInfo *) image->cache;
   assert(cache_info->signature == MagickCoreSignature);
@@ -687,46 +688,11 @@ static inline MagickBooleanType AcquireStreamPixels(CacheInfo *cache_info,
 {
   if (cache_info->length != (MagickSizeType) ((size_t) cache_info->length))
     return(MagickFalse);
-  if (cache_anonymous_memory < 0)
-    {
-      char
-        *value;
-
-      /*
-        Does the security policy require anonymous mapping for pixel cache?
-      */
-      cache_anonymous_memory=0;
-      value=GetPolicyValue("pixel-cache-memory");
-      if (value == (char *) NULL)
-        value=GetPolicyValue("cache:memory-map");
-      if (LocaleCompare(value,"anonymous") == 0)
-        {
-#if defined(MAGICKCORE_HAVE_MMAP) && defined(MAP_ANONYMOUS)
-          cache_anonymous_memory=1;
-#else
-          (void) ThrowMagickException(exception,GetMagickModule(),
-            MissingDelegateError,"DelegateLibrarySupportNotBuiltIn",
-            "'%s' (policy requires anonymous memory mapping)",
-            cache_info->filename);
-#endif
-        }
-      value=DestroyString(value);
-    }
-   if (cache_anonymous_memory <= 0)
-     {
-       cache_info->mapped=MagickFalse;
-       cache_info->pixels=(Quantum *) MagickAssumeAligned(
-         AcquireAlignedMemory(1,(size_t) cache_info->length));
-       if (cache_info->pixels != (Quantum *) NULL)
-         (void) memset(cache_info->pixels,0,(size_t) cache_info->length);
-     }
-   else
-     {
-       cache_info->mapped=MagickTrue;
-       cache_info->pixels=(Quantum *) MapBlob(-1,IOMode,0,(size_t)
-         cache_info->length);
-     }
-  if (cache_info->pixels == (Quantum *) NULL)
+  cache_info->pixels=(Quantum *) MagickAssumeAligned(AcquireAlignedMemory(1,
+    (size_t) cache_info->length));
+  if (cache_info->pixels != (Quantum *) NULL)
+    (void) memset(cache_info->pixels,0,(size_t) cache_info->length);
+  else
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
         ResourceLimitError,"MemoryAllocationFailed","`%s'",
@@ -760,7 +726,7 @@ static const Quantum *GetVirtualPixelStream(const Image *image,
   */
   assert(image != (const Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if ((x < 0) || (y < 0) ||
       ((x+(ssize_t) columns) > (ssize_t) image->columns) ||
@@ -1056,11 +1022,11 @@ MagickExport Image *ReadStream(const ImageInfo *image_info,StreamHandler stream,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   read_info=CloneImageInfo(image_info);
   read_info->cache=AcquirePixelCache(0);
   GetPixelCacheMethods(&cache_methods);
@@ -1110,7 +1076,6 @@ MagickExport Image *ReadStream(const ImageInfo *image_info,StreamHandler stream,
 */
 MagickPrivate void ResetStreamAnonymousMemory(void)
 {
-  cache_anonymous_memory=0;
 }
 
 /*
@@ -1193,7 +1158,7 @@ MagickExport void SetStreamInfoMap(StreamInfo *stream_info,const char *map)
 %  The format of the SetStreamInfoStorageType method is:
 %
 %      void SetStreamInfoStorageType(StreamInfo *stream_info,
-%        const StoreageType *storage_type)
+%        const StorageType *storage_type)
 %
 %  A description of each parameter follows:
 %
@@ -1344,12 +1309,12 @@ MagickExport Image *StreamImage(const ImageInfo *image_info,
 
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(stream_info != (StreamInfo *) NULL);
   assert(stream_info->signature == MagickCoreSignature);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   read_info=CloneImageInfo(image_info);
   stream_info->image_info=image_info;
   stream_info->quantum_info=AcquireQuantumInfo(image_info,(Image *) NULL);
@@ -1421,7 +1386,7 @@ static MagickBooleanType StreamImagePixels(const StreamInfo *stream_info,
   assert(stream_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   length=strlen(stream_info->map);
   quantum_map=(QuantumType *) AcquireQuantumMemory(length,sizeof(*quantum_map));
@@ -2794,7 +2759,7 @@ static MagickBooleanType SyncAuthenticPixelsStream(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   cache_info=(CacheInfo *) image->cache;
   assert(cache_info->signature == MagickCoreSignature);
@@ -2848,7 +2813,7 @@ MagickExport MagickBooleanType WriteStream(const ImageInfo *image_info,
 
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
   assert(image != (Image *) NULL);

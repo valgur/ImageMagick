@@ -143,11 +143,16 @@ static Image *ReadHDRImage(const ImageInfo *image_info,ExceptionInfo *exception)
   double
     gamma;
 
+  float
+    chromaticity[6],
+    white_point[2];
+
   Image
     *image;
 
   int
-    c;
+    c,
+    chromaticity_count = 0;
 
   MagickBooleanType
     status,
@@ -173,11 +178,11 @@ static Image *ReadHDRImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -311,28 +316,10 @@ static Image *ReadHDRImage(const ImageInfo *image_info,ExceptionInfo *exception)
             {
               if (LocaleCompare(keyword,"primaries") == 0)
                 {
-                  float
-                    chromaticity[6],
-                    white_point[2];
-
-                  int
-                    count;
-
-                  count=sscanf(value,"%g %g %g %g %g %g %g %g",&chromaticity[0],
-                    &chromaticity[1],&chromaticity[2],&chromaticity[3],
-                    &chromaticity[4],&chromaticity[5],&white_point[0],
-                    &white_point[1]);
-                  if (count == 8)
-                    {
-                      image->chromaticity.red_primary.x=chromaticity[0];
-                      image->chromaticity.red_primary.y=chromaticity[1];
-                      image->chromaticity.green_primary.x=chromaticity[2];
-                      image->chromaticity.green_primary.y=chromaticity[3];
-                      image->chromaticity.blue_primary.x=chromaticity[4];
-                      image->chromaticity.blue_primary.y=chromaticity[5];
-                      image->chromaticity.white_point.x=white_point[0],
-                      image->chromaticity.white_point.y=white_point[1];
-                    }
+                  chromaticity_count=sscanf(value,"%g %g %g %g %g %g %g %g",
+                    &chromaticity[0],&chromaticity[1],&chromaticity[2],
+                    &chromaticity[3],&chromaticity[4],&chromaticity[5],
+                    &white_point[0],&white_point[1]);
                   break;
                 }
               (void) FormatLocaleString(tag,MagickPathExtent,"hdr:%s",keyword);
@@ -374,14 +361,25 @@ static Image *ReadHDRImage(const ImageInfo *image_info,ExceptionInfo *exception)
       while (isspace((int) ((unsigned char) c)) != 0)
         c=ReadBlobByte(image);
   }
-  if ((LocaleCompare(format,"32-bit_rle_rgbe") != 0) &&
-      (LocaleCompare(format,"32-bit_rle_xyze") != 0))
-    ThrowReaderException(CorruptImageError,"ImproperImageHeader");
   if ((image->columns == 0) || (image->rows == 0))
     ThrowReaderException(CorruptImageError,"NegativeOrZeroImageSize");
-  (void) SetImageColorspace(image,RGBColorspace,exception);
-  if (LocaleCompare(format,"32-bit_rle_xyze") == 0)
+  if (LocaleCompare(format,"32-bit_rle_rgbe") == 0)
+    (void) SetImageColorspace(image,RGBColorspace,exception);
+  else if (LocaleCompare(format,"32-bit_rle_xyze") == 0)
     (void) SetImageColorspace(image,XYZColorspace,exception);
+  else
+    ThrowReaderException(CorruptImageError,"ImproperImageHeader");
+  if (chromaticity_count == 8)
+    {
+      image->chromaticity.red_primary.x=chromaticity[0];
+      image->chromaticity.red_primary.y=chromaticity[1];
+      image->chromaticity.green_primary.x=chromaticity[2];
+      image->chromaticity.green_primary.y=chromaticity[3];
+      image->chromaticity.blue_primary.x=chromaticity[4];
+      image->chromaticity.blue_primary.y=chromaticity[5];
+      image->chromaticity.white_point.x=white_point[0];
+      image->chromaticity.white_point.y=white_point[1];
+    }
   image->compression=(image->columns < 8) || (image->columns > 0x7ffff) ?
     NoCompression : RLECompression;
   if (image_info->ping != MagickFalse)
@@ -579,7 +577,7 @@ ModuleExport void UnregisterHDRImage(void)
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  WriteHDRImage() writes an image in the Radience RGBE image format.
+%  WriteHDRImage() writes an image in the Radiance RGBE image format.
 %
 %  The format of the WriteHDRImage method is:
 %
@@ -695,10 +693,10 @@ static MagickBooleanType WriteHDRImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);

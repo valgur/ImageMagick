@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,18 +87,40 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="module.html#AcquireModuleInfo">AcquireModuleInfo</a></li>
+  <li><a href="module.html#DestroyModuleList">DestroyModuleList</a></li>
+  <li><a href="module.html#GetModuleInfo">GetModuleInfo</a></li>
+  <li><a href="module.html#GetModuleInfoList">GetModuleInfoList</a></li>
+  <li><a href="module.html#GetModuleList">GetModuleList</a></li>
+  <li><a href="module.html#GetMagickModulePath">GetMagickModulePath</a></li>
+  <li><a href="module.html#IsModuleTreeInstantiated">IsModuleTreeInstantiated</a></li>
+  <li><a href="module.html#InvokeDynamicImageFilter">InvokeDynamicImageFilter</a></li>
+  <li><a href="module.html#ListModuleInfo">ListModuleInfo</a></li>
+  <li><a href="module.html#OpenModule">OpenModule</a></li>
+  <li><a href="module.html#OpenModules">OpenModules</a></li>
+  <li><a href="module.html#RegisterModule">RegisterModule</a></li>
+  <li><a href="module.html#TagToCoderModuleName">TagToCoderModuleName</a></li>
+  <li><a href="module.html#TagToFilterModuleName">TagToFilterModuleName</a></li>
+  <li><a href="module.html#TagToModuleName">TagToModuleName</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="module.html#AcquireModuleInfo">AcquireModuleInfo</a> &#8226; <a href="module.html#DestroyModuleList">DestroyModuleList</a> &#8226; <a href="module.html#GetModuleInfo">GetModuleInfo</a> &#8226; <a href="module.html#GetModuleInfoList">GetModuleInfoList</a> &#8226; <a href="module.html#GetModuleList">GetModuleList</a> &#8226; <a href="module.html#GetMagickModulePath">GetMagickModulePath</a> &#8226; <a href="module.html#IsModuleTreeInstantiated">IsModuleTreeInstantiated</a> &#8226; <a href="module.html#InvokeDynamicImageFilter">InvokeDynamicImageFilter</a> &#8226; <a href="module.html#ListModuleInfo">ListModuleInfo</a> &#8226; <a href="module.html#OpenModule">OpenModule</a> &#8226; <a href="module.html#OpenModules">OpenModules</a> &#8226; <a href="module.html#RegisterModule">RegisterModule</a> &#8226; <a href="module.html#TagToCoderModuleName">TagToCoderModuleName</a> &#8226; <a href="module.html#TagToFilterModuleName">TagToFilterModuleName</a> &#8226; <a href="module.html#TagToModuleName">TagToModuleName</a> &#8226; <a href="module.html#UnregisterModule">UnregisterModule</a></p>
-
 <h2><a href="../../api/MagickCore/module_8c.html" id="AcquireModuleInfo">AcquireModuleInfo</a></h2>
 
 <p>AcquireModuleInfo() allocates the ModuleInfo structure.</p>
 
 <p>The format of the AcquireModuleInfo method is:</p>
 
-<pre class="text">
-ModuleInfo *AcquireModuleInfo(const char *path,const char *tag)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>ModuleInfo *AcquireModuleInfo(const char *path,const char *tag)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -125,9 +144,8 @@ ModuleInfo *AcquireModuleInfo(const char *path,const char *tag)
 
 <p>The format of the DestroyModuleList module is:</p>
 
-<pre class="text">
-void DestroyModuleList(void)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>void DestroyModuleList(void)
+</samp></pre>
 
 <h2><a href="../../api/MagickCore/module_8c.html" id="GetModuleInfo">GetModuleInfo</a></h2>
 
@@ -135,9 +153,8 @@ void DestroyModuleList(void)
 
 <p>The format of the GetModuleInfo module is:</p>
 
-<pre class="text">
-ModuleInfo *GetModuleInfo(const char *tag,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>ModuleInfo *GetModuleInfo(const char *tag,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -161,10 +178,9 @@ ModuleInfo *GetModuleInfo(const char *tag,ExceptionInfo *exception)
 
 <p>The format of the GetModuleInfoList function is:</p>
 
-<pre class="text">
-const ModuleInfo **GetModuleInfoList(const char *pattern,
+<pre class="bg-light text-dark mx-4"><samp>const ModuleInfo **GetModuleInfoList(const char *pattern,
   size_t *number_modules,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -192,10 +208,9 @@ const ModuleInfo **GetModuleInfoList(const char *pattern,
 
 <p>The format of the GetModuleList function is:</p>
 
-<pre class="text">
-char **GetModuleList(const char *pattern,const MagickModuleType type,
+<pre class="bg-light text-dark mx-4"><samp>char **GetModuleList(const char *pattern,const MagickModuleType type,
   size_t *number_modules,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -227,10 +242,9 @@ char **GetModuleList(const char *pattern,const MagickModuleType type,
 
 <p>The format of the GetMagickModulePath module is:</p>
 
-<pre class="text">
-MagickBooleanType GetMagickModulePath(const char *filename,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType GetMagickModulePath(const char *filename,
   MagickModuleType module_type,char *path,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -262,9 +276,8 @@ MagickBooleanType GetMagickModulePath(const char *filename,
 
 <p>The format of the IsModuleTreeInstantiated() method is:</p>
 
-<pre class="text">
-IsModuleTreeInstantiated()
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>IsModuleTreeInstantiated()
+</samp></pre>
 
 <h2><a href="../../api/MagickCore/module_8c.html" id="InvokeDynamicImageFilter">InvokeDynamicImageFilter</a></h2>
 
@@ -272,10 +285,9 @@ IsModuleTreeInstantiated()
 
 <p>The format of the InvokeDynamicImageFilter module is:</p>
 
-<pre class="text">
-MagickBooleanType InvokeDynamicImageFilter(const char *tag,Image **image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType InvokeDynamicImageFilter(const char *tag,Image **image,
   const int argc,const char **argv,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -311,9 +323,8 @@ MagickBooleanType InvokeDynamicImageFilter(const char *tag,Image **image,
 
 <p>The format of the ListModuleInfo module is:</p>
 
-<pre class="text">
-MagickBooleanType ListModuleInfo(FILE *file,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType ListModuleInfo(FILE *file,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows.</p>
 
@@ -329,9 +340,8 @@ MagickBooleanType ListModuleInfo(FILE *file,ExceptionInfo *exception)
 
 <p>The format of the OpenModule module is:</p>
 
-<pre class="text">
-MagickBooleanType OpenModule(const char *module,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType OpenModule(const char *module,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -355,9 +365,8 @@ MagickBooleanType OpenModule(const char *module,ExceptionInfo *exception)
 
 <p>The format of the OpenModules module is:</p>
 
-<pre class="text">
-MagickBooleanType OpenModules(ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType OpenModules(ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -377,10 +386,9 @@ MagickBooleanType OpenModules(ExceptionInfo *exception)
 
 <p>The format of the RegisterModule module is:</p>
 
-<pre class="text">
-ModuleInfo *RegisterModule(const ModuleInfo *module_info,
+<pre class="bg-light text-dark mx-4"><samp>ModuleInfo *RegisterModule(const ModuleInfo *module_info,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -408,9 +416,8 @@ ModuleInfo *RegisterModule(const ModuleInfo *module_info,
 
 <p>The format of the TagToCoderModuleName module is:</p>
 
-<pre class="text">
-char *TagToCoderModuleName(const char *tag,char *name)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>char *TagToCoderModuleName(const char *tag,char *name)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -434,9 +441,8 @@ char *TagToCoderModuleName(const char *tag,char *name)
 
 <p>The format of the TagToFilterModuleName module is:</p>
 
-<pre class="text">
-void TagToFilterModuleName(const char *tag,char name)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>void TagToFilterModuleName(const char *tag,char name)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -460,9 +466,8 @@ void TagToFilterModuleName(const char *tag,char name)
 
 <p>The format of the TagToModuleName module is:</p>
 
-<pre class="text">
-TagToModuleName(const char *tag,const char *format,char *module)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>TagToModuleName(const char *tag,const char *format,char *module)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -490,10 +495,9 @@ TagToModuleName(const char *tag,const char *format,char *module)
 
 <p>The format of the UnregisterModule module is:</p>
 
-<pre class="text">
-MagickBooleanType UnregisterModule(const ModuleInfo *module_info,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType UnregisterModule(const ModuleInfo *module_info,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

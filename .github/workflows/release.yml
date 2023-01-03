@@ -4,18 +4,50 @@ on:
     branches:
     - main
     paths:
-    - 'ChangeLog.md'
+    - 'configure'
+    - 'm4/version.m4'
 
 name: release
 jobs:
+  change_log:
+    name: 'Create ChangeLog.md'
+    container:
+      image: node:18
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: npm install -g auto-changelog
+
+    - name: Create ChangeLog.md
+      run: |
+        export NEXT_VERSION=$(grep -oP "PACKAGE_VERSION='\K[0-9\.-]*" configure)
+        git tag $NEXT_VERSION
+        auto-changelog --sort-commits date
+        mkdir artifacts
+        mv ChangeLog.md artifacts/ChangeLog.md
+
+    - name: Upload ChangeLog.md
+      uses: actions/upload-artifact@v3
+      with:
+        name: ChangeLog
+        path: artifacts
+
   release_windows_installer:
     name: 'Windows ${{matrix.quantum}}${{matrix.hdri_flag}}-${{matrix.platform}} (${{matrix.type}})'
+    needs:
+      - change_log
     runs-on: windows-2022
 
     strategy:
       fail-fast: false
       matrix:
-        platform: [ x64, x86 ]
+        platform: [ x64, arm64, x86 ]
         type: [ dll, static ]
         quantum: [ Q8, Q16 ]
         hdri: [ HDRI, noHDRI ]
@@ -24,6 +56,8 @@ jobs:
             hdri: HDRI
         include:
           - platform: x64
+            bit: 64
+          - platform: arm64
             bit: 64
           - platform: x86
             bit: 32
@@ -35,33 +69,38 @@ jobs:
             hdri_flag: '-HDRI'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         repository: ImageMagick/ImageMagick-Windows
         path: ImageMagick-Windows
         ref: refs/heads/main
-        fetch-depth: 1
 
     - name: Clone repositories
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows
+        cd ImageMagick-Windows
         CloneRepositories.cmd https://github.com/ImageMagick shallow
+
+    - name: Download ChangeLog.md
+      uses: actions/download-artifact@v3
+      with:
+        name: ChangeLog
+        path: ImageMagick-Windows\ImageMagick
 
     - name: Download FFmpeg
       shell: cmd
       run: |
         powershell Invoke-WebRequest -Uri https://github.com/ImageMagick/ImageMagick-Windows/releases/download/20200615/ffmpeg-4.2.3-win${{matrix.bit}}.exe -OutFile ffmpeg.exe
-        copy /Y ffmpeg.exe %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\bin
+        copy /Y ffmpeg.exe ImageMagick-Windows\VisualMagick\bin
 
     - name: Download hp2xx
       shell: cmd
       run: |
         powershell Invoke-WebRequest -Uri https://github.com/ImageMagick/ImageMagick-Windows/releases/download/20200615/hp2xx.exe -OutFile hp2xx.exe
-        copy /Y hp2xx.exe %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\bin
+        copy /Y hp2xx.exe ImageMagick-Windows\VisualMagick\bin
 
     - name: Install Strawberry Perl
-      if: ${{matrix.type == 'dll'}}
+      if: ${{matrix.type == 'dll' && matrix.platform != 'arm64'}}
       shell: cmd
       run: |
         powershell Invoke-WebRequest -Uri https://github.com/ImageMagick/ImageMagick-Windows/releases/download/20200615/strawberry-perl-5.30.2.1-${{matrix.bit}}bit.msi -OutFile strawberry-perl-5.30.2.1-${{matrix.bit}}bit.msi
@@ -78,30 +117,30 @@ jobs:
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         msbuild configure.2022.sln /m /t:Rebuild /p:Configuration=Release,Platform=x64
 
     - name: Configure ImageMagick
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         configure.exe /noWizard /VS2022 /includeOptional /installedSupport /deprecated /${{matrix.hdri}} /${{matrix.quantum}} /${{matrix.platform}} /${{matrix.type_flag}}
 
     - name: Build ImageMagick
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick
+        cd ImageMagick-Windows\VisualMagick
         set /p solution=<solution
         msbuild %solution% /m /t:Rebuild /p:Configuration=Release,Platform=${{matrix.platform}}
 
     - name: Build PerlMagick
-      if: ${{matrix.type == 'dll'}}
+      if: ${{matrix.type == 'dll' && matrix.platform != 'arm64'}}
       shell: cmd
       run: |
         set PATH=
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\ImageMagick\PerlMagick
+        cd ImageMagick-Windows\ImageMagick\PerlMagick
         set PATH=%PATH%;C:\Strawberry${{matrix.bit}}\c\bin;C:\Strawberry${{matrix.bit}}\perl\site\bin;C:\Strawberry${{matrix.bit}}\perl\bin;C:\WINDOWS\System32\WindowsPowerShell\v1.0
         perl "Makefile.PL" "MAKE=nmake"
         nmake
@@ -111,62 +150,73 @@ jobs:
       uses: dlemstra/code-sign-action@v1
       with:
         certificate: '${{ secrets.CERTIFICATE }}'
+        password: '${{ secrets.CERTIFICATE_PASSWORD }}'
         folder: 'ImageMagick-Windows\VisualMagick\bin'
 
     - name: Create installer
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\installer\im-${{matrix.platform}}${{matrix.hdri_flag}}-${{matrix.type}}-${{matrix.quantum}}.iss
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe" ImageMagick-Windows\VisualMagick\installer\im-${{matrix.platform}}${{matrix.hdri_flag}}-${{matrix.type}}-${{matrix.quantum}}.iss
 
     - name: Sign installer
       uses: dlemstra/code-sign-action@v1
       with:
         certificate: '${{ secrets.CERTIFICATE }}'
+        password: '${{ secrets.CERTIFICATE_PASSWORD }}'
         folder: 'ImageMagick-Windows\VisualMagick\installer\output'
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: installers
         path: 'ImageMagick-Windows\VisualMagick\installer\output'
 
   release_windows_source:
     name: 'Windows source'
+    needs:
+      - change_log
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         repository: ImageMagick/ImageMagick-Windows
         path: ImageMagick-Windows
         ref: refs/heads/main
-        fetch-depth: 1
 
     - name: Clone repositories
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows
+        cd ImageMagick-Windows
         CloneRepositories.cmd https://github.com/ImageMagick source
+
+    - name: Download ChangeLog.md
+      uses: actions/download-artifact@v3
+      with:
+        name: ChangeLog
+        path: ImageMagick-Windows\ImageMagick
 
     - name: Create source archive
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows
+        cd ImageMagick-Windows
         7z a ImageMagick-Windows.7z .\source\*
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: ImageMagick-Windows
         path: 'ImageMagick-Windows\ImageMagick-Windows.7z'
 
   release_windows_portable:
     name: 'Windows portable ${{matrix.quantum}}${{matrix.hdri_flag}}-${{matrix.platform}}'
+    needs:
+      - change_log
     runs-on: windows-2022
 
     strategy:
       fail-fast: false
       matrix:
-        platform: [ x64, x86 ]
+        platform: [ x64, arm64, x86 ]
         quantum: [ Q8, Q16 ]
         hdri: [ HDRI, noHDRI ]
         exclude:
@@ -175,56 +225,64 @@ jobs:
         include:
           - platform: x64
             bit: 64
+          - platform: arm64
+            bit: 64
           - platform: x86
             bit: 32
           - hdri: HDRI
             hdri_flag: '-HDRI'
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         repository: ImageMagick/ImageMagick-Windows
         path: ImageMagick-Windows
         ref: refs/heads/main
-        fetch-depth: 1
 
     - name: Clone repositories
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows
+        cd ImageMagick-Windows
         CloneRepositories.cmd https://github.com/ImageMagick shallow
 
-    - name: Install FFmpeg
+    - name: Download ChangeLog.md
+      uses: actions/download-artifact@v3
+      with:
+        name: ChangeLog
+        path: ImageMagick-Windows\ImageMagick
+
+    - name: Download FFmpeg
       shell: cmd
       run: |
         powershell Invoke-WebRequest -Uri https://github.com/ImageMagick/ImageMagick-Windows/releases/download/20200615/ffmpeg-4.2.3-win${{matrix.bit}}.exe -OutFile ffmpeg.exe
-        copy /Y ffmpeg.exe %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\bin
+        copy /Y ffmpeg.exe ImageMagick-Windows\VisualMagick\bin
 
     - name: Build configure
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         msbuild configure.2022.sln /m /t:Rebuild /p:Configuration=Release,Platform=x64
 
     - name: Configure ImageMagick
       shell: cmd
       run: |
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick\configure
+        cd ImageMagick-Windows\VisualMagick\configure
         configure.exe /noWizard /VS2022 /noOpenMP /${{matrix.hdri}} /${{matrix.quantum}} /${{matrix.platform}} /smt
 
     - name: Build ImageMagick
       shell: cmd
       run: |
         call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
-        cd %GITHUB_WORKSPACE%\ImageMagick-Windows\VisualMagick
+        cd ImageMagick-Windows\VisualMagick
         set /p solution=<solution
         msbuild %solution% /m /t:Rebuild /p:Configuration=Release,Platform=${{matrix.platform}}
 
-    - name: Sign exectables
+    - name: Sign executables
       uses: dlemstra/code-sign-action@v1
       with:
         certificate: '${{ secrets.CERTIFICATE }}'
+        password: '${{ secrets.CERTIFICATE_PASSWORD }}'
         folder: 'ImageMagick-Windows\VisualMagick\bin'
 
     - name: Copy Files
@@ -253,12 +311,13 @@ jobs:
         Copy-Item "ImageMagick-Windows\VisualMagick\NOTICE.txt" "portable"
         Copy-Item "ImageMagick-Windows\ImageMagick\README.txt" "portable"
 
-        $version = (cat "ImageMagick-Windows\VisualMagick\installer\inc\version.isx" | Select-String "MagickPackageVersion") | Out-String
+        $version = (cat "ImageMagick-Windows\VisualMagick\installer\inc\version.isx" | Select-String "MagickPackageFullVersionText") | Out-String
         $version = ($version | Select-String '".*"' -AllMatches |  Select -Expand Matches | Select -Expand Value | Out-String)
         $version = $version -Replace "`n|`r|""",""
+        $version = $version -Replace " ","-"
         Write-Host "::set-output name=version::$version"
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: 'ImageMagick-${{steps.package.outputs.version}}-portable-${{matrix.quantum}}${{matrix.hdri_flag}}-${{matrix.platform}}'
         path: portable

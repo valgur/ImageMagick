@@ -261,7 +261,7 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
   if (comment_info.comment != (char *) NULL)  \
     comment_info.comment=DestroyString(comment_info.comment); \
   if (quantum_info != (QuantumInfo *) NULL) \
-     quantum_info=DestroyQuantumInfo(quantum_info); \
+    quantum_info=DestroyQuantumInfo(quantum_info); \
   ThrowReaderException((exception),(message)); \
 }
 
@@ -314,11 +314,11 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -329,6 +329,7 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
   /*
     Read PNM image.
   */
+  comment_info.comment=(char *) NULL;
   quantum_info=(QuantumInfo *) NULL;
   count=ReadBlob(image,1,(unsigned char *) &format);
   do
@@ -492,7 +493,10 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
     status=SetImageExtent(image,image->columns,image->rows,exception);
     if (status == MagickFalse)
       {
-        comment_info.comment=DestroyString(comment_info.comment);
+        if (comment_info.comment != (char *) NULL)
+          comment_info.comment=DestroyString(comment_info.comment);
+        if (quantum_info != (QuantumInfo *) NULL)
+          quantum_info=DestroyQuantumInfo(quantum_info);
         return(DestroyImageList(image));
       }
     if (colorspace != UndefinedColorspace)
@@ -1632,6 +1636,10 @@ static Image *ReadPNMImage(const ImageInfo *image_info,ExceptionInfo *exception)
       }
   } while ((count == 1) && (format == 'P'));
   (void) CloseBlob(image);
+  if (comment_info.comment != (char *) NULL)
+    comment_info.comment=DestroyString(comment_info.comment);
+  if (quantum_info != (QuantumInfo *) NULL)
+    quantum_info=DestroyQuantumInfo(quantum_info);
   if (status == MagickFalse)
     return(DestroyImageList(image));
   return(GetFirstImageInList(image));
@@ -1796,17 +1804,17 @@ static MagickBooleanType WritePNMImage(const ImageInfo *image_info,Image *image,
   QuantumType
     quantum_type;
 
-  unsigned char
-    *q;
-
   size_t
     extent,
-    imageListLength,
+    number_scenes,
     packet_size;
 
   ssize_t
     count,
     y;
+
+  unsigned char
+    *q;
 
   /*
     Open output image file.
@@ -1815,15 +1823,15 @@ static MagickBooleanType WritePNMImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     QuantumAny
@@ -1965,7 +1973,7 @@ static MagickBooleanType WritePNMImage(const ImageInfo *image_info,Image *image,
           {
             packet_size=1;
             (void) CopyMagickString(type,"GRAYSCALE",MagickPathExtent);
-            if (IdentifyImageMonochrome(image,exception) != MagickFalse)
+            if (GetQuantumRange(image->depth) == 1)
               (void) CopyMagickString(type,"BLACKANDWHITE",MagickPathExtent);
             break;
           }
@@ -2790,7 +2798,7 @@ static MagickBooleanType WritePNMImage(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

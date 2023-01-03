@@ -152,6 +152,7 @@ static MagickBooleanType IsVIDEO(const unsigned char *magick,
 %    o exception: return any errors or warnings in this structure.
 %
 */
+
 static const char *GetIntermediateFormat(const ImageInfo *image_info)
 {
   const char
@@ -189,11 +190,11 @@ static Image *ReadVIDEOImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -257,6 +258,8 @@ static Image *ReadVIDEOImage(const ImageInfo *image_info,
         intermediate_format);
       (void) ConcatenateMagickString(options,command,MagickPathExtent);
       AcquireUniqueFilename(read_info->unique);
+      (void) AcquireUniqueSymbolicLink(image_info->filename,
+        read_info->filename);
       (void) FormatLocaleString(command,MagickPathExtent,
         GetDelegateCommands(delegate_info),read_info->filename,options,
         read_info->unique);
@@ -269,9 +272,11 @@ static Image *ReadVIDEOImage(const ImageInfo *image_info,
         command,message,exception);
       if (exit_code == 0)
         images=ReadImage(read_info,exception);
-      else if (*message != '\0')
-        (void) ThrowMagickException(exception,GetMagickModule(),
-          DelegateError,"VideoDelegateFailed","`%s'",message);
+      else
+        if (*message != '\0')
+          (void) ThrowMagickException(exception,GetMagickModule(),DelegateError,
+            "VideoDelegateFailed","`%s'",message);
+      (void) RelinquishUniqueFileResource(read_info->filename);
       (void) RelinquishUniqueFileResource(read_info->unique);
       if (images != (Image *) NULL)
         for (next=images; next != (Image *) NULL; next=next->next)
@@ -580,10 +585,10 @@ static MagickBooleanType WriteVIDEOImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   /*
     Write intermediate files.
   */

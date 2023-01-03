@@ -17,7 +17,7 @@
 %                               August 2003                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2003 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the license.  You may  %
@@ -80,7 +80,7 @@
 %  An extended string is the string length, plus an extra MagickPathExtent space
 %  to allow for the string to be actively worked on.
 %
-%  The returned string shoud be freed using DestoryString().
+%  The returned string should be freed using DestroyString().
 %
 %  The format of the AcquireString method is:
 %
@@ -233,7 +233,7 @@ MagickExport StringInfo *BlobToStringInfo(const void *blob,const size_t length)
 %  If source is a NULL pointer the destination string will be freed and set to
 %  a NULL pointer.  A pointer to the stored in the destination is also returned.
 %
-%  When finished the non-NULL string should be freed using DestoryString()
+%  When finished the non-NULL string should be freed using DestroyString()
 %  or using CloneString() with a NULL pointed for the source.
 %
 %  The format of the CloneString method is:
@@ -539,7 +539,8 @@ MagickExport void ConcatenateStringInfo(StringInfo *string_info,
       sizeof(*string_info->datum));
   if (string_info->datum == (unsigned char *) NULL)
     ThrowFatalException(ResourceLimitFatalError,"MemoryAllocationFailed");
-  (void) memcpy(string_info->datum+string_info->length,source->datum,source->length);
+  (void) memcpy(string_info->datum+string_info->length,source->datum,
+    source->length);
   string_info->length=length;
 }
 
@@ -664,7 +665,7 @@ MagickExport StringInfo *ConfigureFileToStringInfo(const char *filename)
 %  copies the source string to that memory location.  A NULL string pointer
 %  will allocate an empty string containing just the NUL character.
 %
-%  When finished the string should be freed using DestoryString()
+%  When finished the string should be freed using DestroyString()
 %
 %  The format of the ConstantString method is:
 %
@@ -969,8 +970,9 @@ MagickExport char *FileToString(const char *filename,const size_t extent,
     length;
 
   assert(filename != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   return((char *) FileToBlob(filename,extent,&length,exception));
 }
 
@@ -1008,8 +1010,9 @@ MagickExport StringInfo *FileToStringInfo(const char *filename,
     *string_info;
 
   assert(filename != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   string_info=AcquireStringInfoContainer();
   string_info->path=ConstantString(filename);
   string_info->datum=(unsigned char *) FileToBlob(filename,extent,
@@ -1079,11 +1082,11 @@ MagickExport ssize_t FormatMagickSize(const MagickSizeType size,
   static const char
     *bi_units[] =
     {
-      "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi", (char *) NULL
+      "", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi", "Ri", "Qi", (char *) NULL
     },
     *traditional_units[] =
     {
-      "", "K", "M", "G", "T", "P", "E", "Z", "Y", (char *) NULL
+      "", "K", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q", (char *) NULL
     };
 
   bytes=1000.0;
@@ -1284,18 +1287,18 @@ MagickExport const char *GetStringInfoPath(const StringInfo *string_info)
 %
 %  The format of the InterpretSiPrefixValue method is:
 %
-%      double InterpretSiPrefixValue(const char *value,char **sentinal)
+%      double InterpretSiPrefixValue(const char *value,char **sentinel)
 %
 %  A description of each parameter follows:
 %
 %    o value: the string value.
 %
-%    o sentinal:  if sentinal is not NULL, return a pointer to the character
+%    o sentinel:  if sentinel is not NULL, return a pointer to the character
 %      after the last character used in the conversion.
 %
 */
 MagickExport double InterpretSiPrefixValue(const char *magick_restrict string,
-  char **magick_restrict sentinal)
+  char **magick_restrict sentinel)
 {
   char
     *q;
@@ -1313,6 +1316,8 @@ MagickExport double InterpretSiPrefixValue(const char *magick_restrict string,
 
           switch ((int) ((unsigned char) *q))
           {
+            case 'q': e=(-30.0); break;
+            case 'r': e=(-27.0); break;
             case 'y': e=(-24.0); break;
             case 'z': e=(-21.0); break;
             case 'a': e=(-18.0); break;
@@ -1333,6 +1338,8 @@ MagickExport double InterpretSiPrefixValue(const char *magick_restrict string,
             case 'E': e=18.0; break;
             case 'Z': e=21.0; break;
             case 'Y': e=24.0; break;
+            case 'R': e=27.0; break;
+            case 'Q': e=30.0; break;
             default: e=0.0; break;
           }
           if (e >= MagickEpsilon)
@@ -1352,8 +1359,8 @@ MagickExport double InterpretSiPrefixValue(const char *magick_restrict string,
       if ((*q == 'B') || (*q == 'P'))
         q++;
     }
-  if (sentinal != (char **) NULL)
-    *sentinal=q;
+  if (sentinel != (char **) NULL)
+    *sentinel=q;
   return(value);
 }
 
@@ -2111,7 +2118,7 @@ MagickExport char **StringToArgv(const char *text,int *argc)
 %
 %  StringToArrayOfDoubles() converts a string of space or comma separated
 %  numbers into array of floating point numbers (doubles). Any number that
-%  failes to parse properly will produce a syntax error. As will two commas
+%  fails to parse properly will produce a syntax error. As will two commas
 %  without a  number between them.  However a final comma at the end will
 %  not be regarded as an error so as to simplify automatic list generation.
 %

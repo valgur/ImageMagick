@@ -10,7 +10,7 @@
 %                             GGG   IIIII  F                                  %
 %                                                                             %
 %                                                                             %
-%            Read/Write Compuserv Graphics Interchange Format                 %
+%            Read/Write Compuserve Graphics Interchange Format                %
 %                                                                             %
 %                              Software Design                                %
 %                                   Cristy                                    %
@@ -80,7 +80,7 @@
 #define MaximumLZWCode  (1UL << MaximumLZWBits)
 
 /*
-  Typdef declarations.
+  Typedef declarations.
 */
 typedef struct _LZWCodeInfo
 {
@@ -229,10 +229,8 @@ static LZWInfo *AcquireLZWInfo(Image *image,const size_t data_size)
       lzw_info=RelinquishLZWInfo(lzw_info);
       return((LZWInfo *) NULL);
     }
-  (void) memset(lzw_info->table[0],0,MaximumLZWCode*
-    sizeof(**lzw_info->table));
-  (void) memset(lzw_info->table[1],0,MaximumLZWCode*
-    sizeof(**lzw_info->table));
+  (void) memset(lzw_info->table[0],0,MaximumLZWCode*sizeof(**lzw_info->table));
+  (void) memset(lzw_info->table[1],0,MaximumLZWCode*sizeof(**lzw_info->table));
   for (i=0; i <= (ssize_t) lzw_info->maximum_data_value; i++)
   {
     lzw_info->table[0][i]=0;
@@ -418,7 +416,7 @@ static MagickBooleanType DecodeImage(Image *image,const ssize_t opacity,
   */
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   data_size=(unsigned char) ReadBlobByte(image);
   if (data_size > MaximumLZWBits)
@@ -881,7 +879,7 @@ static ssize_t ReadBlobBlock(Image *image,unsigned char *data)
     count;
 
   unsigned char
-    block_count;
+    block_count = 0;
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
@@ -936,7 +934,7 @@ static MagickBooleanType PingGIFImage(Image *image,ExceptionInfo *exception)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (ReadBlob(image,1,&data_size) != 1)
     ThrowBinaryException(CorruptImageError,"CorruptImage",image->filename);
@@ -1008,11 +1006,11 @@ static Image *ReadGIFImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -1284,7 +1282,7 @@ static Image *ReadGIFImage(const ImageInfo *image_info,ExceptionInfo *exception)
     if ((image->columns == 0) || (image->rows == 0))
       ThrowGIFException(CorruptImageError,"NegativeOrZeroImageSize");
     /*
-      Inititialize colormap.
+      Initialize colormap.
     */
     if (AcquireImageColormap(image,image->colors,exception) == MagickFalse)
       ThrowGIFException(ResourceLimitError,"MemoryAllocationFailed");
@@ -1513,11 +1511,11 @@ ModuleExport void UnregisterGIFImage(void)
 static MagickBooleanType WriteGIFImage(const ImageInfo *image_info,Image *image,
   ExceptionInfo *exception)
 {
-  int
-    c;
-
   ImageInfo
     *write_info;
+
+  int
+    c;
 
   MagickBooleanType
     status;
@@ -1528,26 +1526,22 @@ static MagickBooleanType WriteGIFImage(const ImageInfo *image_info,Image *image,
   RectangleInfo
     page;
 
-  ssize_t
-    i;
-
-  unsigned char
-    *q;
-
   size_t
     bits_per_pixel,
     delay,
-    imageListLength,
     length,
+    number_scenes,
     one;
 
   ssize_t
+    i,
     j,
     opacity;
 
   unsigned char
     *colormap,
-    *global_colormap;
+    *global_colormap,
+    *q;
 
   /*
     Open output image file.
@@ -1556,10 +1550,10 @@ static MagickBooleanType WriteGIFImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -1610,7 +1604,7 @@ static MagickBooleanType WriteGIFImage(const ImageInfo *image_info,Image *image,
   */
   scene=0;
   one=1;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     if (IssRGBCompatibleColorspace(image->colorspace) == MagickFalse)
@@ -1939,7 +1933,7 @@ static MagickBooleanType WriteGIFImage(const ImageInfo *image_info,Image *image,
       break;
     image=SyncNextImageInList(image);
     scene++;
-    status=SetImageProgress(image,SaveImagesTag,scene,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene,number_scenes);
     if (status == MagickFalse)
       break;
   } while (write_info->adjoin != MagickFalse);

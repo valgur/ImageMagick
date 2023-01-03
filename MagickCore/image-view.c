@@ -22,7 +22,7 @@
 %                                March 2003                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2003 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -731,7 +731,8 @@ MagickExport ImageView *NewImageView(Image *image,ExceptionInfo *exception)
   image_view->extent.x=0;
   image_view->extent.y=0;
   image_view->exception=AcquireExceptionInfo();
-  image_view->debug=IsEventLogging();
+  image_view->debug=(GetLogEventMask() & ImageEvent) != 0 ? MagickTrue : 
+    MagickFalse;
   image_view->signature=MagickCoreSignature;
   return(image_view);
 }
@@ -785,7 +786,8 @@ MagickExport ImageView *NewImageViewRegion(Image *image,const ssize_t x,
   image_view->extent.x=x;
   image_view->extent.y=y;
   image_view->exception=AcquireExceptionInfo();
-  image_view->debug=IsEventLogging();
+  image_view->debug=(GetLogEventMask() & ImageEvent) != 0 ? MagickTrue : 
+    MagickFalse;
   image_view->signature=MagickCoreSignature;
   return(image_view);
 }
@@ -837,7 +839,7 @@ MagickExport void SetImageViewDescription(ImageView *image_view,
 %  SetImageViewIterator() iterates over the image view in parallel and calls
 %  your set method for each scanline of the view.  The pixel extent is
 %  confined to the image canvas-- that is no negative offsets or widths or
-%  heights that exceed the image dimension.  The pixels are initiallly
+%  heights that exceed the image dimension.  The pixels are initially
 %  undefined and any settings you make in the callback method are automagically
 %  synced back to your image.
 %

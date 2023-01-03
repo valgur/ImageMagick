@@ -381,11 +381,13 @@ static ssize_t parse8BIM(Image *ifile, Image *ofile)
                 recnum = (unsigned int) StringToUnsignedLong(newstr);
                 break;
               case 2:
-                name=(char *) AcquireQuantumMemory(strlen(newstr)+MagickPathExtent,
-                  sizeof(*name));
-                if (name)
-                  (void) strcpy(name,newstr);
+              {
+                size_t extent = strlen(newstr)+MagickPathExtent;
+                name=(char *) AcquireQuantumMemory(extent,sizeof(*name));
+                if (name != (char *) NULL)
+                  (void) CopyMagickString(name,newstr,extent);
                 break;
+              }
             }
             s++;
           }
@@ -1188,11 +1190,11 @@ static Image *ReadMETAImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -2302,7 +2304,7 @@ static MagickBooleanType WriteMETAImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (LocaleCompare(image_info->magick,"8BIM") == 0)
     {

@@ -134,7 +134,6 @@ static MagickBooleanType IdentifyUsage(void)
       "  -ping                efficiently determine image attributes\n"
       "  -precision value     maximum number of significant digits to print\n"
       "  -quiet               suppress all warning messages\n"
-      "  -read-mask filename  associate a read mask with the image\n"
       "  -regard-warnings     pay attention to warning messages\n"
       "  -respect-parentheses settings remain in effect until parenthesis boundary\n"
       "  -sampling-factor geometry\n"
@@ -228,9 +227,9 @@ WandExport MagickBooleanType IdentifyImageCommand(ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (argc == 2)
     {
       option=argv[1];

@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,19 +87,28 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="decorate.html#BorderImage">BorderImage</a></li>
+  <li><a href="decorate.html#FrameImage">FrameImage</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="decorate.html#BorderImage">BorderImage</a> &#8226; <a href="decorate.html#FrameImage">FrameImage</a> &#8226; <a href="decorate.html#RaiseImage">RaiseImage</a></p>
-
 <h2><a href="../../api/MagickCore/decorate_8c.html" id="BorderImage">BorderImage</a></h2>
 
 <p>BorderImage() surrounds the image with a border of the color defined by the bordercolor member of the image structure.  The width and height of the border are defined by the corresponding members of the border_info structure.</p>
 
 <p>The format of the BorderImage method is:</p>
 
-<pre class="text">
-Image *BorderImage(const Image *image,const RectangleInfo *border_info,
+<pre class="bg-light text-dark mx-4"><samp>Image *BorderImage(const Image *image,const RectangleInfo *border_info,
   const CompositeOperator compose,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -134,10 +140,9 @@ Image *BorderImage(const Image *image,const RectangleInfo *border_info,
 
 <p>The format of the FrameImage method is:</p>
 
-<pre class="text">
-Image *FrameImage(const Image *image,const FrameInfo *frame_info,
+<pre class="bg-light text-dark mx-4"><samp>Image *FrameImage(const Image *image,const FrameInfo *frame_info,
   const CompositeOperator compose,ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -169,11 +174,10 @@ Image *FrameImage(const Image *image,const FrameInfo *frame_info,
 
 <p>The format of the RaiseImage method is:</p>
 
-<pre class="text">
-MagickBooleanType RaiseImage(const Image *image,
+<pre class="bg-light text-dark mx-4"><samp>MagickBooleanType RaiseImage(const Image *image,
   const RectangleInfo *raise_info,const MagickBooleanType raise,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 

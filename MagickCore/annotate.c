@@ -107,7 +107,12 @@
 #  include FT_BBOX_H
 #else
 #  include <freetype/ftbbox.h>
-#endif /* defined(FT_BBOX_H) */
+#endif
+#if defined(FT_MODULE_H)
+#  include FT_MODULE_H
+#else
+#  include <freetype/ftmodapi.h>
+#endif
 #endif
 #if defined(MAGICKCORE_RAQM_DELEGATE)
 #include <raqm.h>
@@ -261,7 +266,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(draw_info != (DrawInfo *) NULL);
   assert(draw_info->signature == MagickCoreSignature);
@@ -349,7 +354,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
         offset.y=annotate_info->affine.ty+i*annotate_info->affine.sy*height;
         break;
       }
-      case NorthWestGravity:
+      case (GravityType) NorthWestGravity:
       {
         offset.x=(geometry.width == 0 ? -1.0 : 1.0)*annotate_info->affine.tx+i*
           annotate_info->affine.ry*height+annotate_info->affine.ry*
@@ -359,7 +364,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           metrics.ascent;
         break;
       }
-      case NorthGravity:
+      case (GravityType) NorthGravity:
       {
         offset.x=(geometry.width == 0 ? -1.0 : 1.0)*annotate_info->affine.tx+
           geometry.width/2.0+i*annotate_info->affine.ry*height-
@@ -370,7 +375,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           metrics.ascent-annotate_info->affine.rx*metrics.width/2.0;
         break;
       }
-      case NorthEastGravity:
+      case (GravityType) NorthEastGravity:
       {
         offset.x=(geometry.width == 0 ? 1.0 : -1.0)*annotate_info->affine.tx+
           geometry.width+i*annotate_info->affine.ry*height-
@@ -381,7 +386,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           metrics.ascent-annotate_info->affine.rx*metrics.width;
         break;
       }
-      case WestGravity:
+      case (GravityType) WestGravity:
       {
         offset.x=(geometry.width == 0 ? -1.0 : 1.0)*annotate_info->affine.tx+i*
           annotate_info->affine.ry*height+annotate_info->affine.ry*
@@ -392,7 +397,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           (number_lines-1.0)*height)/2.0;
         break;
       }
-      case CenterGravity:
+      case (GravityType) CenterGravity:
       {
         offset.x=(geometry.width == 0 ? -1.0 : 1.0)*annotate_info->affine.tx+
           geometry.width/2.0+i*annotate_info->affine.ry*height-
@@ -404,7 +409,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           (metrics.ascent+metrics.descent-(number_lines-1.0)*height)/2.0;
         break;
       }
-      case EastGravity:
+      case (GravityType) EastGravity:
       {
         offset.x=(geometry.width == 0 ? 1.0 : -1.0)*annotate_info->affine.tx+
           geometry.width+i*annotate_info->affine.ry*height-
@@ -418,7 +423,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           (number_lines-1.0)*height)/2.0;
         break;
       }
-      case SouthWestGravity:
+      case (GravityType) SouthWestGravity:
       {
         offset.x=(geometry.width == 0 ? -1.0 : 1.0)*annotate_info->affine.tx+i*
           annotate_info->affine.ry*height-annotate_info->affine.ry*
@@ -428,7 +433,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           annotate_info->affine.sy*(number_lines-1.0)*height+metrics.descent;
         break;
       }
-      case SouthGravity:
+      case (GravityType) SouthGravity:
       {
         offset.x=(geometry.width == 0 ? -1.0 : 1.0)*annotate_info->affine.tx+
           geometry.width/2.0+i*annotate_info->affine.ry*height-
@@ -440,7 +445,7 @@ MagickExport MagickBooleanType AnnotateImage(Image *image,
           annotate_info->affine.sy*(number_lines-1.0)*height+metrics.descent;
         break;
       }
-      case SouthEastGravity:
+      case (GravityType) SouthEastGravity:
       {
         offset.x=(geometry.width == 0 ? 1.0 : -1.0)*annotate_info->affine.tx+
           geometry.width+i*annotate_info->affine.ry*height-
@@ -594,6 +599,8 @@ static inline char *ReplaceSpaceWithNewline(char **caption,char *space)
   size_t
     octets;
 
+  if ((caption == (char **) NULL) || (space == (char *) NULL))
+    return((char *) NULL);
   octets=(size_t) GetUTFOctets(space);
   if (octets == 1)
     *space='\n';
@@ -623,13 +630,13 @@ MagickExport ssize_t FormatMagickCaption(Image *image,DrawInfo *draw_info,
   const MagickBooleanType split,TypeMetric *metrics,char **caption,
   ExceptionInfo *exception)
 {
-  MagickBooleanType
-    status;
-
   char
     *p,
     *q,
     *s;
+
+  MagickBooleanType
+    status;
 
   size_t
     width;
@@ -652,7 +659,8 @@ MagickExport ssize_t FormatMagickCaption(Image *image,DrawInfo *draw_info,
         q=draw_info->text;
         continue;
       }
-    if ((IsUTFSpace(code) != MagickFalse) &&
+    if ((draw_info->word_break != BreakWordBreakType) &&
+        (IsUTFSpace(code) != MagickFalse) &&
         (IsNonBreakingUTFSpace(code) == MagickFalse))
       {
         s=p;
@@ -779,13 +787,17 @@ MagickExport MagickBooleanType GetMultilineTypeMetrics(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(draw_info != (DrawInfo *) NULL);
   assert(draw_info->text != (char *) NULL);
   assert(draw_info->signature == MagickCoreSignature);
   if (*draw_info->text == '\0')
-    return(MagickFalse);
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
+        "LabelExpected","`%s'",image->filename);
+      return(MagickFalse);
+    }
   annotate_info=CloneDrawInfo((ImageInfo *) NULL,draw_info);
   annotate_info->text=DestroyString(annotate_info->text);
   /*
@@ -905,7 +917,7 @@ MagickExport MagickBooleanType GetTypeMetrics(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(draw_info != (DrawInfo *) NULL);
   assert(draw_info->text != (char *) NULL);
@@ -917,7 +929,7 @@ MagickExport MagickBooleanType GetTypeMetrics(Image *image,
   offset.x=0.0;
   offset.y=0.0;
   status=RenderType(image,annotate_info,&offset,metrics,exception);
-  if (image->debug != MagickFalse)
+  if (draw_info->debug != MagickFalse)
     (void) LogMagickEvent(AnnotateEvent,GetMagickModule(),"Metrics: text: %s; "
       "width: %g; height: %g; ascent: %g; descent: %g; max advance: %g; "
       "bounds: %g,%g  %g,%g; origin: %g,%g; pixels per em: %g,%g; "
@@ -1008,7 +1020,7 @@ static MagickBooleanType RenderType(Image *image,const DrawInfo *draw_info,
   if ((type_info == (const TypeInfo *) NULL) &&
       (draw_info->family != (const char *) NULL))
     {
-      if (strstr(draw_info->family,",'\"") == (char *) NULL)
+      if (strpbrk(draw_info->family,",'\"") == (char *) NULL)
         type_info=GetTypeInfoByFamily(draw_info->family,draw_info->style,
           draw_info->stretch,draw_info->weight,exception);
       if (type_info == (const TypeInfo *) NULL)
@@ -1219,9 +1231,6 @@ cleanup:
   const char
     *p;
 
-  FT_Error
-    ft_status;
-
   ssize_t
     i;
 
@@ -1247,6 +1256,9 @@ cleanup:
       {
         if (FT_HAS_KERNING(face))
           {
+            FT_Error
+              ft_status;
+
             FT_Vector
               kerning;
 
@@ -1257,13 +1269,34 @@ cleanup:
                 RightToLeftDirection ? -1.0 : 1.0)*kerning.x);
           }
       }
-    ft_status=FT_Load_Glyph(face,(FT_UInt) (*grapheme)[i].index,flags);
+    (void) FT_Load_Glyph(face,(FT_UInt) (*grapheme)[i].index,flags);
     (*grapheme)[i].x_advance=face->glyph->advance.x;
     (*grapheme)[i].cluster=p-text;
     last_glyph=(*grapheme)[i].index;
   }
   return((size_t) i);
 #endif
+}
+
+static void FreetypeCloseStream(FT_Stream stream)
+{
+  FILE *file = (FILE *) stream->descriptor.pointer;
+  if (file != (FILE *) NULL)
+    (void) fclose(file);  
+  stream->descriptor.pointer=NULL;
+}
+
+static unsigned long FreetypeReadStream(FT_Stream stream,unsigned long offset,
+  unsigned char *buffer,unsigned long count)
+{
+  FILE *file = (FILE *) stream->descriptor.pointer;
+  if (file == (FILE *) NULL)
+    return(0);
+  if (count == 0)
+    return(0);
+  if (fseek(file,(off_t) offset,SEEK_SET) != 0)
+    return(0);
+  return((unsigned long) fread(buffer,1,count,file));
 }
 
 static inline MagickBooleanType IsEmptyOutline(FT_Outline outline)
@@ -1336,6 +1369,77 @@ static int TraceQuadraticBezier(FT_Vector *control,FT_Vector *to,
   return(0);
 }
 
+static inline const char *FreetypeErrorMessage(FT_Error ft_status)
+{
+#if FREETYPE_MAJOR == 2 && FREETYPE_MINOR >= 10
+  return(FT_Error_String(ft_status));
+#else
+  magick_unreferenced(ft_status);
+  return((const char *) NULL);
+#endif
+}
+
+static void *FreetypeAlloc(FT_Memory magick_unused(memory),long size)
+{
+  magick_unreferenced(memory);
+  if ((size_t) size > GetMaxMemoryRequest())
+    return((void *) NULL);
+  return(AcquireMagickMemory(size));
+}
+
+static void *FreetypeRealloc(FT_Memory magick_unused(memory),
+  long magick_unused(cur_size),long new_size,void *block)
+{
+  magick_unreferenced(memory);
+  magick_unreferenced(cur_size);
+  if ((size_t) new_size > GetMaxMemoryRequest())
+    return((void *) NULL);
+  return(ResizeMagickMemory(block,new_size));
+}
+
+static void FreetypeFree(FT_Memory magick_unused(memory),void *block)
+{
+  magick_unreferenced(memory);
+  (void) RelinquishMagickMemory(block);
+}
+
+static FT_Memory FreetypeAcquireMemoryManager()
+{
+  FT_Memory
+    memory;
+
+  memory=(FT_Memory) AcquireMagickMemory(sizeof(*memory));
+  if (memory == (FT_Memory) NULL)
+    return(memory);
+  memset(memory,0,sizeof(*memory));
+  memory->alloc=(&FreetypeAlloc);
+  memory->realloc=(&FreetypeRealloc);
+  memory->free=(&FreetypeFree);
+  return(memory);
+}
+
+static void FreetypeDone(FT_Memory memory,FT_Library library,
+  FT_StreamRec *stream)
+{
+  (void) FT_Done_Library(library);
+  stream=(FT_StreamRec *) RelinquishMagickMemory(stream);
+  memory=(FT_Memory) RelinquishMagickMemory(memory);
+}
+
+static FT_Error FreetypeInit(FT_Memory memory,FT_Library *alibrary)
+{
+  FT_Error
+    ft_status;
+
+  ft_status=FT_New_Library(memory,alibrary);
+  if (ft_status != 0)
+    RelinquishMagickMemory(memory);
+  else
+    FT_Add_Default_Modules(*alibrary);
+  FT_Set_Default_Properties(*alibrary);
+  return(ft_status);
+}
+
 static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   const char *encoding,const PointInfo *offset,TypeMetric *metrics,
   ExceptionInfo *exception)
@@ -1343,6 +1447,18 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
 #if !defined(FT_OPEN_PATHNAME)
 #define FT_OPEN_PATHNAME  ft_open_pathname
 #endif
+
+#define ThrowFreetypeErrorException(tag,ft_status,value) \
+{ \
+  const char \
+    *error_string=FreetypeErrorMessage(ft_status); \
+  if (error_string != (const char *) NULL) \
+    (void) ThrowMagickException(exception,GetMagickModule(),TypeError, \
+      tag,"`%s (%s)'",value, error_string); \
+  else \
+    (void) ThrowMagickException(exception,GetMagickModule(),TypeError, \
+      tag,"`%s'",value); \
+}
 
   typedef struct _GlyphInfo
   {
@@ -1355,6 +1471,9 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
     FT_Glyph
       image;
   } GlyphInfo;
+
+  char
+    *p;
 
   const char
     *value;
@@ -1389,8 +1508,14 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   FT_Matrix
     affine;
 
+  FT_Memory
+    memory;
+
   FT_Open_Args
     args;
+
+  FT_StreamRec
+    *stream;
 
   FT_UInt
     first_glyph_id,
@@ -1413,9 +1538,6 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
     point,
     resolution;
 
-  char
-    *p;
-
   ssize_t
     i;
 
@@ -1437,18 +1559,28 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
       0, 0
     };
 
+  struct stat
+    attributes;
+
   unsigned char
     *utf8;
 
   /*
     Initialize Truetype library.
   */
-  ft_status=FT_Init_FreeType(&library);
-  if (ft_status != 0)
-    ThrowBinaryException(TypeError,"UnableToInitializeFreetypeLibrary",
+  memory=FreetypeAcquireMemoryManager();
+  if (memory == (FT_Memory) NULL)
+    ThrowBinaryException(ResourceLimitError,"UnableToInitializeFreetypeLibrary",
       image->filename);
+  ft_status=FreetypeInit(memory,&library);
+  if (ft_status != 0)
+    ThrowFreetypeErrorException("UnableToInitializeFreetypeLibrary",ft_status,
+      image->filename);
+  /*
+    Open font face.
+  */
   face_index=(FT_Long) draw_info->face;
-  args.flags=FT_OPEN_PATHNAME;
+  (void) memset(&args,0,sizeof(args));
   if (draw_info->font == (char *) NULL)
     args.pathname=ConstantString("helvetica");
   else
@@ -1459,20 +1591,32 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
         /*
           Extract face index, e.g. @msgothic[1].
         */
-        ImageInfo *image_info=AcquireImageInfo();
-        (void) strcpy(image_info->filename,draw_info->font+1);
+        ImageInfo *image_info = AcquireImageInfo();
+        (void) CopyMagickString(image_info->filename,draw_info->font+1,
+          MagickPathExtent);
         (void) SetImageInfo(image_info,0,exception);
         face_index=(FT_Long) image_info->scene;
         args.pathname=ConstantString(image_info->filename);
         image_info=DestroyImageInfo(image_info);
      }
+  /*
+    Configure streaming interface.
+  */
+  stream=(FT_StreamRec *) AcquireCriticalMemory(sizeof(*stream));
+  (void) memset(stream,0,sizeof(*stream));
+  (void) stat(args.pathname,&attributes);
+  stream->size=attributes.st_size;
+  stream->descriptor.pointer=fopen_utf8(args.pathname,"rb");
+  stream->read=(&FreetypeReadStream);
+  stream->close=(&FreetypeCloseStream);
+  args.flags=FT_OPEN_STREAM;
+  args.stream=stream;
   face=(FT_Face) NULL;
   ft_status=FT_Open_Face(library,&args,face_index,&face);
   if (ft_status != 0)
     {
-      (void) FT_Done_FreeType(library);
-      (void) ThrowMagickException(exception,GetMagickModule(),TypeError,
-        "UnableToReadFont","`%s'",args.pathname);
+      FreetypeDone(memory,library,stream);
+      ThrowFreetypeErrorException("UnableToReadFont",ft_status,args.pathname);
       args.pathname=DestroyString(args.pathname);
       return(MagickFalse);
     }
@@ -1526,8 +1670,10 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
       if (ft_status != 0)
         {
           (void) FT_Done_Face(face);
-          (void) FT_Done_FreeType(library);
-          ThrowBinaryException(TypeError,"UnrecognizedFontEncoding",encoding);
+          FreetypeDone(memory,library,stream);
+          ThrowFreetypeErrorException("UnrecognizedFontEncoding",ft_status,
+            encoding);
+          return(MagickFalse);
         }
     }
   /*
@@ -1556,8 +1702,10 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   if (ft_status != 0)
     {
       (void) FT_Done_Face(face);
-      (void) FT_Done_FreeType(library);
-      ThrowBinaryException(TypeError,"UnableToReadFont",draw_info->font);
+      FreetypeDone(memory,library,stream);
+      ThrowFreetypeErrorException("UnableToReadFont",ft_status,
+        draw_info->font);
+      return(MagickFalse);
     }
   metrics->pixels_per_em.x=face->size->metrics.x_ppem;
   metrics->pixels_per_em.y=face->size->metrics.y_ppem;
@@ -1593,13 +1741,13 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
       (first_glyph_id == 0))
     {
       (void) FT_Done_Face(face);
-      (void) FT_Done_FreeType(library);
+      FreetypeDone(memory,library,stream);
       return(MagickTrue);
     }
   /*
     Compute bounding box.
   */
-  if (image->debug != MagickFalse)
+  if (draw_info->debug != MagickFalse)
     (void) LogMagickEvent(AnnotateEvent,GetMagickModule(),"Font %s; "
       "font-encoding %s; text-encoding %s; pointsize %g",
       draw_info->font != (char *) NULL ? draw_info->font : "none",
@@ -1908,7 +2056,7 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   */
   annotate_info=DestroyDrawInfo(annotate_info);
   (void) FT_Done_Face(face);
-  (void) FT_Done_FreeType(library);
+  FreetypeDone(memory,library,stream);
   return(status);
 }
 #else
@@ -2041,7 +2189,7 @@ static MagickBooleanType RenderPostscript(Image *image,
   /*
     Render label with a Postscript font.
   */
-  if (image->debug != MagickFalse)
+  if (draw_info->debug != MagickFalse)
     (void) LogMagickEvent(AnnotateEvent,GetMagickModule(),
       "Font %s; pointsize %g",draw_info->font != (char *) NULL ?
       draw_info->font : "none",draw_info->pointsize);

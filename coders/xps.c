@@ -82,7 +82,7 @@
 #include "coders/ghostscript-private.h"
 
 /*
-  Typedef declaractions.
+  Typedef declarations.
 */
 typedef struct _XPSInfo
 {
@@ -181,11 +181,11 @@ static Image *ReadXPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -317,21 +317,6 @@ static Image *ReadXPSImage(const ImageInfo *image_info,ExceptionInfo *exception)
   (void) RelinquishUniqueFileResource(input_filename);
   postscript_image=(Image *) NULL;
   if (status == MagickFalse)
-    for (i=1; ; i++)
-    {
-      (void) InterpretImageFilename(image_info,image,filename,(int) i,
-        read_info->filename,exception);
-      if (IsGhostscriptRendered(read_info->filename) == MagickFalse)
-        break;
-      read_info->blob=NULL;
-      read_info->length=0;
-      next=ReadImage(read_info,exception);
-      (void) RelinquishUniqueFileResource(read_info->filename);
-      if (next == (Image *) NULL)
-        break;
-      AppendImageToList(&postscript_image,next);
-    }
-  else
     for (i=1; ; i++)
     {
       (void) InterpretImageFilename(image_info,image,filename,(int) i,

@@ -105,6 +105,7 @@ static MagickBooleanType DisplayUsage(void)
       "  -log format          format of debugging information\n"
       "  -version             print version information",
     operators[] =
+      "  -auto-level          automagically adjust color levels of image\n"
       "  -auto-orient         automagically orient image\n"
       "  -border geometry     surround image with a border of color\n"
       "  -clip                clip along the first path from the 8BIM profile\n"
@@ -331,9 +332,9 @@ WandExport MagickBooleanType DisplayImageCommand(ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (argc == 2)
     {
       option=argv[1];
@@ -682,6 +683,8 @@ WandExport MagickBooleanType DisplayImageCommand(ImageInfo *image_info,
               ThrowDisplayException(OptionError,"MissingArgument",option);
             break;
           }
+        if (LocaleCompare("auto-level",option+1) == 0)
+          break;
         if (LocaleCompare("auto-orient",option+1) == 0)
           break;
         ThrowDisplayException(OptionError,"UnrecognizedOption",option);
@@ -1371,7 +1374,7 @@ WandExport MagickBooleanType DisplayImageCommand(ImageInfo *image_info,
             resource_info.map_type=(char *) NULL;
             if (*option == '+')
               break;
-            (void) strcpy(argv[i]+1,"san");
+            (void) CopyMagickString(argv[i]+1,"...",strlen(argv[i]+1)+1);
             i++;
             if (i == (ssize_t) argc)
               ThrowDisplayException(OptionError,"MissingArgument",option);

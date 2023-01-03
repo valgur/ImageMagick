@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,9 +87,18 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+  <li><a href="vision.html#ConnectedComponentsImage">ConnectedComponentsImage</a></li>
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="vision.html#ConnectedComponentsImage">ConnectedComponentsImage</a> &#8226; <a href="vision.html#IntegralImage">IntegralImage</a></p>
-
 <h2><a href="../../api/MagickCore/vision_8c.html" id="ConnectedComponentsImage">ConnectedComponentsImage</a></h2>
 
 <p>ConnectedComponentsImage() returns the connected-components of the image uniquely labeled.  The returned connected components image colors member defines the number of unique objects.  Choose from 4 or 8-way connectivity.</p>
@@ -103,11 +109,10 @@
 
 <p>The format of the ConnectedComponentsImage method is:</p>
 
-<pre class="text">
-Image *ConnectedComponentsImage(const Image *image,
+<pre class="bg-light text-dark mx-4"><samp>Image *ConnectedComponentsImage(const Image *image,
   const size_t connectivity,CCObjectInfo **objects,
   ExceptionInfo *exception)
-</pre>
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -139,9 +144,8 @@ Image *ConnectedComponentsImage(const Image *image,
 
 <p>The format of the IntegralImage method is:</p>
 
-<pre class="text">
-Image *IntegralImage(const Image *image,ExceptionInfo *exception)
-</pre>
+<pre class="bg-light text-dark mx-4"><samp>Image *IntegralImage(const Image *image,ExceptionInfo *exception)
+</samp></pre>
 
 <p>A description of each parameter follows:</p>
 
@@ -188,4 +192,3 @@ Image *IntegralImage(const Image *image,ExceptionInfo *exception)
   <script src="../../assets/magick.js" ></script>
   </body>
 </html>
-<!-- Magick Cache 2022-02-18T01:22:02+0000 -->

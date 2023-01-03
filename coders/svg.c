@@ -258,7 +258,7 @@ static MagickBooleanType IsSVG(const unsigned char *magick,const size_t length)
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  ReadSVGImage() reads a Scalable Vector Gaphics file and returns it.  It
+%  ReadSVGImage() reads a Scalable Vector Graphics file and returns it.  It
 %  allocates the memory necessary for the new Image structure and returns a
 %  pointer to the new image.
 %
@@ -317,7 +317,7 @@ static Image *RenderSVGImage(const ImageInfo *image_info,Image *image,
     100.0*QuantumScale*image->background_color.green,
     100.0*QuantumScale*image->background_color.blue);
   (void) FormatLocaleString(opacity,MagickPathExtent,"%.20g",QuantumScale*
-    image->background_color.alpha-MagickEpsilon);
+    image->background_color.alpha);
   (void) FormatLocaleString(command,MagickPathExtent,
     GetDelegateCommands(delegate_info),input_filename,output_filename,density,
     background,opacity,unique);
@@ -688,7 +688,8 @@ static double GetUserSpaceCoordinateValue(const SVGInfo *svg_info,int type,
   double
     value;
 
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",string);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",string);
   assert(string != (const char *) NULL);
   p=(const char *) string;
   (void) GetNextToken(p,&p,MagickPathExtent,token);
@@ -787,7 +788,7 @@ static void SVGInternalSubset(void *context,const xmlChar *name,
     *svg_info;
 
   /*
-    Does this document has an internal subset?
+    Does this document have an internal subset?
   */
   (void) LogMagickEvent(CoderEvent,GetMagickModule(),
     "  SAX.internalSubset(%s, %s, %s)",(const char *) name,
@@ -850,11 +851,17 @@ static xmlEntityPtr SVGGetParameterEntity(void *context,const xmlChar *name)
   return(xmlGetParameterEntity(svg_info->document,name));
 }
 
+static void SVGError(void *,const char *,...)
+  magick_attribute((__format__ (__printf__,2,3)));
+
 static void SVGEntityDeclaration(void *context,const xmlChar *name,int type,
   const xmlChar *public_id,const xmlChar *system_id,xmlChar *content)
 {
   SVGInfo
     *svg_info;
+
+  xmlEntityPtr
+    entity;
 
   /*
     An entity definition has been parsed.
@@ -865,12 +872,16 @@ static void SVGEntityDeclaration(void *context,const xmlChar *name,int type,
     system_id != (xmlChar *) NULL ? (const char *) system_id : "none",content);
   svg_info=(SVGInfo *) context;
   if (svg_info->parser->inSubset == 1)
-    (void) xmlAddDocEntity(svg_info->document,name,type,public_id,system_id,
+    entity=xmlAddDocEntity(svg_info->document,name,type,public_id,system_id,
       content);
   else
     if (svg_info->parser->inSubset == 2)
-      (void) xmlAddDtdEntity(svg_info->document,name,type,public_id,system_id,
+      entity=xmlAddDtdEntity(svg_info->document,name,type,public_id,system_id,
         content);
+    else
+      return;
+  if (entity == (xmlEntityPtr) NULL)  
+    SVGError(svg_info,"NULL entity");
 }
 
 static void SVGAttributeDeclaration(void *context,const xmlChar *element,
@@ -3339,9 +3350,6 @@ static void SVGWarning(void *context,const char *format,...)
   va_end(operands);
 }
 
-static void SVGError(void *,const char *,...)
-  magick_attribute((__format__ (__printf__,2,3)));
-
 static void SVGError(void *context,const char *format,...)
 {
   char
@@ -3604,7 +3612,10 @@ static Image *RenderMSVGImage(const ImageInfo *image_info,Image *image,
   (void) xmlParseChunk(svg_info->parser,(char *) message,0,1);
   SVGEndDocument(svg_info);
   if (svg_info->parser->myDoc != (xmlDocPtr) NULL)
-    xmlFreeDoc(svg_info->parser->myDoc);
+    {
+      xmlFreeDoc(svg_info->parser->myDoc);
+      svg_info->parser->myDoc=(xmlDocPtr) NULL;
+    }
   xmlFreeParserCtxt(svg_info->parser);
   if (image->debug != MagickFalse)
     (void) LogMagickEvent(CoderEvent,GetMagickModule(),"end SAX");
@@ -3649,13 +3660,14 @@ static Image *RenderMSVGImage(const ImageInfo *image_info,Image *image,
       if (svg_info->comment != (char *) NULL)
         (void) SetImageProperty(image,"svg:comment",svg_info->comment,
           exception);
+      for (next=GetFirstImageInList(image); next != (Image *) NULL; )
+      {
+        (void) CopyMagickString(next->filename,image->filename,
+          MagickPathExtent);
+        (void) CopyMagickString(next->magick,"SVG",MagickPathExtent);
+        next=GetNextImageInList(next);
+      }
     }
-  for (next=GetFirstImageInList(image); next != (Image *) NULL; )
-  {
-    (void) CopyMagickString(next->filename,image->filename,MagickPathExtent);
-    (void) CopyMagickString(next->magick,"SVG",MagickPathExtent);
-    next=GetNextImageInList(next);
-  }
   svg_info=DestroySVGInfo(svg_info);
   (void) RelinquishUniqueFileResource(filename);
   return(GetFirstImageInList(image));
@@ -3685,10 +3697,10 @@ static Image *ReadSVGImage(const ImageInfo *image_info,ExceptionInfo *exception)
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
   assert(exception != (ExceptionInfo *) NULL);
-  if (image_info->debug != MagickFalse)
+  assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
       image_info->filename);
-  assert(exception->signature == MagickCoreSignature);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -4195,10 +4207,10 @@ static MagickBooleanType WriteSVGImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);

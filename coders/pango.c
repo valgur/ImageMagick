@@ -184,11 +184,11 @@ static Image *ReadPANGOImage(const ImageInfo *image_info,
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   (void) ResetImagePage(image,"0x0+0+0");
   if ((image->columns != 0) && (image->rows != 0))
@@ -373,7 +373,7 @@ static Image *ReadPANGOImage(const ImageInfo *image_info,
           error->message,"`%s'",image_info->filename);
       pango_layout_set_markup(layout,caption,-1);
     }
-  if (draw_info->interline_spacing > 0)
+  if (draw_info->interline_spacing != 0)
     pango_layout_set_spacing(layout,ScalePangoValue(
       draw_info->interline_spacing,image->resolution.x));
   pango_layout_context_changed(layout);

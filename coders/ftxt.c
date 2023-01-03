@@ -37,37 +37,48 @@
 %
 */
 
-#include <MagickCore/studio.h>
-#include <MagickCore/artifact.h>
-#include <MagickCore/attribute.h>
-#include <MagickCore/blob.h>
+#include "MagickCore/studio.h"
+#include "MagickCore/annotate.h"
+#include "MagickCore/artifact.h"
+#include "MagickCore/attribute.h"
+#include "MagickCore/blob.h"
 #include "MagickCore/blob-private.h"
-#include <MagickCore/cache.h>
-#include <MagickCore/channel.h>
-#include <MagickCore/colorspace.h>
-#include <MagickCore/exception.h>
+#include "MagickCore/cache.h"
+#include "MagickCore/channel.h"
+#include "MagickCore/color.h"
+#include "MagickCore/color-private.h"
+#include "MagickCore/colorspace.h"
+#include "MagickCore/constitute.h"
+#include "MagickCore/draw.h"
+#include "MagickCore/exception.h"
 #include "MagickCore/exception-private.h"
-#include <MagickCore/image.h>
+#include "MagickCore/geometry.h"
+#include "MagickCore/image.h"
 #include "MagickCore/image-private.h"
-#include <MagickCore/list.h>
-#include <MagickCore/magick.h>
-#include <MagickCore/memory_.h>
-#include <MagickCore/module.h>
-#include <MagickCore/monitor.h>
+#include "MagickCore/list.h"
+#include "MagickCore/magick.h"
+#include "MagickCore/memory_.h"
+#include "MagickCore/module.h"
+#include "MagickCore/monitor.h"
 #include "MagickCore/monitor-private.h"
-#include <MagickCore/pixel-accessor.h>
+#include "MagickCore/option.h"
+#include "MagickCore/pixel-accessor.h"
 #include "MagickCore/quantum-private.h"
-#include <MagickCore/string_.h>
+#include "MagickCore/static.h"
+#include "MagickCore/statistic.h"
+#include "MagickCore/string_.h"
+#include "MagickCore/token.h"
+#include "coders/ftxt.h"
 
 /*
-  Define declaractions.
+  Define declarations.
 */
 #define chEsc '\\'
 #define dfltChSep ","
 #define dfltFmt "\\x,\\y:\\c\\n"
 
 /*
-  Enumerated declaractions.
+  Enumerated declarations.
 */
 typedef enum
   {
@@ -227,7 +238,7 @@ static long double BufToFlt(char * buffer,char ** tail,ValueTypeT expectType,
       char
         *p;
 
-      // read hex integer
+      /* read hex integer */
       p=buffer+1;
       while (*p)
       {
@@ -251,14 +262,14 @@ static long double BufToFlt(char * buffer,char ** tail,ValueTypeT expectType,
     }
   else if ((*buffer == '0') && (*(buffer + 1) == 'x'))
     {
-      // read hex floating-point
+      /* read hex floating-point */
       val=strtold(buffer,tail);
       if ((expectType != vtAny) && (expectType != vtFltHex))
         *err=MagickTrue;
     }
   else
     {
-      // Read decimal floating-point (possibly a percent).
+      /* Read decimal floating-point (possibly a percent). */
       errno=0;
       val=strtold(buffer,tail);
       if (errno)
@@ -388,11 +399,11 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
 
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -427,7 +438,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
       if (SetPixelMetaChannels (image, numMeta, exception) == MagickFalse)
         ThrowReaderException(OptionError,"SetPixelMetaChannelsFailure");
     }
-  // make image zero (if RGB channels, transparent black).
+  /* make image zero (if RGB channels, transparent black). */
   GetPixelInfo(image,&mppBlack);
   if (hasAlpha)
     mppBlack.alpha=TransparentAlpha;
@@ -456,7 +467,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
           case 'j':
             if (*(pf+1)=='\0')
               ThrowReaderException(DelegateFatalError,"EscapeJproblem");
-            // Drop through...
+            /* Drop through... */
           default:
             if ((i+=2) >= MaxTextExtent)
               ThrowReaderException(DelegateFatalError,"ppf bust");
@@ -469,7 +480,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
       }
     else
       {
-        // Not escape
+        /* Not escape */
         if (++i >= MaxTextExtent)
           ThrowReaderException (DelegateFatalError,"ppf bust");
         *ppf=*pf;
@@ -480,7 +491,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
   *ppf='\0';
   if ((image->columns == 0) || (image->rows == 0))
     ThrowReaderException(OptionError,"MustSpecifyImageSize");
-  // How many channel values can we expect?
+  /* How many channel values can we expect? */
   nExpCh=0;
   for (i=0; i < (ssize_t) GetPixelChannels (image); i++)
   {
@@ -595,7 +606,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
               i=0;
               for (;;)
               {
-                // Loop through input channels.
+                /* Loop through input channels. */
                 val=BufToFlt(pt,&tail,expectType,&typeErr);
                 if (expectType == vtProp)
                   val *= QuantumRange;
@@ -627,7 +638,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
             }
             case 'j':
             {
-              // Skip chars until we find char after *ppf.
+              /* Skip chars until we find char after *ppf. */
               SkipUntil(image,*(ppf+1),&eofInp,&chPushed);
               break;
             }
@@ -668,7 +679,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
         }
       else
         {
-          // Not escape
+          /* Not escape */
           chIn=ReadChar(image,&chPushed);
           if (chIn == EOF)
             {
@@ -752,7 +763,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
 %      size_t RegisterFTXTImage(void)
 %
 */
-ModuleExport unsigned long RegisterFTXTImage(void)
+ModuleExport size_t RegisterFTXTImage(void)
 {
   MagickInfo
     *entry;
@@ -848,7 +859,7 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -960,7 +971,7 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
                     valMult=1.0;
                     fltHexFmt=MagickTrue;
                   }
-                // Output all "-channel" channels.
+                /* Output all "-channel" channels. */
                 sSep[0]=sSep[1]='\0';
                 for (i=0; i < (ssize_t) GetPixelChannels (image); i++)
                 {
@@ -975,14 +986,14 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
                   if ((traits & UpdatePixelTrait) != UpdatePixelTrait)
                     continue;
                   if (hexFmt)
-                    FormatLocaleString(buffer,MaxTextExtent,"%s#%Lx",sSep,
-                      (signed long long)(((long double)p[i])+0.5));
+                    FormatLocaleString(buffer,MaxTextExtent,"%s#%llx",sSep,
+                      (signed long long)(((long double) p[i])+0.5));
                   else if (fltHexFmt)
                     FormatLocaleString(buffer,MaxTextExtent,"%s%a",sSep,
                       (double) p[i]);
                   else
-                    FormatLocaleString(buffer,MaxTextExtent,"%s%.*Lg%s",sSep,
-                      precision,p[i]*valMult,sSuff);
+                    FormatLocaleString(buffer,MaxTextExtent,"%s%.*g%s",sSep,
+                      precision,(double) (p[i]*valMult),sSuff);
                   WriteBlobString(image,buffer);
                   sSep[0]=chSep;
                 }
@@ -990,7 +1001,7 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
               }
               case 'j':
               {
-                // Output nothing.
+                /* Output nothing. */
                 break;
               }
               case 's':
@@ -1003,8 +1014,10 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
               case 'H':
               {
                 GetPixelInfoPixel(image,p,&pixel);
-                // For reading, QueryColorCompliance misreads 64 bit/channel
-                // hex colours, so when writing we ensure it is at most 32 bits.
+                /*
+                  For reading, QueryColorCompliance misreads 64 bit/channel
+                  hex colours, so when writing we ensure it is at most 32 bits.
+                */
                 if (pixel.depth > 32)
                   pixel.depth=32;
                 GetColorTuple(&pixel,MagickTrue,buffer);
@@ -1017,7 +1030,7 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
           }
           else
             {
-              // Not an escape char.
+              /* Not an escape char. */
               buffer[0]=*pFmt;
               buffer[1]='\0';
               (void) WriteBlobString(image,buffer);

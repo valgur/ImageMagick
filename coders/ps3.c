@@ -260,7 +260,7 @@ static MagickBooleanType SerializeImage(const ImageInfo *image_info,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=MagickTrue;
   *length=(image->colorspace == CMYKColorspace ? 4 : 3)*(size_t)
@@ -333,7 +333,7 @@ static MagickBooleanType SerializeImageChannel(const ImageInfo *image_info,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=MagickTrue;
   pack=SetImageMonochrome(image,exception) == MagickFalse ? 1UL : 8UL;
@@ -402,7 +402,7 @@ static MagickBooleanType SerializeImageIndexes(const ImageInfo *image_info,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=MagickTrue;
   *length=(size_t) image->columns*image->rows;
@@ -466,9 +466,9 @@ static MagickBooleanType WritePS3MaskImage(const ImageInfo *image_info,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(image->alpha_trait != UndefinedPixelTrait);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=MagickTrue;
   /*
     Note BeginData DSC comment for update later.
@@ -857,20 +857,18 @@ static MagickBooleanType WritePS3Image(const ImageInfo *image_info,Image *image,
     media_info,
     page_info;
 
-  ssize_t
-    i;
-
   SegmentInfo
     bounds;
 
   size_t
-    imageListLength,
     length,
+    number_scenes,
     page,
     pixel,
     text_size;
 
   ssize_t
+    i,
     j;
 
   time_t
@@ -886,10 +884,10 @@ static MagickBooleanType WritePS3Image(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(MagickFalse);
@@ -932,7 +930,7 @@ static MagickBooleanType WritePS3Image(const ImageInfo *image_info,Image *image,
   (void) memset(&bounds,0,sizeof(bounds));
   page=0;
   scene=0;
-  imageListLength=GetImageListLength(image);
+  number_scenes=GetImageListLength(image);
   do
   {
     MagickBooleanType
@@ -1077,7 +1075,7 @@ static MagickBooleanType WritePS3Image(const ImageInfo *image_info,Image *image,
               (void) CopyMagickString(buffer,"%%Pages: 1\n",MagickPathExtent);
             else
               (void) FormatLocaleString(buffer,MagickPathExtent,
-                "%%%%Pages: %.20g\n",(double) imageListLength);
+                "%%%%Pages: %.20g\n",(double) number_scenes);
             (void) WriteBlobString(image,buffer);
           }
         if (image->colorspace == CMYKColorspace)
@@ -1595,7 +1593,7 @@ static MagickBooleanType WritePS3Image(const ImageInfo *image_info,Image *image,
     if (GetNextImageInList(image) == (Image *) NULL)
       break;
     image=SyncNextImageInList(image);
-    status=SetImageProgress(image,SaveImagesTag,scene++,imageListLength);
+    status=SetImageProgress(image,SaveImagesTag,scene++,number_scenes);
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);

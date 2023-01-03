@@ -137,7 +137,7 @@
    Composition based on the SVG specification:
 
    A Composition is defined by...
-      Color Function :  f(Sc,Dc)  where Sc and Dc are the normizalized colors
+      Color Function :  f(Sc,Dc)  where Sc and Dc are the normalized colors
       Blending areas :  X = 1     for area of overlap, ie: f(Sc,Dc)
                         Y = 1     for source preserved
                         Z = 1     for canvas preserved
@@ -151,7 +151,7 @@
       Dca = Dc*Da     normalized Dest color divided by Dest alpha
       Dc' = Dca'/Da'  the desired color value for this channel.
 
-   Da' in in the follow formula as 'gamma'  The resulting alpla value.
+   Da' in in the follow formula as 'gamma'  The resulting alpha value.
 
    Most functions use a blending mode of over (X=1,Y=1,Z=1) this results in
    the following optimizations...
@@ -173,10 +173,10 @@
        with regard to blending.  This now includes 'ModulusAdd' and
        'ModulusSubtract'.
 
-    3) When the special channel flag 'sync' (syncronize channel updates)
+    3) When the special channel flag 'sync' (synchronize channel updates)
        is turned off (enabled by default) then mathematical compositions are
        only performed on the channels specified, and are applied
-       independantally of each other.  In other words the mathematics is
+       independently of each other.  In other words the mathematics is
        performed as 'pure' mathematical operations, rather than as image
        operations.
 */
@@ -1568,10 +1568,10 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(composite != (Image *) NULL);
   assert(composite->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)
     return(MagickFalse);
   source_image=CloneImage(composite,0,0,MagickTrue,exception);
@@ -1861,7 +1861,7 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
           angle_range=DegreesToRadians(geometry_info.psi)-angle_start;
         }
       /*
-        Set up a gaussian cylindrical filter for EWA Bluring.
+        Set up a gaussian cylindrical filter for EWA Blurring.
 
         As the minimum ellipse radius of support*1.0 the EWA algorithm
         can only produce a minimum blur of 0.5 for Gaussian (support=2.0)
@@ -2137,6 +2137,8 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
             canvas_dissolve=geometry_info.sigma/100.0;
           if ((canvas_dissolve-MagickEpsilon) < 0.0)
             canvas_dissolve=0.0;
+          if ((canvas_dissolve+MagickEpsilon) > 1.0)
+            canvas_dissolve=1.0;
         }
       break;
     }
@@ -2275,12 +2277,12 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
       *pixels;
 
     MagickRealType
-      blue,
-      chroma,
-      green,
-      hue,
-      luma,
-      red;
+      blue = 0.0,
+      chroma = 0.0,
+      green = 0.0,
+      hue = 0.0,
+      luma = 0.0,
+      red = 0.0;
 
     PixelInfo
       canvas_pixel,
@@ -2328,26 +2330,25 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
         status=MagickFalse;
         continue;
       }
-    hue=0.0;
-    chroma=0.0;
-    luma=0.0;
     GetPixelInfo(image,&canvas_pixel);
     GetPixelInfo(source_image,&source_pixel);
     for (x=0; x < (ssize_t) image->columns; x++)
     {
       double
-        gamma;
+        gamma = 0.0;
 
       MagickRealType
-        alpha,
-        Da,
-        Dc,
-        Dca,
-        DcaDa,
-        Sa,
-        SaSca,
-        Sc,
-        Sca;
+        alpha = 0.0,
+        Da = 0.0,
+        Dc = 0.0,
+        Dca = 0.0,
+        DcaDa = 0.0,
+        Di = 0.0,
+        Sa = 0.0,
+        SaSca = 0.0,
+        Sc = 0.0,
+        Sca = 0.0,
+        Si = 0.0;
 
       ssize_t
         i;
@@ -2381,11 +2382,11 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
           for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
           {
             MagickRealType
-              pixel;
+              pixel = 0.0;
 
             PixelChannel channel = GetPixelChannelChannel(image,i);
             PixelTrait traits = GetPixelChannelTraits(image,channel);
-            PixelTrait source_traits=GetPixelChannelTraits(source_image,
+            PixelTrait source_traits = GetPixelChannelTraits(source_image,
               channel);
             if ((traits == UndefinedPixelTrait) ||
                 (source_traits == UndefinedPixelTrait))
@@ -2562,8 +2563,18 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
         case RMSECompositeOp:
         case SaturateCompositeOp:
         {
+          Si=GetPixelIntensity(source_image,p);
           GetPixelInfoPixel(source_image,p,&source_pixel);
           GetPixelInfoPixel(image,q,&canvas_pixel);
+          break;
+        }
+        case BumpmapCompositeOp:
+        case CopyAlphaCompositeOp:
+        case DarkenIntensityCompositeOp:
+        case LightenIntensityCompositeOp:
+        {
+          Si=GetPixelIntensity(source_image,p);
+          Di=GetPixelIntensity(image,q);
           break;
         }
         default:
@@ -2572,8 +2583,8 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
       for (i=0; i < (ssize_t) GetPixelChannels(image); i++)
       {
         MagickRealType
-          pixel,
-          sans;
+          pixel = 0.0,
+          sans = 0.0;
 
         PixelChannel channel = GetPixelChannelChannel(image,i);
         PixelTrait traits = GetPixelChannelTraits(image,channel);
@@ -2610,7 +2621,7 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
               }
               case BumpmapCompositeOp:
               {
-                pixel=GetPixelIntensity(source_image,p)*Da;
+                pixel=Si*Da;
                 break;
               }
               case ChangeMaskCompositeOp:
@@ -2653,7 +2664,7 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
               case CopyAlphaCompositeOp:
               {
                 if (source_image->alpha_trait == UndefinedPixelTrait)
-                  pixel=GetPixelIntensity(source_image,p);
+                  pixel=Si;
                 else
                   pixel=QuantumRange*Sa;
                 break;
@@ -2673,12 +2684,10 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
               {
                 if (compose_sync == MagickFalse)
                   {
-                    pixel=GetPixelIntensity(source_image,p) <
-                      GetPixelIntensity(image,q) ? Sa : Da;
+                    pixel=Si < Di? Sa : Da;
                     break;
                   }
-                pixel=Sa*GetPixelIntensity(source_image,p) <
-                  Da*GetPixelIntensity(image,q) ? Sa : Da;
+                pixel=Sa*Si < Da*Di ? Sa : Da;
                 break;
               }
               case DifferenceCompositeOp:
@@ -2704,12 +2713,10 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
               {
                 if (compose_sync == MagickFalse)
                   {
-                    pixel=GetPixelIntensity(source_image,p) >
-                      GetPixelIntensity(image,q) ? Sa : Da;
+                    pixel=Si > Di ? Sa : Da;
                     break;
                   }
-                pixel=Sa*GetPixelIntensity(source_image,p) >
-                  Da*GetPixelIntensity(image,q) ? Sa : Da;
+                pixel=Sa*Si > Da*Di ? Sa : Da;
                 break;
               }
               case ModulateCompositeOp:
@@ -2839,7 +2846,7 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
                 pixel=Dc;
                 break;
               }
-            pixel=QuantumScale*GetPixelIntensity(source_image,p)*Dc;
+            pixel=QuantumScale*Si*Dc;
             break;
           }
           case ChangeMaskCompositeOp:
@@ -2959,12 +2966,10 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
           {
             if (compose_sync == MagickFalse)
               {
-                pixel=GetPixelIntensity(source_image,p) <
-                  GetPixelIntensity(image,q) ? Sc : Dc;
+                pixel=Si < Di ? Sc : Dc;
                 break;
               }
-            pixel=Sa*GetPixelIntensity(source_image,p) <
-              Da*GetPixelIntensity(image,q) ? Sc : Dc;
+            pixel=Sa*Si < Da*Di ? Sc : Dc;
             break;
           }
           case DifferenceCompositeOp:
@@ -3171,12 +3176,10 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
             */
             if (compose_sync == MagickFalse)
               {
-                pixel=GetPixelIntensity(source_image,p) >
-                  GetPixelIntensity(image,q) ? Sc : Dc;
+                pixel=Si > Di ? Sc : Dc;
                 break;
               }
-            pixel=Sa*GetPixelIntensity(source_image,p) >
-              Da*GetPixelIntensity(image,q) ? Sc : Dc;
+            pixel=Sa*Si > Da*Di ? Sc : Dc;
             break;
           }
           case LuminizeCompositeOp:
@@ -3272,7 +3275,7 @@ MagickExport MagickBooleanType CompositeImage(Image *image,
                 pixel=Dc;
                 break;
               }
-            offset=(ssize_t) (GetPixelIntensity(source_image,p)-midpoint);
+            offset=(ssize_t) (Si-midpoint);
             if (offset == 0)
               {
                 pixel=Dc;
@@ -3665,9 +3668,9 @@ MagickExport MagickBooleanType TextureImage(Image *image,const Image *texture,
     y;
 
   assert(image != (Image *) NULL);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(image->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (texture == (const Image *) NULL)
     return(MagickFalse);
   if (SetImageStorageClass(image,DirectClass,exception) == MagickFalse)

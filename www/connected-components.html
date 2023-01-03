@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../www/download.html">Download</a>
         </li>
@@ -112,7 +109,7 @@
   4: 21x23+0+45 8.8,55.9 409 srgb(255,255,255)
   1: 4x10+252+0 253.9,4.1 31 srgb(255,255,255)
 </samp></pre>
-<p>Add <samp>-define connected-components:exclude-header=true</samp> to show the objects without the header-line.  Add <samp>-define connected-components:exclude-ids=true</samp>.</p>
+<p>Add <samp>-define connected-components:exclude-header=true</samp> to show the objects without the header-line.  Add <samp>-define connected-components:exclude-ids=true</samp>. Use <samp>-define connected-components:sort=<var>area | width | height | x | y</samp> to sort the verbose connected components objects.  By default, the objects are listed in decreasing area.  Add <samp>-define connected-components:sort-order=<var>increasing | decreasing</var> to specify the sort order.</p>
 <p>Use <samp>-connected-components 8</samp> to visit 8 neighbors rather than 4.  By default, neighbor colors must be exact to be part of a unique object. Use the <a href="../www/command-line-options.html#fuzz">-fuzz</a> option to include pixels as part of an object that are <var>close</var> in color.</p>
 <p>You might want to eliminate small objects by merging them with their larger neighbors.  If so, use this command:</p>
 <pre class="bg-light text-dark mx-4"><samp>magick objects.gif -define connected-components:area-threshold=410 -connected-components 4 \
@@ -142,6 +139,18 @@
 <p>Objects in your image may look homogeneous but have slightly different color values.  By default, only pixels that match exactly are considered as part of a particular object.  For slight variations of color in an object, use <samp>-fuzz</samp>.  For example,</p>
 <pre class="bg-light text-dark mx-4"><samp>magick star-map.png -fuzz 5% -define connected-components:verbose=true \
   -define connected-components:mean-color=true -connected-components 4 stars.gif</samp></pre>
+<h4>Connected Components</h4>
+<p>The algorithm walks through the pixels of a component, in the usual row-column order, looking for a component above or to the left.  For the component at top-left, there are no components above or to the left to merge into.  As a result, there are special cases where you need to rotate, repeat the connected components, then rotate back.  For example</p>
+<pre class="bg-light text-dark mx-4"><samp> magick  \
+  objects.gif  \
+  -define connected-components:verbose=true \
+  -define connected-components:area-threshold=6000 \
+  -virtual-pixel None \
+  -connected-components 4 -rotate 180 \
+  -connected-components 4 -rotate -180 \
+  objects.png
+</samp></pre>
+
 </div>
   </div>
   </main><!-- /.container -->
@@ -171,3 +180,4 @@
   <script src="assets/magick.js" ></script>
   </body>
 </html>
+<!-- Magick Cache 17th December 2022 15:04 -->

@@ -291,7 +291,8 @@ static void *DestroyOptions(void *message)
 MagickExport LinkedListInfo *DestroyLocaleOptions(LinkedListInfo *messages)
 {
   assert(messages != (LinkedListInfo *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   return(DestroyLinkedList(messages,DestroyOptions));
 }
 
@@ -592,8 +593,9 @@ MagickExport const LocaleInfo **GetLocaleInfoList(const char *pattern,
     Allocate locale list.
   */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_messages != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_messages=0;
   p=GetLocaleInfo_("*",exception);
   if (p == (const LocaleInfo *) NULL)
@@ -687,8 +689,9 @@ MagickExport char **GetLocaleList(const char *pattern,size_t *number_messages,
     Allocate locale list.
   */
   assert(pattern != (char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   assert(number_messages != (size_t *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",pattern);
   *number_messages=0;
   p=GetLocaleInfo_("*",exception);
   if (p == (const LocaleInfo *) NULL)
@@ -801,8 +804,9 @@ MagickExport LinkedListInfo *GetLocaleOptions(const char *filename,
     *xml;
 
   assert(filename != (const char *) NULL);
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",filename);
   (void) CopyMagickString(path,filename,MagickPathExtent);
   /*
     Load XML from configuration files to linked-list.
@@ -871,7 +875,8 @@ MagickExport LinkedListInfo *GetLocaleOptions(const char *filename,
 */
 MagickExport const char *GetLocaleValue(const LocaleInfo *locale_info)
 {
-  (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(locale_info != (LocaleInfo *) NULL);
   assert(locale_info->signature == MagickCoreSignature);
   return(locale_info->message);
@@ -949,25 +954,25 @@ static MagickBooleanType IsLocaleTreeInstantiated(ExceptionInfo *exception)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %  InterpretLocaleValue() interprets the string as a floating point number in
-%  the "C" locale and returns its value as a double. If sentinal is not a null
-%  pointer, the method also sets the value pointed by sentinal to point to the
+%  the "C" locale and returns its value as a double. If sentinel is not a null
+%  pointer, the method also sets the value pointed by sentinel to point to the
 %  first character after the number.
 %
 %  The format of the InterpretLocaleValue method is:
 %
-%      double InterpretLocaleValue(const char *value,char **sentinal)
+%      double InterpretLocaleValue(const char *value,char **sentinel)
 %
 %  A description of each parameter follows:
 %
 %    o value: the string value.
 %
-%    o sentinal:  if sentinal is not NULL, a pointer to the character after the
+%    o sentinel:  if sentinel is not NULL, a pointer to the character after the
 %      last character used in the conversion is stored in the location
-%      referenced by sentinal.
+%      referenced by sentinel.
 %
 */
 MagickExport double InterpretLocaleValue(const char *magick_restrict string,
-  char *magick_restrict *sentinal)
+  char *magick_restrict *sentinel)
 {
   char
     *q;
@@ -992,8 +997,8 @@ MagickExport double InterpretLocaleValue(const char *magick_restrict string,
       value=strtod(string,&q);
 #endif
     }
-  if (sentinal != (char **) NULL)
-    *sentinal=q;
+  if (sentinel != (char **) NULL)
+    *sentinel=q;
   return(value);
 }
 

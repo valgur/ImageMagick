@@ -226,7 +226,7 @@ typedef struct CINInfo
 } CINInfo;
 
 /*
-  Forward declaractions.
+  Forward declarations.
 */
 static MagickBooleanType
   WriteCINImage(const ImageInfo *,Image *,ExceptionInfo *);
@@ -426,11 +426,11 @@ static Image *ReadCINImage(const ImageInfo *image_info,ExceptionInfo *exception)
   */
   assert(image_info != (const ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
-      image_info->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",
+      image_info->filename);
   image=AcquireImage(image_info,exception);
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
@@ -624,7 +624,7 @@ static Image *ReadCINImage(const ImageInfo *image_info,ExceptionInfo *exception)
   (void) CopyMagickString(property,cin.origination.model,
     sizeof(cin.origination.model));
   (void) SetImageProperty(image,"dpx:origination.model",property,exception);
-  (void) memset(cin.origination.serial,0, 
+  (void) memset(cin.origination.serial,0,
     sizeof(cin.origination.serial));
   offset+=ReadBlob(image,sizeof(cin.origination.serial),(unsigned char *)
     cin.origination.serial);
@@ -760,7 +760,6 @@ static Image *ReadCINImage(const ImageInfo *image_info,ExceptionInfo *exception)
       quantum_type=GrayQuantum;
       length=GetBytesPerRow(image->columns,1,image->depth,MagickTrue);
     }
-  status=SetQuantumPad(image,quantum_info,0);
   pixels=GetQuantumPixels(quantum_info);
   for (y=0; y < (ssize_t) image->rows; y++)
   {
@@ -952,10 +951,10 @@ static MagickBooleanType WriteCINImage(const ImageInfo *image_info,Image *image,
   assert(image_info->signature == MagickCoreSignature);
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(exception != (ExceptionInfo *) NULL);
   assert(exception->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   status=OpenBlob(image_info,image,WriteBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(status);
@@ -1206,8 +1205,8 @@ static MagickBooleanType WriteCINImage(const ImageInfo *image_info,Image *image,
   quantum_info=AcquireQuantumInfo(image_info,image);
   if (quantum_info == (QuantumInfo *) NULL)
     ThrowWriterException(ResourceLimitError,"MemoryAllocationFailed");
-  quantum_info->quantum=32;
-  quantum_info->pack=MagickFalse;
+  SetQuantumQuantum(quantum_info,32);
+  SetQuantumPack(quantum_info,MagickFalse);
   quantum_type=RGBQuantum;
   pixels=(unsigned char *) GetQuantumPixels(quantum_info);
   length=GetBytesPerRow(image->columns,3,image->depth,MagickTrue);

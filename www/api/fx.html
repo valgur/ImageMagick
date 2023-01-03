@@ -19,7 +19,7 @@
   <meta name="author" content="ImageMagick Studio LLC" />
   <meta name="revisit-after" content="2 DAYS" />
   <meta name="resource-type" content="document" />
-  <meta name="copyright" content="Copyright (c) 1999-2020 ImageMagick Studio LLC" />
+  <meta name="copyright" content="Copyright (c) 1999 ImageMagick Studio LLC" />
   <meta name="distribution" content="Global" />
   <meta name="magick-serial" content="P131-S030410-R485315270133-P82224-A6668-G1245-1" />
   <meta property='og:url' content='../../' />
@@ -44,9 +44,6 @@
 
     <div class="collapse navbar-collapse" id="magick-navbars">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link " href="../../www/index.html">Home</a>
-        </li>
         <li class="nav-item">
           <a class="nav-link " href="../../www/download.html">Download</a>
         </li>
@@ -90,12 +87,20 @@
 
   <main class="container">
   <div class="magick-template">
+<br/>
+<div class="btn-group">
+<button class="btn btn-secondary dropdown-toggle" type="button" id="defaultDropdown" data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
+  Select API Method
+</button>
+<ul class="dropdown-menu pre-scrollable" aria-labelledby="defaultDropdown">
+</ul>
+</div>
+<br/>
+<br/>
 <div class="magick-header">
-<p class="text-center"><a href="fx.html#pfx-&gt;exception, GetMagickModule">pfx-&gt;exception, GetMagickModule</a></p>
-
 <h2><a href="../../api/MagickCore/fx_8c.html" id="pfx-&gt;exception,_GetMagickModule">pfx-&gt;exception, GetMagickModule</a></h2>
 
-<p>pfx-&gt;exception, GetMagickModule(), OptionError, "ImgNum", "lu bad for ImgListLen lu", i, pfx-&gt;ImgListLen); i = -1; } return i; }</p>
+<p>pfx-&gt;exception, GetMagickModule(), OptionError, "ImgNum", "lu bad for ImgListLen lu", (unsigned long) i, (unsigned long) pfx-&gt;ImgListLen); i = -1; } return i; }</p>
 
 <p>#define WHICH_ATTR_CHAN \ (pel-&gt;ChannelQual == NO_CHAN_QUAL) ? CompositePixelChannel : \ (pel-&gt;ChannelQual == THIS_CHANNEL) ? channel : pel-&gt;ChannelQual</p>
 
@@ -107,7 +112,7 @@
 
 <p>MagickBooleanType okay = MagickTrue; if(!InterpolatePixelChannel (img, pfx-&gt;Imgs[ImgNum].View, RedPixelChannel, img-&gt;interpolate, (double) fx, (double) fy, &amp;red, pfx-&gt;exception)) okay = MagickFalse; if(!InterpolatePixelChannel (img, pfx-&gt;Imgs[ImgNum].View, GreenPixelChannel, img-&gt;interpolate, (double) fx, (double) fy, &amp;green, pfx-&gt;exception)) okay = MagickFalse; if(!InterpolatePixelChannel (img, pfx-&gt;Imgs[ImgNum].View, BluePixelChannel, img-&gt;interpolate, (double) fx, (double) fy, &amp;blue, pfx-&gt;exception)) okay = MagickFalse;</p>
 
-<p>if (!okay) (void) ThrowMagickException ( pfx-&gt;exception, GetMagickModule(), OptionError, "GetHslFlt failure", "lu Lg,Lg i", ImgNum, fx, fy, channel);</p>
+<p>if (!okay) (void) ThrowMagickException ( pfx-&gt;exception, GetMagickModule(), OptionError, "GetHslFlt failure", "lu g,g i", (unsigned long) ImgNum, (double) fx, (double) fy, channel);</p>
 
 <p>ConvertRGBToHSL ( red, green, blue, &amp;hue, &amp;saturation, &amp;lightness);</p>
 
@@ -119,7 +124,7 @@
 
 <p>double hue=0, saturation=0, lightness=0;</p>
 
-<p>const Quantum * p = GetCacheViewVirtualPixels (pfx-&gt;Imgs[ImgNum].View, imgx, imgy, 1, 1, pfx-&gt;exception); if (!p) (void) ThrowMagickException ( pfx-&gt;exception, GetMagickModule(), OptionError, "GetHslInt failure", "lu li,li i", ImgNum, imgx, imgy, channel);</p>
+<p>const Quantum * p = GetCacheViewVirtualPixels (pfx-&gt;Imgs[ImgNum].View, imgx, imgy, 1, 1, pfx-&gt;exception); if (p == (const Quantum *) NULL) { (void) ThrowMagickException (pfx-&gt;exception,GetMagickModule(), OptionError,"GetHslInt failure","lu li,li i",(unsigned long) ImgNum, (long) imgx,(long) imgy,channel); return(0.0); }</p>
 
 <p>ConvertRGBToHSL ( GetPixelRed (img, p), GetPixelGreen (img, p), GetPixelBlue (img, p), &amp;hue, &amp;saturation, &amp;lightness);</p>
 
@@ -135,13 +140,13 @@
 
 <p>(void) GetPixelInfo (img, &amp;pixelinf);</p>
 
-<p>if (!InterpolatePixelInfo (img, pfx-&gt;Imgs[pfx-&gt;ImgNum].View, img-&gt;interpolate, (double) fx, (double) fy, &amp;pixelinf, pfx-&gt;exception)) { (void) ThrowMagickException ( pfx-&gt;exception, GetMagickModule(), OptionError, "GetIntensity failure", "lu Lg,Lg", ImgNum, fx, fy); }</p>
+<p>if (!InterpolatePixelInfo (img, pfx-&gt;Imgs[pfx-&gt;ImgNum].View, img-&gt;interpolate, (double) fx, (double) fy, &amp;pixelinf, pfx-&gt;exception)) { (void) ThrowMagickException ( pfx-&gt;exception, GetMagickModule(), OptionError, "GetIntensity failure", "lu g,g", (unsigned long) ImgNum, (double) fx, (double) fy); }</p>
 
 <p>SetPixelViaPixelInfo (img, &amp;pixelinf, quantum_pixel); return QuantumScale * GetPixelIntensity (img, quantum_pixel); }</p>
 
 <p>static MagickBooleanType ExecuteRPN (FxInfo * pfx, fxRtT * pfxrt, fxFltType *result, const PixelChannel channel, const ssize_t imgx, const ssize_t imgy) { const Quantum * p = pfxrt-&gt;thisPixel; fxFltType regA=0, regB=0, regC=0, regD=0, regE=0; Image * img = pfx-&gt;image; ChannelStatistics * cs = NULL; MagickBooleanType NeedRelinq = MagickFalse; double hue=0, saturation=0, lightness=0; int i;</p>
 
-<p>/* For -fx, this sets p to ImgNum 0. for [fx:...], this sets p to the currrent image. Similarly img. </p>
+<p>/* For -fx, this sets p to ImgNum 0. for [fx:...], this sets p to the current image. Similarly img. </p>
 </div>
   </div>
   </main><!-- /.container -->

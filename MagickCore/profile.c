@@ -154,10 +154,10 @@ MagickExport MagickBooleanType CloneImageProfiles(Image *image,
 {
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(clone_image != (const Image *) NULL);
   assert(clone_image->signature == MagickCoreSignature);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (clone_image->profiles != (void *) NULL)
     {
       if (image->profiles != (void *) NULL)
@@ -183,7 +183,7 @@ MagickExport MagickBooleanType CloneImageProfiles(Image *image,
 %
 %  The format of the DeleteImageProfile method is:
 %
-%      MagickBooleanTyupe DeleteImageProfile(Image *image,const char *name)
+%      MagickBooleanType DeleteImageProfile(Image *image,const char *name)
 %
 %  A description of each parameter follows:
 %
@@ -196,7 +196,7 @@ MagickExport MagickBooleanType DeleteImageProfile(Image *image,const char *name)
 {
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->profiles == (SplayTreeInfo *) NULL)
     return(MagickFalse);
@@ -264,7 +264,7 @@ MagickExport const StringInfo *GetImageProfile(const Image *image,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->profiles == (SplayTreeInfo *) NULL)
     return((StringInfo *) NULL);
@@ -299,7 +299,7 @@ MagickExport char *GetNextImageProfile(const Image *image)
 {
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->profiles == (SplayTreeInfo *) NULL)
     return((char *) NULL);
@@ -958,9 +958,9 @@ MagickExport MagickBooleanType ProfileImage(Image *image,const char *name,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   assert(name != (const char *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if ((datum == (const void *) NULL) || (length == 0))
     {
       char
@@ -1481,7 +1481,7 @@ MagickExport StringInfo *RemoveImageProfile(Image *image,const char *name)
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->profiles == (SplayTreeInfo *) NULL)
     return((StringInfo *) NULL);
@@ -1519,7 +1519,7 @@ MagickExport void ResetImageProfileIterator(const Image *image)
 {
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   if (image->profiles == (SplayTreeInfo *) NULL)
     return;
@@ -1752,7 +1752,8 @@ static void GetProfilesFromResourceBlock(Image *image,
       break;
     p=ReadResourceLong(p,&value);
     count=(ssize_t) value;
-    if ((p > (datum+length-count)) || (count > (ssize_t) length) || (count < 0))
+    if ((p > (datum+length-count)) || (count > (ssize_t) length) ||
+        (count <= 0))
       break;
     switch (id)
     {
@@ -1790,7 +1791,7 @@ static void GetProfilesFromResourceBlock(Image *image,
       case 0x0404:
       {
         /*
-          IPTC Profile
+          IPTC profile.
         */
         profile=AcquireStringInfo(count);
         SetStringInfoDatum(profile,p);
@@ -1942,8 +1943,9 @@ static MagickBooleanType ValidateXMPProfile(Image *image,
 static MagickBooleanType ValidateXMPProfile(Image *image,
   const StringInfo *profile,ExceptionInfo *exception)
 {
-  (void) ThrowMagickException(exception,GetMagickModule(),MissingDelegateWarning,
-    "DelegateLibrarySupportNotBuiltIn","'%s' (XML)",image->filename);
+  (void) ThrowMagickException(exception,GetMagickModule(),
+    MissingDelegateWarning,"DelegateLibrarySupportNotBuiltIn","'%s' (XML)",
+    image->filename);
   return(MagickFalse);
 }
 #endif
@@ -1963,7 +1965,7 @@ static MagickBooleanType SetImageProfileInternal(Image *image,const char *name,
 
   assert(image != (Image *) NULL);
   assert(image->signature == MagickCoreSignature);
-  if (image->debug != MagickFalse)
+  if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
   clone_profile=CloneStringInfo(profile);
   PatchCorruptProfile(name,clone_profile);
@@ -2179,7 +2181,7 @@ static MagickBooleanType SyncExifProfile(const Image *image,unsigned char *exif,
   } DirectoryInfo;
 
   DirectoryInfo
-    directory_stack[MaxDirectoryStack];
+    directory_stack[MaxDirectoryStack] = {{ 0 }};
 
   EndianType
     endian;

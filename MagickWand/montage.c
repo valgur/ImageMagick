@@ -131,7 +131,7 @@ static MagickBooleanType MontageUsage(void)
       "  -bordercolor color   border color\n"
       "  -caption string      assign a caption to an image\n"
       "  -colors value        preferred number of colors in the image\n"
-      "  -colorspace type     alternate image colorsapce\n"
+      "  -colorspace type     alternate image colorspace\n"
       "  -comment string      annotate image with comment\n"
       "  -compose operator    composite operator\n"
       "  -compress type       type of pixel compression when writing the image\n"
@@ -147,6 +147,7 @@ static MagickBooleanType MontageUsage(void)
       "  -encoding type       text encoding type\n"
       "  -endian type         endianness (MSB or LSB) of the image\n"
       "  -extract geometry    extract area from image\n"
+      "  -family name         render text with this font family\n"
       "  -fill color          color to use when filling a graphic primitive\n"
       "  -filter type         use this filter when resizing an image\n"
       "  -font name           render text with this font\n"
@@ -312,9 +313,9 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
   */
   assert(image_info != (ImageInfo *) NULL);
   assert(image_info->signature == MagickCoreSignature);
-  if (image_info->debug != MagickFalse)
-    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   assert(exception != (ExceptionInfo *) NULL);
+  if (IsEventLogging() != MagickFalse)
+    (void) LogMagickEvent(TraceEvent,GetMagickModule(),"...");
   if (argc == 2)
     {
       option=argv[1];
@@ -933,6 +934,15 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
       }
       case 'f':
       {
+        if (LocaleCompare("family",option+1) == 0)
+          {
+            if (*option == '+')
+              break;
+            i++;
+            if (i == (ssize_t) argc)
+              ThrowMontageException(OptionError,"MissingArgument",option);
+            break;
+          }
         if (LocaleCompare("fill",option+1) == 0)
           {
             (void) QueryColorCompliance("none",AllCompliance,

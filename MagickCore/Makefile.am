@@ -48,6 +48,10 @@ MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURCES =
 MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LIBADD = $(MAGICK_DEP_LIBS)
 endif # WITH_MODULES
 
+if WIN32_NATIVE_BUILD
+MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LIBADD += -lws2_32
+endif
+
 nodist_MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURCES =
 MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBRARY_EXTRA_CPPFLAGS)
 
@@ -260,6 +264,7 @@ MAGICKCORE_BASE_SRCS = \
   MagickCore/static.h \
   MagickCore/statistic.c \
   MagickCore/statistic.h \
+  MagickCore/statistic-private.h \
   MagickCore/stream.c \
   MagickCore/stream.h \
   MagickCore/stream-private.h \
@@ -441,6 +446,7 @@ MAGICKCORE_NOINST_HDRS = \
   MagickCore/fx-private.h \
   MagickCore/gem-private.h \
   MagickCore/image-private.h \
+  MagickCore/linked-list-private.h \
   MagickCore/locale-private.h \
   MagickCore/log-private.h \
   MagickCore/magick-private.h \
@@ -470,6 +476,7 @@ MAGICKCORE_NOINST_HDRS = \
   MagickCore/semaphore-private.h \
   MagickCore/semaphore-private.h \
   MagickCore/signature-private.h \
+  MagickCore/statistic-private.h \
   MagickCore/stream-private.h \
   MagickCore/string-private.h \
   MagickCore/thread_.h \

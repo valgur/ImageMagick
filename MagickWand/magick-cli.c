@@ -54,6 +54,8 @@
 #include "MagickWand/operation.h"
 #include "MagickWand/magick-cli.h"
 #include "MagickWand/script-token.h"
+#include "MagickCore/string-private.h"
+#include "MagickCore/thread-private.h"
 #include "MagickCore/utility-private.h"
 #include "MagickCore/exception-private.h"
 #include "MagickCore/version.h"
@@ -64,7 +66,236 @@
       5 - image counts (after option runs)
 */
 #define MagickCommandDebug 0
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%     M a g i c k C o m m a n d G e n e s i s                                 %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  MagickCommandGenesis() applies image processing options to an image as
+%  prescribed by command line options.
+%
+%  It wiil look for special options like "-debug", "-bench", and
+%  "-distribute-cache" that needs to be applied even before the main
+%  processing begins, and may completely overrule normal command processing.
+%  Such 'Genesis' Options can only be given on the CLI, (not in a script)
+%  and are typically ignored (as they have been handled) if seen later.
+%
+%  The format of the MagickCommandGenesis method is:
+%
+%      MagickBooleanType MagickCommandGenesis(ImageInfo *image_info,
+%        MagickCommand command,int argc,char **argv,char **metadata,
+%        ExceptionInfo *exception)
+%
+%  A description of each parameter follows:
+%
+%    o image_info: the image info.
+%
+%    o command: Choose from ConvertImageCommand, IdentifyImageCommand,
+%      MogrifyImageCommand, CompositeImageCommand, CompareImagesCommand,
+%      ConjureImageCommand, StreamImageCommand, ImportImageCommand,
+%      DisplayImageCommand, or AnimateImageCommand.
+%
+%    o argc: Specifies a pointer to an integer describing the number of
+%      elements in the argument vector.
+%
+%    o argv: Specifies a pointer to a text array containing the command line
+%      arguments.
+%
+%    o metadata: any metadata is returned here.
+%
+%    o exception: return any errors or warnings in this structure.
+%
+*/
+WandExport MagickBooleanType MagickCommandGenesis(ImageInfo *image_info,
+  MagickCommand command,int argc,char **argv,char **metadata,
+  ExceptionInfo *exception)
+{
+  char
+    client_name[MagickPathExtent],
+    *option;
 
+  double
+    duration,
+    serial;
+
+  MagickBooleanType
+    concurrent,
+    regard_warnings,
+    status;
+
+  ssize_t
+    i;
+
+  size_t
+    iterations,
+    number_threads;
+
+  ssize_t
+    n;
+
+  (void) setlocale(LC_ALL,"");
+  (void) setlocale(LC_NUMERIC,"C");
+  GetPathComponent(argv[0],TailPath,client_name);
+  (void) SetClientName(client_name);
+  concurrent=MagickFalse;
+  duration=(-1.0);
+  iterations=1;
+  status=MagickTrue;
+  regard_warnings=MagickFalse;
+  for (i=1; i < (ssize_t) (argc-1); i++)
+  {
+    option=argv[i];
+    if ((strlen(option) == 1) || ((*option != '-') && (*option != '+')))
+      continue;
+    if (LocaleCompare("-bench",option) == 0)
+      iterations=StringToUnsignedLong(argv[++i]);
+    if (LocaleCompare("-concurrent",option) == 0)
+      concurrent=MagickTrue;
+    if (LocaleCompare("-debug",option) == 0)
+      (void) SetLogEventMask(argv[++i]);
+    if (LocaleCompare("-distribute-cache",option) == 0)
+      {
+        DistributePixelCacheServer(StringToInteger(argv[++i]),exception);
+        exit(0);
+      }
+    if (LocaleCompare("-duration",option) == 0)
+      duration=StringToDouble(argv[++i],(char **) NULL);
+    if (LocaleCompare("-regard-warnings",option) == 0)
+      regard_warnings=MagickTrue;
+  }
+  if (iterations == 1)
+    {
+      char
+        *text;
+
+      text=(char *) NULL;
+      status=command(image_info,argc,argv,&text,exception);
+      if (exception->severity != UndefinedException)
+        {
+          if ((exception->severity > ErrorException) ||
+              (regard_warnings != MagickFalse))
+            status=MagickFalse;
+          CatchException(exception);
+        }
+      if (text != (char *) NULL)
+        {
+          if (metadata != (char **) NULL)
+            (void) ConcatenateString(&(*metadata),text);
+          text=DestroyString(text);
+        }
+      return(status);
+    }
+  number_threads=GetOpenMPMaximumThreads();
+  serial=0.0;
+  for (n=1; n <= (ssize_t) number_threads; n++)
+  {
+    double
+      e,
+      parallel,
+      user_time;
+
+    TimerInfo
+      *timer;
+
+    (void) SetMagickResourceLimit(ThreadResource,(MagickSizeType) n);
+    timer=AcquireTimerInfo();
+    if (concurrent == MagickFalse)
+      {
+        for (i=0; i < (ssize_t) iterations; i++)
+        {
+          char
+            *text;
+
+          text=(char *) NULL;
+          if (status == MagickFalse)
+            continue;
+          if (duration > 0)
+            {
+              if (GetElapsedTime(timer) > duration)
+                continue;
+              (void) ContinueTimer(timer);
+            }
+          status=command(image_info,argc,argv,&text,exception);
+          if (exception->severity != UndefinedException)
+            {
+              if ((exception->severity > ErrorException) ||
+                  (regard_warnings != MagickFalse))
+                status=MagickFalse;
+              CatchException(exception);
+            }
+          if (text != (char *) NULL)
+            {
+              if (metadata != (char **) NULL)
+                (void) ConcatenateString(&(*metadata),text);
+              text=DestroyString(text);
+            }
+          }
+      }
+    else
+      {
+        SetOpenMPNested(1);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+        # pragma omp parallel for shared(status)
+#endif
+        for (i=0; i < (ssize_t) iterations; i++)
+        {
+          char
+            *text;
+
+          text=(char *) NULL;
+          if (status == MagickFalse)
+            continue;
+          if (duration > 0)
+            {
+              if (GetElapsedTime(timer) > duration)
+                continue;
+              (void) ContinueTimer(timer);
+            }
+          status=command(image_info,argc,argv,&text,exception);
+#if defined(MAGICKCORE_OPENMP_SUPPORT)
+          # pragma omp critical (MagickCore_MagickCommandGenesis)
+#endif
+          {
+            if (exception->severity != UndefinedException)
+              {
+                if ((exception->severity > ErrorException) ||
+                    (regard_warnings != MagickFalse))
+                  status=MagickFalse;
+                CatchException(exception);
+              }
+            if (text != (char *) NULL)
+              {
+                if (metadata != (char **) NULL)
+                  (void) ConcatenateString(&(*metadata),text);
+                text=DestroyString(text);
+              }
+          }
+        }
+      }
+    user_time=GetUserTime(timer);
+    parallel=GetElapsedTime(timer);
+    e=1.0;
+    if (n == 1)
+      serial=parallel;
+    else
+      e=((1.0/(1.0/((serial/(serial+parallel))+(1.0-(serial/(serial+parallel)))/
+        (double) n)))-(1.0/(double) n))/(1.0-1.0/(double) n);
+    (void) FormatLocaleFile(stderr,
+      "  Performance[%.20g]: %.20gi %0.3fips %0.6fe %0.6fu %lu:%02lu.%03lu\n",
+      (double) n,(double) iterations,(double) iterations/parallel,e,user_time,
+      (unsigned long) (parallel/60.0),(unsigned long) floor(fmod(parallel,
+      60.0)),(unsigned long) (1000.0*(parallel-floor(parallel))+0.5));
+    timer=DestroyTimerInfo(timer);
+  }
+  return(status);
+}
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -105,7 +336,7 @@
 %
 %    o argv: A text array containing the command line arguments. (optional)
 %
-%    o index: offset of next argment in argv (script arguments) (optional)
+%    o index: offset of next argument in argv (script arguments) (optional)
 %
 */
 WandExport void ProcessScriptOptions(MagickCLI *cli_wand,const char *filename,
@@ -143,7 +374,7 @@ WandExport void ProcessScriptOptions(MagickCLI *cli_wand,const char *filename,
   }
 
   /* define the error location string for use in exceptions
-     order of localtion format escapes: filename, line, column */
+     order of location format escapes: filename, line, column */
   cli_wand->location="in \"%s\" at line %u,column %u";
   if ( LocaleCompare("-", filename) == 0 )
     cli_wand->filename="stdin";
@@ -273,9 +504,9 @@ loop_exit:
   switch( token_info->status ) {
     case TokenStatusOK:
     case TokenStatusEOF:
-      if (cli_wand->image_list_stack != (Stack *) NULL)
+      if (cli_wand->image_list_stack != (CLIStack *) NULL)
         CLIWandException(OptionError,"UnbalancedParenthesis", "(eof)");
-      else if (cli_wand->image_info_stack != (Stack *) NULL)
+      else if (cli_wand->image_info_stack != (CLIStack *) NULL)
         CLIWandException(OptionError,"UnbalancedBraces", "(eof)");
       break;
     case TokenStatusBadQuotes:
@@ -351,7 +582,7 @@ loop_exit:
 %    o index: index in the argv array to start processing from
 %
 % The function returns the index ot the next option to be processed. This
-% is really only releven if process_flags contains a ProcessOneOptionOnly
+% is really only relevant if process_flags contains a ProcessOneOptionOnly
 % flag.
 %
 */
@@ -379,7 +610,7 @@ WandExport int ProcessCommandOptions(MagickCLI *cli_wand,int argc,char **argv,
   assert(cli_wand->signature == MagickWandSignature);
 
   /* define the error location string for use in exceptions
-     order of localtion format escapes: filename, line, column */
+     order of location format escapes: filename, line, column */
   cli_wand->location="at %s arg %u";
   cli_wand->filename="CLI";
   cli_wand->line=index;  /* note first argument we will process */
@@ -389,8 +620,8 @@ WandExport int ProcessCommandOptions(MagickCLI *cli_wand,int argc,char **argv,
          "- Starting (\"%s\")", argv[index]);
 
   end = argc;
-  if ( (cli_wand->process_flags & ProcessImplictWrite) != 0 )
-    end--; /* the last arument is an implied write, do not process directly */
+  if ( (cli_wand->process_flags & ProcessImplicitWrite) != 0 )
+    end--; /* the last argument is an implied write, do not process directly */
 
   for (i=index; i < end; i += count +1) {
     /* Finished processing one option? */
@@ -418,7 +649,7 @@ WandExport int ProcessCommandOptions(MagickCLI *cli_wand,int argc,char **argv,
              i, option);
 #endif
         if (IsCommandOption(option) == MagickFalse) {
-          if ( (cli_wand->process_flags & ProcessImplictRead) != 0 ) {
+          if ( (cli_wand->process_flags & ProcessImplicitRead) != 0 ) {
             /* non-option -- treat as a image read */
             cli_wand->command=(const OptionInfo *) NULL;
             CLIOption(cli_wand,"-read",option);
@@ -433,7 +664,7 @@ WandExport int ProcessCommandOptions(MagickCLI *cli_wand,int argc,char **argv,
            ((cli_wand->process_flags & ProcessScriptOption) != 0) &&
            (LocaleCompare(option,"-script") == 0) ) {
         /* Call Script from CLI, with a filename as a zeroth argument.
-           NOTE: -script may need to use the 'implict write filename' argument
+           NOTE: -script may need to use the 'implicit write filename' argument
            so it must be handled specially to prevent a 'missing argument' error.
         */
         if ( (i+count) >= argc )
@@ -489,7 +720,7 @@ RestoreMSCWarning
   }
   assert(i==end);
 
-  if ( (cli_wand->process_flags & ProcessImplictWrite) == 0 )
+  if ( (cli_wand->process_flags & ProcessImplicitWrite) == 0 )
     return(end); /* no implied write -- just return to caller */
 
   assert(end==argc-1); /* end should not include last argument */
@@ -501,9 +732,9 @@ RestoreMSCWarning
   cli_wand->line=i;
 
   /* check that stacks are empty - or cause exception */
-  if (cli_wand->image_list_stack != (Stack *) NULL)
+  if (cli_wand->image_list_stack != (CLIStack *) NULL)
     CLIWandException(OptionError,"UnbalancedParenthesis", "(end of cli)");
-  else if (cli_wand->image_info_stack != (Stack *) NULL)
+  else if (cli_wand->image_info_stack != (CLIStack *) NULL)
     CLIWandException(OptionError,"UnbalancedBraces", "(end of cli)");
   if ( CLICatchException(cli_wand, MagickFalse) != MagickFalse )
     return(argc);
@@ -544,7 +775,7 @@ RestoreMSCWarning
 %  MagickImageCommand() Handle special use CLI arguments and prepare a
 %  CLI MagickCLI to process the command line or directly specified script.
 %
-%  This is essentualy interface function between the MagickCore library
+%  This is essentially interface function between the MagickCore library
 %  initialization function MagickCommandGenesis(), and the option MagickCLI
 %  processing functions  ProcessCommandOptions()  or  ProcessScriptOptions()
 %
@@ -556,14 +787,14 @@ RestoreMSCWarning
 %  A description of each parameter follows:
 %
 %    o image_info: the starting image_info structure
-%      (for compatibilty with MagickCommandGenisis())
+%      (for compatibility with MagickCommandGenisis())
 %
 %    o argc: the number of elements in the argument vector.
 %
 %    o argv: A text array containing the command line arguments.
 %
 %    o metadata: any metadata (for VBS) is returned here.
-%      (for compatibilty with MagickCommandGenisis())
+%      (for compatibility with MagickCommandGenisis())
 %
 %    o exception: return any errors or warnings in this structure.
 %
@@ -631,7 +862,7 @@ static void MagickUsage(MagickBooleanType verbose)
 }
 
 /*
-   Concatanate given file arguments to the given output argument.
+   Concatenate given file arguments to the given output argument.
    Used for a special -concatenate option used for specific 'delegates'.
    The option is not formally documented.
 
@@ -806,11 +1037,11 @@ Magick_Command_Cleanup:
 
   /* recover original image_info and clean up stacks
      FUTURE: "-reset stacks" option  */
-  while ((cli_wand->image_list_stack != (Stack *) NULL) &&
-         (cli_wand->image_list_stack->next != (Stack *) NULL))
+  while ((cli_wand->image_list_stack != (CLIStack *) NULL) &&
+         (cli_wand->image_list_stack->next != (CLIStack *) NULL))
     CLIOption(cli_wand,")");
-  while ((cli_wand->image_info_stack != (Stack *) NULL) &&
-         (cli_wand->image_info_stack->next != (Stack *) NULL))
+  while ((cli_wand->image_info_stack != (CLIStack *) NULL) &&
+         (cli_wand->image_info_stack->next != (CLIStack *) NULL))
     CLIOption(cli_wand,"}");
 
   /* assert we have recovered the original structures */
