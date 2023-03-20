@@ -50,6 +50,10 @@ endif # WITH_MODULES
 
 if WIN32_NATIVE_BUILD
 MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LIBADD += -lws2_32
+if WITH_MODULES
+else
+MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LIBADD += -lurlmon
+endif
 endif
 
 nodist_MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURCES =
@@ -155,6 +159,7 @@ MAGICKCORE_BASE_SRCS = \
   MagickCore/gem-private.h \
   MagickCore/geometry.c \
   MagickCore/geometry.h \
+  MagickCore/geometry-private.h \
   MagickCore/histogram.c \
   MagickCore/histogram.h \
   MagickCore/identify.c \
@@ -445,6 +450,7 @@ MAGICKCORE_NOINST_HDRS = \
   MagickCore/exception-private.h \
   MagickCore/fx-private.h \
   MagickCore/gem-private.h \
+  MagickCore/geometry-private.h \
   MagickCore/image-private.h \
   MagickCore/linked-list-private.h \
   MagickCore/locale-private.h \

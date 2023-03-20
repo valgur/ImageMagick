@@ -987,9 +987,6 @@ static MagickBooleanType RenderType(Image *image,const DrawInfo *draw_info,
   DrawInfo
     *annotate_info;
 
-  ExceptionInfo
-    *sans_exception;
-
   MagickBooleanType
     status;
 
@@ -1072,19 +1069,18 @@ static MagickBooleanType RenderType(Image *image,const DrawInfo *draw_info,
         }
       font=DestroyString(font);
     }
-  sans_exception=AcquireExceptionInfo();
   if (type_info == (const TypeInfo *) NULL)
-    type_info=GetTypeInfoByFamily("Open Sans",draw_info->style,
-      draw_info->stretch,draw_info->weight,sans_exception);
-  if (type_info == (const TypeInfo *) NULL)
-    type_info=GetTypeInfoByFamily("Sans Serif",draw_info->style,
-      draw_info->stretch,draw_info->weight,sans_exception);
-  if (type_info == (const TypeInfo *) NULL)
-    type_info=GetTypeInfoByFamily((const char *) NULL,draw_info->style,
-      draw_info->stretch,draw_info->weight,sans_exception);
-  if (type_info == (const TypeInfo *) NULL)
-    type_info=GetTypeInfo("*",sans_exception);
-  sans_exception=DestroyExceptionInfo(sans_exception);
+    {
+      ExceptionInfo
+        *sans_exception;
+
+      sans_exception=AcquireExceptionInfo();
+      type_info=GetTypeInfoByFamily((const char *) NULL,draw_info->style,
+        draw_info->stretch,draw_info->weight,sans_exception);
+      if (type_info == (const TypeInfo *) NULL)
+        type_info=GetTypeInfo("*",sans_exception);
+      sans_exception=DestroyExceptionInfo(sans_exception);
+    }
   if (type_info == (const TypeInfo *) NULL)
     {
       status=RenderFreetype(image,draw_info,draw_info->encoding,offset,metrics,
@@ -1280,21 +1276,34 @@ cleanup:
 
 static void FreetypeCloseStream(FT_Stream stream)
 {
-  FILE *file = (FILE *) stream->descriptor.pointer;
+  FILE
+    *file;
+
+  file=(FILE *) stream->descriptor.pointer;
   if (file != (FILE *) NULL)
-    (void) fclose(file);  
+    (void) fclose(file);
   stream->descriptor.pointer=NULL;
 }
 
 static unsigned long FreetypeReadStream(FT_Stream stream,unsigned long offset,
   unsigned char *buffer,unsigned long count)
 {
-  FILE *file = (FILE *) stream->descriptor.pointer;
+  FILE
+    *file;
+
+  unsigned long
+    result;
+
+  file=(FILE *) stream->descriptor.pointer;
   if (file == (FILE *) NULL)
     return(0);
-  if (count == 0)
-    return(0);
-  if (fseek(file,(off_t) offset,SEEK_SET) != 0)
+  if (offset > stream->size)
+    result=1;
+  else
+    result=(unsigned long) fseek(file,(off_t) offset,SEEK_SET);
+  if (count == 0) /* seek operation */
+    return(result);
+  if (result != 0)
     return(0);
   return((unsigned long) fread(buffer,1,count,file));
 }
@@ -1582,7 +1591,11 @@ static MagickBooleanType RenderFreetype(Image *image,const DrawInfo *draw_info,
   face_index=(FT_Long) draw_info->face;
   (void) memset(&args,0,sizeof(args));
   if (draw_info->font == (char *) NULL)
-    args.pathname=ConstantString("helvetica");
+    {
+      const TypeInfo *type_info = GetTypeInfo("*",exception);
+      if (type_info != (const TypeInfo *) NULL)
+        args.pathname=ConstantString(type_info->glyphs);
+    }
   else
     if (*draw_info->font != '@')
       args.pathname=ConstantString(draw_info->font);

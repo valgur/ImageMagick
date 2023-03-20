@@ -163,10 +163,15 @@ static MagickBooleanType
 */
 static Image *ReadTGAImage(const ImageInfo *image_info,ExceptionInfo *exception)
 {
+  const char
+    *option;
+
   Image
     *image;
 
   MagickBooleanType
+    flip_x = MagickFalse,
+    flip_y = MagickFalse,
     status;
 
   PixelInfo
@@ -185,6 +190,7 @@ static Image *ReadTGAImage(const ImageInfo *image_info,ExceptionInfo *exception)
     count,
     i,
     offset,
+    offset_stepsize,
     x,
     y;
 
@@ -322,21 +328,38 @@ static Image *ReadTGAImage(const ImageInfo *image_info,ExceptionInfo *exception)
         }
       comment=DestroyString(comment);
     }
-  image->orientation=BottomLeftOrientation;
   if ((tga_info.attributes & (1UL << 4)) == 0)
     {
       if ((tga_info.attributes & (1UL << 5)) == 0)
-        image->orientation=BottomLeftOrientation;
+        {
+          image->orientation=BottomLeftOrientation;
+          flip_y=MagickTrue;
+        }
       else
         image->orientation=TopLeftOrientation;
     }
   else
     {
       if ((tga_info.attributes & (1UL << 5)) == 0)
-        image->orientation=BottomRightOrientation;
+        {
+          image->orientation=BottomRightOrientation;
+          flip_x=MagickTrue;
+          flip_y=MagickTrue;
+        }
       else
-        image->orientation=TopRightOrientation;
+        {
+          image->orientation=TopRightOrientation;
+          flip_x=MagickTrue;
+        }
     }
+  option=GetImageOption(image_info,"tga:preserve-orientation");
+  if (IsStringTrue(option) != MagickFalse)
+    {
+      flip_x=MagickFalse;
+      flip_y=MagickFalse;
+    }
+  else
+    image->orientation=TopLeftOrientation;
   if (image_info->ping != MagickFalse)
     {
       (void) CloseBlob(image);
@@ -433,11 +456,19 @@ static Image *ReadTGAImage(const ImageInfo *image_info,ExceptionInfo *exception)
   index=0;
   runlength=0;
   offset=0;
+  offset_stepsize=1;
+  if (((unsigned char) (tga_info.attributes & 0xc0) >> 6) == 2)
+    offset_stepsize=2;
   for (y=0; y < (ssize_t) image->rows; y++)
   {
-    q=QueueAuthenticPixels(image,0,offset,image->columns,1,exception);
+    size_t
+      y_offset = (flip_y == MagickFalse) ? offset : image->rows-1-offset;
+
+    q=QueueAuthenticPixels(image,0,y_offset,image->columns,1,exception);
     if (q == (Quantum *) NULL)
       break;
+    if (flip_x != MagickFalse)
+      q+=GetPixelChannels(image)*(image->columns-1);
     for (x=0; x < (ssize_t) image->columns; x++)
     {
       if ((tga_info.image_type == TGARLEColormap) ||
@@ -569,12 +600,12 @@ static Image *ReadTGAImage(const ImageInfo *image_info,ExceptionInfo *exception)
       SetPixelBlue(image,ClampToQuantum(pixel.blue),q);
       if (image->alpha_trait != UndefinedPixelTrait)
         SetPixelAlpha(image,ClampToQuantum(pixel.alpha),q);
-      q+=GetPixelChannels(image);
+      if (flip_x != MagickFalse)
+        q-=GetPixelChannels(image);
+      else
+        q+=GetPixelChannels(image);
     }
-    if (((unsigned char) (tga_info.attributes & 0xc0) >> 6) == 2)
-      offset+=2;
-    else
-      offset++;
+    offset+=offset_stepsize;
     if (offset >= (ssize_t) image->rows)
       {
         base++;

@@ -3695,6 +3695,10 @@ static MagickBooleanType OpenPixelCache(Image *image,const MapMode mode,
       ((MagickSizeType) image->rows > cache_info->height_limit))
     ThrowBinaryException(ImageError,"WidthOrHeightExceedsLimit",
       image->filename);
+  if (GetPixelChannels(image) >= MaxPixelChannels)
+    ThrowBinaryException(ImageError,"MaximumChannelsExceeded",image->filename);
+  if (GetPixelMetaChannels(image) > GetPixelChannels(image))
+    ThrowBinaryException(ImageError,"MaximumChannelsExceeded",image->filename);
   if (GetMagickResourceLimit(ListLengthResource) != MagickResourceInfinity)
     {
       length=GetImageListLength(image);

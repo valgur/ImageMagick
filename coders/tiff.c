@@ -1092,6 +1092,9 @@ static void TIFFReadPhotoshopLayers(const ImageInfo *image_info,Image *image,
   const StringInfo
     *profile;
 
+  ExceptionInfo
+    *sans_exception;
+
   CustomStreamInfo
     *custom_stream;
 
@@ -1156,7 +1159,9 @@ static void TIFFReadPhotoshopLayers(const ImageInfo *image_info,Image *image,
   InitPSDInfo(layers,&info);
   clone_info=CloneImageInfo(image_info);
   clone_info->number_scenes=0;
-  (void) ReadPSDLayers(layers,clone_info,&info,exception);
+  sans_exception=AcquireExceptionInfo();
+  (void) ReadPSDLayers(layers,clone_info,&info,sans_exception);
+  sans_exception=DestroyExceptionInfo(sans_exception);
   clone_info=DestroyImageInfo(clone_info);
   DeleteImageFromList(&layers);
   if (layers != (Image *) NULL)
@@ -1701,9 +1706,9 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
             (void) SetPixelMetaChannels(image,extra_samples,exception);
             for (i=0; i < extra_samples; i++)
             {
-              image->alpha_trait=BlendPixelTrait;
               if (sample_info[i] == EXTRASAMPLE_ASSOCALPHA)
                 {
+                  image->alpha_trait=BlendPixelTrait;
                   SetQuantumAlphaType(quantum_info,AssociatedQuantumAlpha);
                   (void) SetImageProperty(image,"tiff:alpha","associated",
                     exception);
@@ -1711,6 +1716,7 @@ static Image *ReadTIFFImage(const ImageInfo *image_info,
               else
                 if (sample_info[i] == EXTRASAMPLE_UNASSALPHA)
                   {
+                    image->alpha_trait=BlendPixelTrait;
                     SetQuantumAlphaType(quantum_info,DisassociatedQuantumAlpha);
                     (void) SetImageProperty(image,"tiff:alpha","unassociated",
                       exception);
@@ -2237,11 +2243,14 @@ static void TIFFIgnoreTags(TIFF *tiff)
   Image
    *image;
 
+  size_t
+    count;
+
   ssize_t
     i;
 
-  size_t
-    count;
+  static
+    char *dummy_name = "";
 
   TIFFFieldInfo
     *ignore;
@@ -2286,6 +2295,7 @@ static void TIFFIgnoreTags(TIFF *tiff)
       p++;
 
     ignore[i].field_tag=(ttag_t) strtol(p,&q,10);
+    ignore[i].field_name=dummy_name;
 
     p=q;
     i++;
@@ -3309,6 +3319,7 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
     quantum_type;
 
   size_t
+    extra_samples,
     length,
     number_scenes;
 
@@ -3602,10 +3613,11 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
     (void) TIFFSetField(tiff,TIFFTAG_COMPRESSION,compress_tag);
     (void) TIFFSetField(tiff,TIFFTAG_FILLORDER,endian);
     (void) TIFFSetField(tiff,TIFFTAG_BITSPERSAMPLE,quantum_info->depth);
-    if (image->alpha_trait != UndefinedPixelTrait)
+    extra_samples=image->alpha_trait != UndefinedPixelTrait ? 1 : 0;
+    extra_samples+=image->number_meta_channels;
+    if (extra_samples != 0)
       {
         uint16
-          extra_samples,
           sample_info[MaxPixelChannels+1],
           samples_per_pixel;
 
@@ -3613,8 +3625,9 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
           TIFF has a matte channel.
         */
         (void) memset(sample_info,0,sizeof(sample_info));
-        extra_samples=(uint16) (image->number_meta_channels+1);
-        sample_info[0]=EXTRASAMPLE_UNASSALPHA;
+        sample_info[0]=EXTRASAMPLE_UNSPECIFIED;
+        if (image->alpha_trait != UndefinedPixelTrait)
+          sample_info[0]=EXTRASAMPLE_UNASSALPHA;
         option=GetImageOption(image_info,"tiff:alpha");
         if (option != (const char *) NULL)
           {
@@ -3628,7 +3641,7 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
           &samples_per_pixel,sans);
         (void) TIFFSetField(tiff,TIFFTAG_SAMPLESPERPIXEL,samples_per_pixel+
           extra_samples);
-        (void) TIFFSetField(tiff,TIFFTAG_EXTRASAMPLES,extra_samples,
+        (void) TIFFSetField(tiff,TIFFTAG_EXTRASAMPLES,(uint16) extra_samples,
           &sample_info);
         if (sample_info[0] == EXTRASAMPLE_ASSOCALPHA)
           SetQuantumAlphaType(quantum_info,AssociatedQuantumAlpha);
@@ -3672,14 +3685,12 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
         (void) TIFFSetField(tiff,TIFFTAG_JPEGCOLORMODE,JPEGCOLORMODE_RAW);
         if (IssRGBCompatibleColorspace(image->colorspace) != MagickFalse)
           {
-            const char
-              *value;
-
             (void) TIFFSetField(tiff,TIFFTAG_JPEGCOLORMODE,JPEGCOLORMODE_RGB);
             if (IsYCbCrCompatibleColorspace(image->colorspace) != MagickFalse)
               {
                 const char
-                  *sampling_factor;
+                  *sampling_factor,
+                  *value;
 
                 GeometryInfo
                   geometry_info;
@@ -3712,6 +3723,16 @@ static MagickBooleanType WriteTIFFImage(const ImageInfo *image_info,
           &bits_per_sample,sans);
         if (bits_per_sample == 12)
           (void) TIFFSetField(tiff,TIFFTAG_JPEGTABLESMODE,JPEGTABLESMODE_QUANT);
+        option=GetImageOption(image_info,"tiff:jpeg-tables-mode");
+        if (option != (char *) NULL)
+          {
+            int
+              jpeg_tables_mode;
+
+            jpeg_tables_mode=(int) StringToUnsignedLong(option);
+            if (jpeg_tables_mode >= 0 && jpeg_tables_mode <= 3)
+              (void) TIFFSetField(tiff,TIFFTAG_JPEGTABLESMODE,jpeg_tables_mode);
+          }
 #endif
         break;
       }

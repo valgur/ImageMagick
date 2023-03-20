@@ -269,6 +269,7 @@ AC_USE_SYSTEM_EXTENSIONS
 # ==============================================================================
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_CPP
 LT_PATH_LD
 AC_SUBST([LD])
@@ -800,12 +801,12 @@ AC_SUBST([MAGICK_ABI_SUFFIX])
 # Set pixel cache threshold
 AC_ARG_WITH([cache],
     [AS_HELP_STRING([--with-cache=THRESHOLD],
-                    [set pixel cache threshold in MB (default available memory)])],
+                    [set pixel cache memory threshold (default available memory)])],
     [with_cache=$withval],
     [with_cache=''])
 
 if test "$with_cache" != ''; then
-    AC_DEFINE_UNQUOTED([PixelCacheThreshold],["$with_cache"],[Pixel cache threshold in MB (defaults to available memory)])
+    AC_DEFINE_UNQUOTED([PixelCacheThreshold],["$with_cache"],[Pixel cache memory threshold (defaults to available memory)])
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-cache=$with_cache "
 fi
 
@@ -2583,17 +2584,11 @@ if test "x$with_pango" = "xyes"; then
   AC_MSG_RESULT([])
 fi
 
-if test "$have_pango" = 'yes'; then
-  AC_DEFINE([PANGO_DELEGATE],[1],[Define if you have PANGO library])
-  CFLAGS="$PANGO_CFLAGS $CFLAGS"
-fi
-
-if test "$have_pangocairo" = 'yes'; then
+if test "${have_pango}x${have_pangocairo}" = 'yesxyes'; then
   AC_DEFINE([PANGOCAIRO_DELEGATE],[1],[Define if you have PANGOCAIRO library])
-  CFLAGS="$PANGOCAIRO_CFLAGS $CFLAGS"
+  CFLAGS="$PANGO_CFLAGS $PANGOCAIRO_CFLAGS $CFLAGS"
 fi
 
-AM_CONDITIONAL([PANGO_DELEGATE],[test "$have_pango" = 'yes'])
 AM_CONDITIONAL([PANGOCAIRO_DELEGATE],[test "$have_pangocairo" = 'yes'])
 AC_SUBST([PANGO_CFLAGS])
 AC_SUBST([PANGO_LIBS])
@@ -3705,6 +3700,9 @@ fi
 if test "$have_bzlib"  = 'yes' ; then
    MAGICK_DELEGATES="$MAGICK_DELEGATES bzlib"
 fi
+if test "$have_cairo"    = 'yes' ; then
+   MAGICK_DELEGATES="$MAGICK_DELEGATES cairo"
+fi
 if test "$have_dps"    = 'yes' ; then
    MAGICK_DELEGATES="$MAGICK_DELEGATES dps"
 fi
@@ -3738,6 +3736,9 @@ fi
 if test "$have_png$have_jpeg" = 'yesyes' ; then
    MAGICK_DELEGATES="$MAGICK_DELEGATES jng"
 fi
+if test "$have_openjp2"    = 'yes' ; then
+   MAGICK_DELEGATES="$MAGICK_DELEGATES jp2"
+fi
 if test "$have_jpeg"   = 'yes' ; then
    MAGICK_DELEGATES="$MAGICK_DELEGATES jpeg"
 fi
@@ -3756,11 +3757,8 @@ fi
 if test "$have_openexr"    = 'yes' ; then
    MAGICK_DELEGATES="$MAGICK_DELEGATES openexr"
 fi
-if test "$have_openjp2"    = 'yes' ; then
-   MAGICK_DELEGATES="$MAGICK_DELEGATES openjp2"
-fi
-if test "$have_pango"    = 'yes' ; then
-   MAGICK_DELEGATES="$MAGICK_DELEGATES pango"
+if test "$have_pangocairo" = 'yes' ; then
+   MAGICK_DELEGATES="$MAGICK_DELEGATES pangocairo"
 fi
 if test "$have_png"    = 'yes' ; then
    MAGICK_DELEGATES="$MAGICK_DELEGATES png"
@@ -4034,7 +4032,7 @@ Delegate library configuration:
   Magick++          --with-magick-plus-plus=$with_magick_plus_plus	$have_magick_plus_plus
   OpenEXR           --with-openexr=$with_openexr		$have_openexr
   OpenJP2           --with-openjp2=$with_openjp2		$have_openjp2
-  PANGO             --with-pango=$with_pango		$have_pango
+  PANGO             --with-pango=$with_pango		$have_pangocairo
   PERL              --with-perl=$with_perl		$have_perl
   PNG               --with-png=$with_png		$have_png
   RAQM              --with-raqm=$with_raqm		$have_raqm

@@ -34,7 +34,7 @@
 %
 %
 */
-
+
 /*
   Include declarations.
 */
@@ -77,14 +77,14 @@ typedef struct MemoryManagerInfo
   ExceptionInfo
     *exception;
 } MemoryManagerInfo;
-
+
 #if defined(MAGICKCORE_JXL_DELEGATE)
 /*
   Forward declarations.
 */
 static MagickBooleanType
   WriteJXLImage(const ImageInfo *,Image *,ExceptionInfo *);
-
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -119,7 +119,7 @@ static MagickBooleanType IsJXL(const unsigned char *magick,const size_t length)
     return(MagickFalse);
   return(MagickTrue);
 }
-
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -173,17 +173,17 @@ static inline StorageType JXLDataTypeToStorageType(Image *image,
   switch (data_type)
   {
     case JXL_TYPE_FLOAT:
-      return FloatPixel;
+      return(FloatPixel);
     case JXL_TYPE_FLOAT16:
       (void) SetImageProperty(image,"quantum:format","floating-point",
         exception);
-      return FloatPixel;
+      return(FloatPixel);
     case JXL_TYPE_UINT16:
-      return ShortPixel;
+      return(ShortPixel);
     case JXL_TYPE_UINT8:
-      return CharPixel;
+      return(CharPixel);
     default:
-      return UndefinedPixel;
+      return(UndefinedPixel);
   }
 }
 
@@ -194,21 +194,21 @@ static inline OrientationType JXLOrientationToOrientation(
   {
     default:
     case JXL_ORIENT_IDENTITY:
-      return TopLeftOrientation;
+      return(TopLeftOrientation);
     case JXL_ORIENT_FLIP_HORIZONTAL:
-      return TopRightOrientation;
+      return(TopRightOrientation);
     case JXL_ORIENT_ROTATE_180:
-      return BottomRightOrientation;
+      return(BottomRightOrientation);
     case JXL_ORIENT_FLIP_VERTICAL:
-      return BottomLeftOrientation;
+      return(BottomLeftOrientation);
     case JXL_ORIENT_TRANSPOSE:
-      return LeftTopOrientation;
+      return(LeftTopOrientation);
     case JXL_ORIENT_ROTATE_90_CW:
-      return RightTopOrientation;
+      return(RightTopOrientation);
     case JXL_ORIENT_ANTI_TRANSPOSE:
-      return RightBottomOrientation;
+      return(RightBottomOrientation);
     case JXL_ORIENT_ROTATE_90_CCW:
-      return LeftBottomOrientation;
+      return(LeftBottomOrientation);
   }
 }
 
@@ -449,13 +449,71 @@ static Image *ReadJXLImage(const ImageInfo *image_info,ExceptionInfo *exception)
         if (jxl_status == JXL_DEC_SUCCESS)
           {
             if (color_encoding.transfer_function == JXL_TRANSFER_FUNCTION_LINEAR)
-              image->colorspace=RGBColorspace;
+              {
+                image->colorspace=RGBColorspace;
+                image->gamma=1.0;
+              }
             if (color_encoding.color_space == JXL_COLOR_SPACE_GRAY)
               {
                 image->colorspace=GRAYColorspace;
                 if (color_encoding.transfer_function == JXL_TRANSFER_FUNCTION_LINEAR)
-                  image->colorspace=LinearGRAYColorspace;
+                  {
+                    image->colorspace=LinearGRAYColorspace;
+                    image->gamma=1.0;
+                  }
               }
+            if (color_encoding.white_point == JXL_WHITE_POINT_CUSTOM)
+              {
+                image->chromaticity.white_point.x=
+                  color_encoding.white_point_xy[0];
+                image->chromaticity.white_point.y=
+                  color_encoding.white_point_xy[1];
+              }
+            if (color_encoding.primaries == JXL_PRIMARIES_CUSTOM)
+              {
+                image->chromaticity.red_primary.x=
+                  color_encoding.primaries_red_xy[0];
+                image->chromaticity.red_primary.y=
+                  color_encoding.primaries_red_xy[1];
+                image->chromaticity.green_primary.x=
+                  color_encoding.primaries_green_xy[0];
+                image->chromaticity.green_primary.y=
+                  color_encoding.primaries_green_xy[1];
+                image->chromaticity.blue_primary.x=
+                  color_encoding.primaries_blue_xy[0];
+                image->chromaticity.blue_primary.y=
+                  color_encoding.primaries_blue_xy[1];
+              }
+            if (color_encoding.transfer_function == JXL_TRANSFER_FUNCTION_GAMMA)
+              image->gamma=color_encoding.gamma;
+            switch (color_encoding.rendering_intent)
+            {
+              case JXL_RENDERING_INTENT_PERCEPTUAL:
+              {
+                image->rendering_intent=PerceptualIntent;
+                break;
+              }
+              case JXL_RENDERING_INTENT_RELATIVE:
+              {
+                image->rendering_intent=RelativeIntent;
+                break;
+              }
+              case JXL_RENDERING_INTENT_SATURATION: 
+              {
+                image->rendering_intent=SaturationIntent;
+                break;
+              }
+              case JXL_RENDERING_INTENT_ABSOLUTE: 
+              {
+                image->rendering_intent=AbsoluteIntent;
+                break;
+              }
+              default:
+              {
+                image->rendering_intent=UndefinedIntent;
+                break;
+              }
+            }
           }
         else
           if (jxl_status != JXL_DEC_ERROR)
@@ -468,7 +526,8 @@ static Image *ReadJXLImage(const ImageInfo *image_info,ExceptionInfo *exception)
         jxl_status=JxlDecoderGetColorAsICCProfile(jxl_info,&pixel_format,
           JXL_COLOR_PROFILE_TARGET_ORIGINAL,GetStringInfoDatum(profile),
           profile_size);
-        (void) SetImageProfile(image,"icc",profile,exception);
+        if (jxl_status == JXL_DEC_SUCCESS)
+          (void) SetImageProfile(image,"icm",profile,exception);
         profile=DestroyStringInfo(profile);
         if (jxl_status == JXL_DEC_SUCCESS)
           jxl_status=JXL_DEC_COLOR_ENCODING;
@@ -564,35 +623,17 @@ static Image *ReadJXLImage(const ImageInfo *image_info,ExceptionInfo *exception)
         if (jxl_status != JXL_DEC_SUCCESS)
           break;
         jxl_status=JxlDecoderGetBoxSizeRaw(jxl_info,&size);
-        if ((jxl_status != JXL_DEC_SUCCESS) || (size < 4))
+        if ((jxl_status != JXL_DEC_SUCCESS) || (size <= 8))
           break;
+        size-=8;
         if (LocaleNCompare(type,"Exif",sizeof(type)) == 0)
           {
-            unsigned char
-              *p;
-
             /*
               Read Exif profile.
             */
             exif_profile=AcquireStringInfo((size_t) size);
-            p=GetStringInfoDatum(exif_profile);
-            jxl_status=JxlDecoderSetBoxBuffer(jxl_info,p,size);
-            if (size > 4)
-              {
-                /*
-                  Extract Exif profile.
-                */
-                StringInfo *snippet = SplitStringInfo(exif_profile,4);
-                unsigned int offset = 0;
-                offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+0)) << 24;
-                offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+1)) << 16;
-                offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+2)) << 8;
-                offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+3)) << 0;
-                snippet=DestroyStringInfo(snippet);
-                if (offset < GetStringInfoLength(exif_profile))
-                  (void) DestroyStringInfo(SplitStringInfo(exif_profile,
-                    offset));
-              }
+            jxl_status=JxlDecoderSetBoxBuffer(jxl_info,
+              GetStringInfoDatum(exif_profile),size);
           }
         if (LocaleNCompare(type,"xml ",sizeof(type)) == 0)
           {
@@ -621,17 +662,40 @@ static Image *ReadJXLImage(const ImageInfo *image_info,ExceptionInfo *exception)
   }
   (void) JxlDecoderReleaseBoxBuffer(jxl_info);
   if ((exif_profile != (StringInfo *) NULL) &&
-      (GetStringInfoLength(exif_profile) > 6))
+      (GetStringInfoLength(exif_profile) > 4))
     {
+      StringInfo
+        *snippet;
+
+      unsigned int
+        offset=0;
+
       /*
-        Cache Exif profile.
+        Extract and cache Exif profile.
       */
-      StringInfo *profile = StringToStringInfo("Exif\0\0");
-      DestroyStringInfo(SplitStringInfo(exif_profile,2));
-      ConcatenateStringInfo(profile,exif_profile);
-      SetStringInfoLength(profile,GetStringInfoLength(profile)-4);
-      (void) SetImageProfile(image,"exif",profile,exception);
-      profile=DestroyStringInfo(profile);
+      snippet=SplitStringInfo(exif_profile,4);
+      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+0)) << 24;
+      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+1)) << 16;
+      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+2)) << 8;
+      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+3)) << 0;
+      snippet=DestroyStringInfo(snippet);
+      /*
+        Strip any EOI marker if payload starts with a JPEG marker.
+      */
+      size_t exif_length = GetStringInfoLength(exif_profile);
+      unsigned char *exif_datum = GetStringInfoDatum(exif_profile);
+      if (exif_length > 2 && 
+          (memcmp(exif_datum, "\xff\xd8", 2) == 0 ||
+           memcmp(exif_datum, "\xff\xe1", 2) == 0) &&
+          memcmp(exif_datum+exif_length-2, "\xff\xd9", 2) == 0)
+        SetStringInfoLength(exif_profile, exif_length-2);
+      /*
+        Skip to actual Exif payload.
+      */
+      if (offset < GetStringInfoLength(exif_profile))
+        (void) DestroyStringInfo(SplitStringInfo(exif_profile,
+          offset));
+      (void) SetImageProfile(image,"exif",exif_profile,exception);
       exif_profile=DestroyStringInfo(exif_profile);
     }
   if (xmp_profile != (StringInfo *) NULL)
@@ -653,7 +717,7 @@ static Image *ReadJXLImage(const ImageInfo *image_info,ExceptionInfo *exception)
   return(GetFirstImageInList(image));
 }
 #endif
-
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -703,7 +767,7 @@ ModuleExport size_t RegisterJXLImage(void)
   (void) RegisterMagickInfo(entry);
   return(MagickImageCoderSignature);
 }
-
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -727,7 +791,7 @@ ModuleExport void UnregisterJXLImage(void)
 {
   (void) UnregisterMagickInfo("JXL");
 }
-
+
 #if defined(MAGICKCORE_JXL_DELEGATE)
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -955,9 +1019,12 @@ static MagickBooleanType WriteJXLImage(const ImageInfo *image_info,Image *image,
           (GetStringInfoLength(exif_profile) > 6))
         {
           /*
-            Add Exif profile. Assumes "Exif\0\0" JPEG APP1 prefix was added by SetImageProfile().
+            Add Exif profile.  Assumes "Exif\0\0" JPEG APP1 prefix.
           */
-          StringInfo *profile = StringToStringInfo("\0\0\0\6");
+          StringInfo
+            *profile;
+
+          profile=BlobToStringInfo("\0\0\0\6",4);
           ConcatenateStringInfo(profile,exif_profile);
           (void) JxlEncoderAddBox(jxl_info,"Exif",GetStringInfoDatum(profile),
             GetStringInfoLength(profile),0);

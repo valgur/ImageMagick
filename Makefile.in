@@ -155,7 +155,7 @@
 #
 #  Makefile for building ImageMagick utilities.
 
-#  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization
+#  Copyright 1999 ImageMagick Studio LLC, a non-profit organization
 #  dedicated to making software imaging solutions freely available.
 #
 #  You may not use this file except in compliance with the License.  You may
@@ -258,8 +258,9 @@ XFAIL_TESTS = $(am__EXEEXT_6) $(am__EXEEXT_6)
 check_PROGRAMS = $(am__EXEEXT_2) $(am__EXEEXT_4)
 @WIN32_NATIVE_BUILD_TRUE@am__append_1 = -lurlmon
 @WIN32_NATIVE_BUILD_TRUE@am__append_2 = -lws2_32
-@MAGICKCORE_ZERO_CONFIGURATION_SUPPORT_TRUE@am__append_3 = MagickCore/threshold-map.h
+@WIN32_NATIVE_BUILD_TRUE@@WITH_MODULES_FALSE@am__append_3 = -lurlmon
 @MAGICKCORE_ZERO_CONFIGURATION_SUPPORT_TRUE@am__append_4 = MagickCore/threshold-map.h
+@MAGICKCORE_ZERO_CONFIGURATION_SUPPORT_TRUE@am__append_5 = MagickCore/threshold-map.h
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_func_fseeko.m4 \
@@ -456,18 +457,18 @@ am__MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURC
 	MagickCore/fourier.h MagickCore/fx.c MagickCore/fx.h \
 	MagickCore/fx-private.h MagickCore/gem.c MagickCore/gem.h \
 	MagickCore/gem-private.h MagickCore/geometry.c \
-	MagickCore/geometry.h MagickCore/histogram.c \
-	MagickCore/histogram.h MagickCore/identify.c \
-	MagickCore/identify.h MagickCore/image.c MagickCore/image.h \
-	MagickCore/image-private.h MagickCore/image-view.c \
-	MagickCore/image-view.h MagickCore/layer.c MagickCore/layer.h \
-	MagickCore/linked-list.c MagickCore/linked-list.h \
-	MagickCore/list.c MagickCore/list.h MagickCore/locale.c \
-	MagickCore/locale_.h MagickCore/log.c MagickCore/log.h \
-	MagickCore/magic.c MagickCore/magic.h MagickCore/magick.c \
-	MagickCore/magick-baseconfig.h MagickCore/magick-config.h \
-	MagickCore/magick-type.h MagickCore/magick.h \
-	MagickCore/matrix.c MagickCore/matrix.h \
+	MagickCore/geometry.h MagickCore/geometry-private.h \
+	MagickCore/histogram.c MagickCore/histogram.h \
+	MagickCore/identify.c MagickCore/identify.h MagickCore/image.c \
+	MagickCore/image.h MagickCore/image-private.h \
+	MagickCore/image-view.c MagickCore/image-view.h \
+	MagickCore/layer.c MagickCore/layer.h MagickCore/linked-list.c \
+	MagickCore/linked-list.h MagickCore/list.c MagickCore/list.h \
+	MagickCore/locale.c MagickCore/locale_.h MagickCore/log.c \
+	MagickCore/log.h MagickCore/magic.c MagickCore/magic.h \
+	MagickCore/magick.c MagickCore/magick-baseconfig.h \
+	MagickCore/magick-config.h MagickCore/magick-type.h \
+	MagickCore/magick.h MagickCore/matrix.c MagickCore/matrix.h \
 	MagickCore/matrix-private.h MagickCore/memory.c \
 	MagickCore/memory_.h MagickCore/memory-private.h \
 	MagickCore/method-attribute.h MagickCore/methods.h \
@@ -3547,7 +3548,7 @@ MODULECOMMONCPPFLAGS = $(AM_CPPFLAGS)
 DISTCHECK_CONFIGURE_FLAGS = $(DISTCHECK_CONFIG_FLAGS)
 DISTCLEANFILES = _configs.sed MagickCore/magick-baseconfig.h
 CLEANFILES = $(MAGICKWAND_CLEANFILES) $(MAGICKPP_CLEANFILES) \
-	$(UTILITIES_CLEANFILES) $(TESTS_CLEANFILES) $(am__append_4)
+	$(UTILITIES_CLEANFILES) $(TESTS_CLEANFILES) $(am__append_5)
 
 # Binary scripts
 bin_SCRIPTS = \
@@ -5178,11 +5179,13 @@ MAGICKCORE_LIBS = MagickCore/libMagickCore-@MAGICK_MAJOR_VERSION@.@MAGICK_ABI_SU
 @WITH_MODULES_FALSE@MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURCES = $(MAGICKCORE_BASE_SRCS) $(MAGICKCORE_PLATFORM_SRCS) $(MAGICKCORE_CODER_SRCS) $(MAGICKCORE_FILTER_SRCS)
 @WITH_MODULES_TRUE@MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURCES = $(MAGICKCORE_BASE_SRCS) $(MAGICKCORE_PLATFORM_SRCS)
 @WITH_MODULES_FALSE@MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LIBADD =  \
-@WITH_MODULES_FALSE@	$(MAGICK_DEP_LIBS) $(am__append_2)
+@WITH_MODULES_FALSE@	$(MAGICK_DEP_LIBS) $(am__append_2) \
+@WITH_MODULES_FALSE@	$(am__append_3)
 @WITH_MODULES_TRUE@MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LIBADD =  \
-@WITH_MODULES_TRUE@	$(MAGICK_DEP_LIBS) $(am__append_2)
+@WITH_MODULES_TRUE@	$(MAGICK_DEP_LIBS) $(am__append_2) \
+@WITH_MODULES_TRUE@	$(am__append_3)
 nodist_MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_SOURCES =  \
-	$(am__append_3)
+	$(am__append_4)
 MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBRARY_EXTRA_CPPFLAGS)
 @HAVE_LD_VERSION_SCRIPT_FALSE@MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LDFLAGS_VERSION = -export-symbols-regex ".*"
 @HAVE_LD_VERSION_SCRIPT_TRUE@MagickCore_libMagickCore_@MAGICK_MAJOR_VERSION@_@MAGICK_ABI_SUFFIX@_la_LDFLAGS_VERSION = -Wl,--version-script=$(top_srcdir)/MagickCore/libMagickCore.map
@@ -5281,6 +5284,7 @@ MAGICKCORE_BASE_SRCS = \
   MagickCore/gem-private.h \
   MagickCore/geometry.c \
   MagickCore/geometry.h \
+  MagickCore/geometry-private.h \
   MagickCore/histogram.c \
   MagickCore/histogram.h \
   MagickCore/identify.c \
@@ -5566,6 +5570,7 @@ MAGICKCORE_NOINST_HDRS = \
   MagickCore/exception-private.h \
   MagickCore/fx-private.h \
   MagickCore/gem-private.h \
+  MagickCore/geometry-private.h \
   MagickCore/image-private.h \
   MagickCore/linked-list-private.h \
   MagickCore/locale-private.h \

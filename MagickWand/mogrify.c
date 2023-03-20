@@ -56,6 +56,7 @@
 #include "MagickCore/blob-private.h"
 #include "MagickCore/color-private.h"
 #include "MagickCore/composite-private.h"
+#include "MagickCore/geometry-private.h"
 #include "MagickCore/image-private.h"
 #include "MagickCore/monitor-private.h"
 #include "MagickCore/string-private.h"
@@ -1402,6 +1403,7 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
                   draw_info->family=DestroyString(draw_info->family);
                 break;
               }
+            (void) SetImageOption(image_info,option+1,argv[i+1]);
             (void) CloneString(&draw_info->family,argv[i+1]);
             break;
           }
@@ -2706,7 +2708,24 @@ WandExport MagickBooleanType MogrifyImage(ImageInfo *image_info,const int argc,
                   (void) SetImageArtifact(*image,argv[i+1]+7,value);
                 }
               else
-                (void) SetImageProperty(*image,argv[i+1],value,exception);
+                if (LocaleCompare(argv[i+1],"profile") == 0)
+                  {
+                    StringInfo
+                      *profile = (StringInfo *) NULL;
+
+                    (void) CopyMagickString(image_info->filename,value,MagickPathExtent);
+                    (void) SetImageInfo(image_info,1,exception);
+                    if (LocaleCompare(image_info->filename,"-") != 0)
+                      profile=FileToStringInfo(image_info->filename,~0UL,exception);
+                    if (profile != (StringInfo *) NULL)
+                      {
+                        status=SetImageProfile(*image,image_info->magick,profile,
+                          exception);
+                        profile=DestroyStringInfo(profile);
+                      }
+                  }
+                else
+                  (void) SetImageProperty(*image,argv[i+1],value,exception);
             value=DestroyString(value);
             break;
           }
@@ -3907,6 +3926,9 @@ WandExport MagickBooleanType MogrifyImageCommand(ImageInfo *image_info,
             if (*backup_filename != '\0')
               (void) remove_utf8(backup_filename);
           }
+        else
+          if (*backup_filename != '\0')
+            (void) rename_utf8(backup_filename,image->filename);
         RemoveAllImageStack();
         continue;
       }
@@ -7199,6 +7221,11 @@ WandExport MagickBooleanType MogrifyImageInfo(ImageInfo *image_info,
                 (void) ListModuleInfo((FILE *) NULL,exception);
                 break;
               }
+              case MagickPagesizeOptions:
+              {
+                (void) ListPagesizes((FILE *) NULL,exception);
+                break;
+              }
               case MagickPolicyOptions:
               {
                 (void) ListPolicyInfo((FILE *) NULL,exception);
@@ -8740,7 +8767,7 @@ WandExport MagickBooleanType MogrifyImageList(ImageInfo *image_info,
 
             (void) SyncImagesSettings(mogrify_info,*images,exception);
             arguments=StringToArgv(argv[i+1],&number_arguments);
-            if (arguments == (char **) NULL)
+            if ((arguments == (char **) NULL) || (number_arguments == 1))
               break;
             if ((argc > 1) && (strchr(arguments[1],'=') != (char *) NULL))
               {

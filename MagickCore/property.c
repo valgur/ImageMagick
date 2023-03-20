@@ -1485,7 +1485,6 @@ static MagickBooleanType GetEXIFProperty(const Image *image,
           switch (format)
           {
             case EXIF_FMT_BYTE:
-            case EXIF_FMT_UNDEFINED:
             {
               value=(char *) NULL;
               if (~((size_t) number_bytes) >= 1)
@@ -1557,6 +1556,7 @@ static MagickBooleanType GetEXIFProperty(const Image *image,
               break;
             }
             case EXIF_FMT_STRING:
+            case EXIF_FMT_UNDEFINED:
             default:
             {
               if ((p < exif) || (p > (exif+length-number_bytes)))
@@ -2903,13 +2903,12 @@ MagickExport const char *GetMagickProperty(ImageInfo *image_info,
       if (LocaleCompare("channels",property) == 0)
         {
           WarnNoImageReturn("\"%%[%s]\"",property);
-          /* FUTURE: return actual image channels */
-          (void) FormatLocaleString(value,MagickPathExtent,"%s",
+          (void) FormatLocaleString(value,MagickPathExtent,"%s%s %g.%g",
             CommandOptionToMnemonic(MagickColorspaceOptions,(ssize_t)
-            image->colorspace));
+            image->colorspace),image->alpha_trait != UndefinedPixelTrait ?
+            "a" : " ",(double) image->number_channels,(double)
+            image->number_meta_channels);
           LocaleLower(value);
-          if( image->alpha_trait != UndefinedPixelTrait )
-            (void) ConcatenateMagickString(value,"a",MagickPathExtent);
           break;
         }
       if (LocaleCompare("colors",property) == 0)
@@ -3735,14 +3734,7 @@ MagickExport char *InterpretImageProperties(ImageInfo *image_info,Image *image,
       /*
         Handle a '@' replace string from file.
       */
-      if (IsRightsAuthorized(PathPolicyDomain,ReadPolicyRights,p) == MagickFalse)
-        {
-          errno=EPERM;
-          (void) ThrowMagickException(exception,GetMagickModule(),PolicyError,
-            "NotAuthorized","`%s'",p);
-          return(ConstantString(""));
-        }
-      interpret_text=FileToString(p+1,~0UL,exception);
+      interpret_text=FileToString(p,~0UL,exception);
       if (interpret_text != (char *) NULL)
         return(interpret_text);
     }
@@ -4708,28 +4700,6 @@ MagickExport MagickBooleanType SetImageProperty(Image *image,
           return(MagickFalse);
         }
 #endif
-      if (LocaleCompare("profile",property) == 0)
-        {
-          ImageInfo
-            *image_info;
-
-          StringInfo
-            *profile = (StringInfo *) NULL;
-
-          image_info=AcquireImageInfo();
-          (void) CopyMagickString(image_info->filename,value,MagickPathExtent);
-          (void) SetImageInfo(image_info,1,exception);
-          if (LocaleCompare(image_info->filename,"-") != 0)
-            profile=FileToStringInfo(image_info->filename,~0UL,exception);
-          if (profile != (StringInfo *) NULL)
-            {
-              status=SetImageProfile(image,image_info->magick,profile,
-                exception);
-              profile=DestroyStringInfo(profile);
-            }
-          image_info=DestroyImageInfo(image_info);
-          return(MagickTrue);
-        }
       break; /* not an attribute, add as a property */
     }
     case 'R':

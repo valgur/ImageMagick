@@ -75,9 +75,6 @@ typedef struct _TIM2FileHeader
 
   unsigned short
     image_count;
-
-  char
-    reserved[8];
 } TIM2FileHeader;
 
 typedef struct _TIM2ImageHeader
@@ -372,6 +369,7 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
             image_info->filename);
         }
       }
+      SyncImage(image,exception);
     }
   else  /* has_clut==false */
     {
@@ -626,8 +624,7 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
     status;
 
   ssize_t
-    i,
-    str_read;
+    i;
 
   TIM2FileHeader
     file_header;
@@ -649,37 +646,19 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
       image=DestroyImageList(image);
       return((Image *) NULL);
     }
-  /*
-   * Verify TIM2 magic number.
-   */
   file_header.magic_num=ReadBlobMSBLong(image);
   if (file_header.magic_num != 0x54494D32) /* "TIM2" */
     ThrowReaderException(CorruptImageError,"ImproperImageHeader");
-  /*
-   * #### Read File Header ####
-   */
   file_header.format_vers=ReadBlobByte(image);
   if (file_header.format_vers != 0x04)
     ThrowReaderException(CoderError,"ImageTypeNotSupported");
   file_header.format_type=ReadBlobByte(image);
   file_header.image_count=ReadBlobLSBShort(image);
-  ReadBlobStream(image,8,&(file_header.reserved),&str_read);
-  /*
-   * Jump to first image header
-   */
-  switch(file_header.format_type)
-  {
-    case 0x00:
-      if (DiscardBlobBytes(image,16) == MagickFalse)
-        ThrowReaderException(CorruptImageError,"InsufficientImageDataInFile");
-      break;
-    case 0x01:
-      if (DiscardBlobBytes(image,128) == MagickFalse)
-        ThrowReaderException(CorruptImageError,"InsufficientImageDataInFile");
-      break;
-    default:
-      ThrowReaderException(CoderError,"ImageTypeNotSupported");
-  }
+  if (DiscardBlobBytes(image,8) == MagickFalse) /* reserved */
+    ThrowReaderException(CorruptImageError,"InsufficientImageDataInFile");
+  if ((file_header.format_type > 0) &&
+      (DiscardBlobBytes(image,112) == MagickFalse))
+    ThrowReaderException(CorruptImageError,"InsufficientImageDataInFile");
   /*
    * Process each image. Only one image supported for now
    */
@@ -694,6 +673,28 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
     TIM2ImageHeader
       image_header;
 
+    if (i > 0)
+      {
+        /*
+          Proceed to next image.
+        */
+        if (image_info->number_scenes != 0)
+          if (image->scene >= (image_info->scene+image_info->number_scenes-1))
+            break;
+        /*
+          Allocate next image structure.
+        */
+        AcquireNextImage(image_info,image,exception);
+        if (GetNextImageInList(image) == (Image *) NULL)
+          {
+            status=MagickFalse;
+            break;
+          }
+        image=SyncNextImageInList(image);
+        status=SetImageProgress(image,LoadImagesTag,image->scene-1,image->scene);
+        if (status == MagickFalse)
+          break;
+      }
     ReadTIM2ImageHeader(image,&image_header);
     if (image_header.mipmap_count != 1)
       ThrowReaderException(CoderError,"NumberOfImagesIsNotSupported");
@@ -748,7 +749,7 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
     image->depth=(clut_depth != 0) ? clut_depth : bits_per_pixel;
     if ((image->depth == 16) || (image->depth == 32))
       image->alpha_trait=BlendPixelTrait;
-    if (image->ping != MagickFalse)
+    if (image->ping == MagickFalse)
       {
         status=ReadTIM2ImageData(image_info,image,&image_header,clut_depth,
           bits_per_pixel,exception);
@@ -764,25 +765,6 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
           image->filename);
         break;
       }
-    /*
-      Proceed to next image.
-    */
-    if (image_info->number_scenes != 0)
-      if (image->scene >= (image_info->scene+image_info->number_scenes-1))
-        break;
-    /*
-      Allocate next image structure.
-    */
-    AcquireNextImage(image_info,image,exception);
-    if (GetNextImageInList(image) == (Image *) NULL)
-      {
-        status=MagickFalse;
-        break;
-      }
-    image=SyncNextImageInList(image);
-    status=SetImageProgress(image,LoadImagesTag,image->scene-1,image->scene);
-    if (status == MagickFalse)
-      break;
   }
   (void) CloseBlob(image);
   if (status == MagickFalse)

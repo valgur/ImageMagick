@@ -80,7 +80,8 @@
 #include <heif.h>
 #endif
 #endif
-
+
+
 #if defined(MAGICKCORE_HEIC_DELEGATE)
 /*
   Forward declarations.
@@ -217,16 +218,37 @@ static MagickBooleanType ReadHEICExifProfile(Image *image,
     GetStringInfoDatum(exif_profile));
   if ((IsHEIFSuccess(image,&error,exception) != MagickFalse) && (length > 4))
     {
+      StringInfo
+        *snippet = SplitStringInfo(exif_profile,4);
+
+      unsigned char
+        *datum;
+
+      unsigned int
+        offset = 0;
+
       /*
         Extract Exif profile.
       */
-      StringInfo *snippet = SplitStringInfo(exif_profile,4);
-      unsigned int offset = 0;
-      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+0)) << 24;
-      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+1)) << 16;
-      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+2)) << 8;
-      offset|=(unsigned int) (*(GetStringInfoDatum(snippet)+3)) << 0;
+      datum=GetStringInfoDatum(snippet);
+      offset|=(unsigned int) (*(datum++)) << 24;
+      offset|=(unsigned int) (*(datum++)) << 16;
+      offset|=(unsigned int) (*(datum++)) << 8;
+      offset|=(unsigned int) (*(datum++)) << 0;
       snippet=DestroyStringInfo(snippet);
+      /*
+        Strip any EOI marker if payload starts with a JPEG marker.
+      */
+      length=GetStringInfoLength(exif_profile);
+      datum=GetStringInfoDatum(exif_profile);
+      if ((length > 2) && 
+          ((memcmp(datum,"\xff\xd8",2) == 0) ||
+           (memcmp(datum,"\xff\xe1",2) == 0)) &&
+           memcmp(datum+length-2,"\xff\xd9",2) == 0)
+        SetStringInfoLength(exif_profile,length-2);
+      /*
+        Skip to actual Exif payload.
+      */
       if (offset < GetStringInfoLength(exif_profile))
         {
           (void) DestroyStringInfo(SplitStringInfo(exif_profile,offset));
@@ -429,15 +451,16 @@ static MagickBooleanType ReadHEICImageHandle(const ImageInfo *image_info,
       p=pixels+(y*stride);
       for (x=0; x < (ssize_t) image->columns; x++)
       {
-        unsigned short pixel = ((*(p+1) << 8) | (*(p+0))) << shift; p+=2;
+        unsigned short pixel = (((unsigned short) *(p+1) << 8) |
+          (*(p+0))) << shift; p+=2;
         SetPixelRed(image,ScaleShortToQuantum(pixel),q);
-        pixel=((*(p+1) << 8) | (*(p+0))) << shift; p+=2;
+        pixel=(((unsigned short) *(p+1) << 8) | (*(p+0))) << shift; p+=2;
         SetPixelGreen(image,ScaleShortToQuantum(pixel),q);
-        pixel=((*(p+1) << 8) | (*(p+0))) << shift; p+=2;
+        pixel=(((unsigned short) *(p+1) << 8) | (*(p+0))) << shift; p+=2;
         SetPixelBlue(image,ScaleShortToQuantum(pixel),q);
         if (image->alpha_trait != UndefinedPixelTrait)
           {
-            pixel=((*(p+1) << 8) | (*(p+0))) << shift; p+=2;
+            pixel=(((unsigned short) *(p+1) << 8) | (*(p+0))) << shift; p+=2;
             SetPixelAlpha(image,ScaleShortToQuantum(pixel),q);
           }
         q+=GetPixelChannels(image);
@@ -636,7 +659,8 @@ static Image *ReadHEICImage(const ImageInfo *image_info,
   return(GetFirstImageInList(image));
 }
 #endif
-
+
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -676,7 +700,8 @@ static MagickBooleanType IsHEIC(const unsigned char *magick,const size_t length)
 #endif
   return(MagickFalse);
 }
-
+
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -756,7 +781,8 @@ ModuleExport size_t RegisterHEICImage(void)
 #endif
   return(MagickImageCoderSignature);
 }
-
+
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -789,7 +815,8 @@ ModuleExport void UnregisterHEICImage(void)
 #endif
 #endif
 }
-
+
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -1201,6 +1228,9 @@ static MagickBooleanType WriteHEICImage(const ImageInfo *image_info,
     MagickBooleanType
       lossless = image_info->quality >= 100 ? MagickTrue : MagickFalse;
 
+    struct heif_encoding_options
+      *options;
+
     /*
       Get encoder for the specified format.
     */
@@ -1303,9 +1333,14 @@ static MagickBooleanType WriteHEICImage(const ImageInfo *image_info,
           }
       }
 #endif
+    options=heif_encoding_options_alloc();
+#if LIBHEIF_NUMERIC_VERSION >= 0x010e0000
+    if (image->orientation != UndefinedOrientation)
+      options->image_orientation=(enum heif_orientation) image->orientation;
+#endif
     error=heif_context_encode_image(heif_context,heif_image,heif_encoder,
-      (const struct heif_encoding_options *) NULL,
-      (struct heif_image_handle **) NULL);
+      options,(struct heif_image_handle **) NULL);
+    heif_encoding_options_free(options);
     if (IsHEIFSuccess(image,&error,exception) == MagickFalse)
       break;
     status=IsHEIFSuccess(image,&error,exception);

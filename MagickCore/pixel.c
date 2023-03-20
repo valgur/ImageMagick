@@ -4373,7 +4373,7 @@ MagickExport void InitializePixelChannelMap(Image *image)
   if ((image->channels & CompositeMaskChannel) != 0)
     SetPixelChannelAttributes(image,CompositeMaskPixelChannel,CopyPixelTrait,
       n++);
-  if (image->number_meta_channels > 0)
+  if (image->number_meta_channels != 0)
     {
       PixelChannel
         meta_channel;
@@ -6259,7 +6259,7 @@ static void LogPixelChannels(const Image *image)
         name="composite-mask";
         break;
       }
-      case MetaPixelChannel:
+      case MetaPixelChannels:
       {
         name="meta";
         break;
