@@ -11,7 +11,7 @@
 #   under the License.
 #
 #   CMake script file to build ImageMagick
-# 
+#
 
 project(Magick C)
 
@@ -19,13 +19,13 @@ set(MAGICK_SRC
   magick.c
 )
 
-add_executable(${MAGICK_BINARY_NAME} ${MAGICK_SRC} ${MAGICK_RESOURCE_FILE_PATH})
+add_executable(magick ${MAGICK_SRC} ${MAGICK_RESOURCE_FILE_PATH})
 
-target_include_directories(${MAGICK_BINARY_NAME} PRIVATE ${IMAGEMAGICK_BASE_PATH})
-target_compile_definitions(${MAGICK_BINARY_NAME} PRIVATE ${MAGICK_BUILD_DEFINES})
-target_link_libraries(${MAGICK_BINARY_NAME} PRIVATE ${MAGICKWAND_BINARY_NAME})
+target_include_directories(magick PRIVATE ${IMAGEMAGICK_BASE_PATH})
+target_compile_definitions(magick PRIVATE ${MAGICK_BUILD_DEFINES})
+target_link_libraries(magick PRIVATE MagickWand)
 
-install(TARGETS ${MAGICK_BINARY_NAME}
+install(TARGETS magick
   RUNTIME DESTINATION bin
   BUNDLE DESTINATION bin
 )
