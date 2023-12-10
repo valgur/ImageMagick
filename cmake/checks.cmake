@@ -17,7 +17,7 @@ macro(magick_check_env)
   check_library_exists(m pow "" LIBM)
   if (LIBM)
     set(CMAKE_REQUIRED_LIBRARIES m)
-    link_libraries(m)
+    set(CMAKE_REQUIRED_LIBRARIES_SAVE ${CMAKE_REQUIRED_LIBRARIES})
   endif()
 
   # Check if `<dirent.h>' exists
@@ -48,7 +48,7 @@ macro(magick_check_env)
   check_function_exists(atoll HAVE_ATOLL)
 
   # Check if `bool' exists (check_type_size is not working at least on windows)
-  check_cxx_source_compiles ("void main () {bool b = false;}" HAVE_BOOL)
+  check_cxx_source_compiles ("int main () {bool b = false;}" HAVE_BOOL)
 
   # Check if `carg' exists
   check_symbol_exists(carg complex.h HAVE_CARG)
@@ -83,6 +83,16 @@ macro(magick_check_env)
   # Check if `pread' exists
   check_function_exists(pread HAVE_DECL_PREAD)
 
+  # Check if `PTHREAD_PRIO_INHERIT` exists
+  set(CMAKE_REQUIRED_LIBRARIES pthread)
+  check_c_source_compiles("
+      #include <pthread.h>
+      int main() {
+          int i = PTHREAD_PRIO_INHERIT;
+      }
+  " HAVE_PTHREAD_PRIO_INHERIT)
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_SAVE})
+
   # Check if `putenv' exists
   check_function_exists(putenv HAVE_PUTENV)
 
@@ -105,10 +115,18 @@ macro(magick_check_env)
   check_include_file(dlfcn.h HAVE_DLFCN_H)
 
   # Check if `double_t' exists
-  check_cxx_source_compiles (
+  check_c_source_compiles (
   "
     #include <math.h>
-    void main () {double_t d = 0;}
+    int main () {float_t f = 0;}
+  "
+  HAVE_FLOAT_T)
+
+  # Check if `double_t' exists
+  check_c_source_compiles (
+  "
+    #include <math.h>
+    int main () {double_t d = 0;}
   "
   HAVE_DOUBLE_T)
 
@@ -135,6 +153,9 @@ macro(magick_check_env)
 
   # Check if `floor' exists
   check_function_exists(floor HAVE_FLOOR)
+
+  # Check if `fork' exists
+  check_function_exists(fork HAVE_FORK)
 
   # Check if `fseeko' exists
   check_function_exists(fseeko HAVE_FSEEKO)
@@ -215,7 +236,16 @@ macro(magick_check_env)
   check_include_file(limits.h HAVE_LIMITS_H)
 
   # Check if you have Linux-compatible sendfile()
-  # HAVE_LINUX_SENDFILE ?
+  check_c_source_compiles( "
+      #undef _FILE_OFFSET_BITS
+      #include <sys/types.h>
+      #include <sys/socket.h>
+      #include <sys/sendfile.h>
+      int main() {
+          sendfile(0, 0, (void *) 0, 0);
+      }"
+    HAVE_LINUX_SENDFILE)
+
 
   # Check if <linux/unistd.h> exists
   check_include_file(linux/unistd.h HAVE_LINUX_UNISTD_H)
@@ -249,6 +279,9 @@ macro(magick_check_env)
     set(HAVE_LONG_LONG_INT 1)
   endif()
 
+  # Check if `lstat' exists
+  check_function_exists(lstat HAVE_LSTAT)
+
   # Check if <machine/param.h> exists
   check_include_file(machine/param.h HAVE_MACHINE_PARAM_H)
 
@@ -259,7 +292,14 @@ macro(magick_check_env)
   check_include_file(malloc.h HAVE_MALLOC_H)
 
   # Check if `mbstate_t' exists in <wchar.h>
-  check_symbol_exists(mbstate_t wchar.h HAVE_MBSTATE_T)
+  set(CMAKE_EXTRA_INCLUDE_FILES wchar.h)
+  check_type_size(mbstate_t SIZEOF_MBSTATE_T LANGUAGE C)
+  set(CMAKE_EXTRA_INCLUDE_FILES)
+  if(SIZEOF_MBSTATE_T)
+    set(HAVE_MBSTATE_T 1)
+  else()
+    set(mbstate_t int)
+  endif()
 
   # Check if `memmove' exists
   check_function_exists(memmove HAVE_MEMMOVE)
@@ -283,13 +323,13 @@ macro(magick_check_env)
   check_function_exists(munmap HAVE_MUNMAP)
 
   # Check if `namespace' exists
-  check_cxx_source_compiles ("namespace test {} void main() {using namespace ::test;}" HAVE_NAMESPACES)
+  check_cxx_source_compiles ("namespace test {} int main() {using namespace ::test;}" HAVE_NAMESPACES)
 
   # Check if `std::' exists
   check_cxx_source_compiles (
   "
     #include <iostream>
-    void main() {std::istream& is = std::cin;}
+    int main() {std::istream& is = std::cin;}
   "
   HAVE_NAMESPACE_STD)
 
@@ -401,16 +441,19 @@ macro(magick_check_env)
   # Check if `stat' exists
   check_function_exists(stat HAVE_STAT)
 
-  # Check if `stdarg' exists
-  check_function_exists(stdarg HAVE_STDARG_H)
+  # Check if `<stdarg.h>' exists
+  check_include_file(stdarg.h HAVE_STDARG_H)
 
   # Check if <stdbool.h> exists and conforms to C99
   check_cxx_source_compiles (
   "
     #include <stdbool.h>
-    void main() {bool b = __bool_true_false_are_defined;}
+    int main() {bool b = __bool_true_false_are_defined;}
   "
   HAVE_STDBOOL_H)
+
+  # Check if <stddef.h> exists
+  check_include_file(stddef.h HAVE_STDDEF_H)
 
   # Check if <stdint.h> exists
   check_include_file(stdint.h HAVE_STDINT_H)
@@ -432,7 +475,7 @@ macro(magick_check_env)
       using namespace std;
     #endif
 
-    void main() {}
+    int main() {}
   "
   HAVE_STD_LIBS)
   set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS_SAVE})
@@ -683,30 +726,9 @@ macro(magick_check_env)
   "
     #include <stdlib.h>
     static void foo(void) __attribute__ ((unused));
-    void main() { }
+    int main() { }
   "
   HAVE___ATTRIBUTE__)
-
-  # Check return type of signal handlers
-  check_c_source_compiles(
-  "
-    #include <signal.h>
-    #ifdef signal
-      #undef signal
-    #endif
-    #ifdef __cplusplus
-    extern \"C\" void (*signal (int, void (*)(int)))(int);
-    #else
-    void (*signal ()) ();
-    #endif
-    void main() {}
-  "
-  SIGNAL_RETURN_TYPE_IS_VOID)
-  if(SIGNAL_RETURN_TYPE_IS_VOID)
-    set(RETSIGTYPE void)
-  else(SIGNAL_RETURN_TYPE_IS_VOID)
-    set(RETSIGTYPE int)
-  endif(SIGNAL_RETURN_TYPE_IS_VOID)
 
   # Check `double' size
   check_type_size(double SIZEOF_DOUBLE)
@@ -753,8 +775,8 @@ macro(magick_check_env)
   # Check `size_t' size
   check_type_size("size_t" SIZEOF_SIZE_T)
 
-  # Check `size_t' size
-  check_type_size("size_t" SIZEOF_SIZE_T)
+  # Check `ssize_t' size
+  check_type_size("ssize_t" SIZEOF_SSIZE_T)
 
   # Check `unsigned int' size
   check_type_size("unsigned int" SIZEOF_UNSIGNED_INT)
@@ -784,23 +806,13 @@ macro(magick_check_env)
   # Check strerror_r returns `char *'
   check_cxx_source_compiles(
   "
-    void main()
-    {
-      char buf[100];
-      char x = *strerror_r(0, buf, sizeof buf);
-      char *p = strerror_r(0, buf, sizeof buf);
+    #include <string.h>
+    int main() {
+        char buf[100];
+        const char* c = strerror_r(0, buf, 100);
     }
   "
   STRERROR_R_CHAR_P)
-
-  # Check if we can safely include both <sys/time.h> and <time.h>
-  check_cxx_source_compiles(
-  "
-    #include <sys/time.h>
-    #include <time.h>
-    void main(void){}
-  "
-  TIME_WITH_SYS_TIME)
 
   # Check if `struct tm' exists in <sys/time.h>
   if(HAVE_SYS_TIME_H)
@@ -811,20 +823,17 @@ macro(magick_check_env)
   check_symbol_exists(__GNU_LIBRARY__ features.h _GNU_SOURCE)
 
   # Check if system is Big Endian
-  TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
+  test_big_endian(WORDS_BIGENDIAN)
 
   # Check if we are on MINIX
   check_symbol_exists(_MINIX "stdio.h" EVENT___MINIX)
 
   # Check if system does not provide POSIX.1 features except with this defined
-  #TODO does this suffice ????
-  check_symbol_exists(_POSIX_1_SOURCE "stdio.h" EVENT___POSIX_1_SOURCE)
-  if(NOT _POSIX_1_SOURCE)
-    set(_POSIX_1_SOURCE 2)
+  if(HAVE_MINIX_CONFIG_H)
+    set(_MINIX ON)
+    set(_POSIX_1_SOURCE ON)
+    set(_POSIX_SOURCE ON)
   endif()
-
-  # TODO Is this true or should it be 1 when not found???
-  check_symbol_exists(_POSIX_SOURCE "stdio.h" EVENT___POSIX_SOURCE)
 
   if(NOT CMAKE_COMPILER_IS_GNUCC)
     set(__CHAR_UNSIGNED___EXITCODE 1)
@@ -838,19 +847,18 @@ macro(magick_check_env)
   endif()
 
   # Check for compiler `__func__' compatibility
-  check_c_source_compiles("void main() {char *function_name = __func__;}" HAVE___FUNC__)
-  check_c_source_compiles("void main() {char *function_name = __FUNCTION__;}" HAVE___FUNCTION__)
-
+  check_c_source_compiles("int main() {char *function_name = __func__;}" HAVE___FUNC__)
+  check_c_source_compiles("int main() {char *function_name = __FUNCTION__;}" HAVE___FUNCTION__)
   if(HAVE___FUNC__)
-    set(__func__ __func__)
+    set(__func__)
   elseif(HAVE___FUNCTION__)
     set(__func__ __FUNCTION__)
   else()
-    set(__func__ "")
+    set(__func__ __FILE__)
   endif()
 
   # Check if `const' is supported by compiler
-  check_c_source_compiles("void main() {const char *s = \"Test\";}" HAVE_CONST)
+  check_c_source_compiles("int main() {const char *s = \"Test\";}" HAVE_CONST)
   # Only set const to empty if it doesn't exist otherwise magick++ will not compile
   if(NOT HAVE_CONST)
     set(const " ")
@@ -868,23 +876,21 @@ macro(magick_check_env)
   check_c_source_compiles(
     "static inline int test (void) {return 0;}\nint main (void) {return test();}"
     HAVE_INLINE)
-
   check_c_source_compiles (
     "static __inline int test (void) {return 0;}\nint main (void) {return test();}"
     HAVE___INLINE)
-
   check_c_source_compiles (
     "static __inline__ int test (void) {return 0;}\nint main (void) {return test();}"
     HAVE___INLINE__)
 
   if(HAVE_INLINE)
-    set(inline inline)
+    set(inline)
   elseif(HAVE___INLINE)
     set(inline __inline)
   elseif(HAVE___INLINE__)
     set(inline __inline__)
   else()
-    set(inline "")
+    set(inline " ")
   endif()
 
   #TODO these defines if system doesn't define them
@@ -894,7 +900,6 @@ macro(magick_check_env)
   set(int8_t "")
   set(intmax_t "")
   set(intptr_t "")
-  set(mbstate_t "")
 
   # Check if <sys/types.h> doesn't define `mode_t'
   if(HAVE_SYS_TYPES_H)
@@ -963,7 +968,7 @@ macro(magick_check_env)
   # Check if `volatile' works
   check_cxx_source_compiles(
   "
-  void main() { volatile int i = 1; }
+  int main() { volatile int i = 1; }
   "
   HAVE_VOLATILE)
 

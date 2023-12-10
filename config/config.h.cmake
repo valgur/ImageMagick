@@ -1,26 +1,25 @@
 /* config/config.h.cmake.  Hand crafted from config/config.h.in.  */
-/* config/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
-#cmakedefine AC_APPLE_UNIVERSAL_BUILD
+#cmakedefine AC_APPLE_UNIVERSAL_BUILD 1
 
 /* Define if you have AUTOTRACE library */
-#cmakedefine AUTOTRACE_DELEGATE
+#cmakedefine AUTOTRACE_DELEGATE 1
 
 /* Define if coders and filters are to be built as modules. */
-#cmakedefine BUILD_MODULES
+#cmakedefine BUILD_MODULES 1
 
 /* Define if you have the bzip2 library */
-#cmakedefine BZLIB_DELEGATE
+#cmakedefine BZLIB_DELEGATE 1
 
 /* Define if you have CAIRO library */
-#cmakedefine CAIRO_DELEGATE
+#cmakedefine CAIRO_DELEGATE 1
 
 /* Channel mask depth */
 #cmakedefine CHANNEL_MASK_DEPTH @CHANNEL_MASK_DEPTH@
 
 /* permit enciphering and deciphering image pixels */
-#cmakedefine CIPHER_SUPPORT
+#cmakedefine CIPHER_SUPPORT 1
 
 /* coders subdirectory. */
 #cmakedefine CODER_DIRNAME "@CODER_DIRNAME@"
@@ -33,7 +32,7 @@
 #cmakedefine CONFIGURE_RELATIVE_PATH "@CONFIGURE_RELATIVE_PATH@"
 
 /* Define if you have DJVU library */
-#cmakedefine DJVU_DELEGATE
+#cmakedefine DJVU_DELEGATE 1
 
 /* Directory where ImageMagick documents live. */
 #cmakedefine DOCUMENTATION_PATH "@DOCUMENTATION_PATH@"
@@ -42,7 +41,7 @@
 #cmakedefine DPC_SUPPORT 1
 
 /* Define if you have Display Postscript */
-#cmakedefine DPS_DELEGATE
+#cmakedefine DPS_DELEGATE 1
 
 /* exclude deprecated methods in MagickCore API */
 #cmakedefine EXCLUDE_DEPRECATED "@EXCLUDE_DEPRECATED@"
@@ -51,28 +50,28 @@
 #cmakedefine EXECUTABLE_PATH "@EXECUTABLE_PATH@"
 
 /* Define if you have FFTW library */
-#cmakedefine FFTW_DELEGATE
+#cmakedefine FFTW_DELEGATE 1
 
 /* filter subdirectory. */
 #cmakedefine FILTER_DIRNAME "@FILTER_DIRNAME@"
 
 /* Define if you have FLIF library */
-#cmakedefine FLIF_DELEGATE
+#cmakedefine FLIF_DELEGATE 1
 
 /* Define if you have FONTCONFIG library */
-#cmakedefine FONTCONFIG_DELEGATE
+#cmakedefine FONTCONFIG_DELEGATE 1
 
 /* Define if you have FlashPIX library */
-#cmakedefine FPX_DELEGATE
+#cmakedefine FPX_DELEGATE 1
 
 /* Define if you have FREETYPE library */
-#cmakedefine FREETYPE_DELEGATE
+#cmakedefine FREETYPE_DELEGATE 1
 
 /* Define if you have Ghostscript library or framework */
-#cmakedefine GS_DELEGATE
+#cmakedefine GS_DELEGATE 1
 
 /* Define if you have GVC library */
-#cmakedefine GVC_DELEGATE
+#cmakedefine GVC_DELEGATE 1
 
 /* Define to 1 if you have the `acosh' function. */
 #cmakedefine HAVE_ACOSH 1
@@ -148,7 +147,7 @@
 
 /* Define to 1 if you have the declaration of `strlcpy', and to 0 if you
    don't. */
-#cmakedefine HAVE_DECL_STRLCPY 1
+#cmakedefine01 HAVE_DECL_STRLCPY
 
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
@@ -208,37 +207,37 @@
 #cmakedefine HAVE_GETC_UNLOCKED 1
 
 /* Define to 1 if you have the `getdtablesize' function. */
-#cmakedefine HAVE_GETDTABLESIZE
+#cmakedefine HAVE_GETDTABLESIZE 1
 
 /* Define to 1 if you have the `getentropy' function. */
-#cmakedefine HAVE_GETENTROPY
+#cmakedefine HAVE_GETENTROPY 1
 
 /* Define to 1 if you have the `getexecname' function. */
-#cmakedefine HAVE_GETEXECNAME
+#cmakedefine HAVE_GETEXECNAME 1
 
 /* Define to 1 if you have the `getpagesize' function. */
-#cmakedefine HAVE_GETPAGESIZE
+#cmakedefine HAVE_GETPAGESIZE 1
 
 /* Define to 1 if you have the `getpid' function. */
-#cmakedefine HAVE_GETPID
+#cmakedefine HAVE_GETPID 1
 
 /* Define to 1 if you have the `getpwnam_r' function. */
-#cmakedefine HAVE_GETPWNAM_R
+#cmakedefine HAVE_GETPWNAM_R 1
 
 /* Define to 1 if you have the `getrlimit' function. */
-#cmakedefine HAVE_GETRLIMIT
+#cmakedefine HAVE_GETRLIMIT 1
 
 /* Define to 1 if you have the `getrusage' function. */
-#cmakedefine HAVE_GETRUSAGE
+#cmakedefine HAVE_GETRUSAGE 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
-#cmakedefine HAVE_GETTIMEOFDAY
+#cmakedefine HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the `gmtime_r' function. */
-#cmakedefine HAVE_GMTIME_R
+#cmakedefine HAVE_GMTIME_R 1
 
 /* Compile with hugepage support */
-#cmakedefine HAVE_HUGEPAGES
+#cmakedefine HAVE_HUGEPAGES 1
 
 /* Define to 1 if the system has the type `intmax_t'. */
 #cmakedefine HAVE_INTMAX_T 1
@@ -259,19 +258,19 @@
 #cmakedefine HAVE_J1 1
 
 /* Define if you have jemalloc memory allocation library */
-#cmakedefine HAVE_JEMALLOC
+#cmakedefine HAVE_JEMALLOC 1
 
 /* Define if you have the <lcms2.h> header file. */
-#cmakedefine HAVE_LCMS2_H
+#cmakedefine HAVE_LCMS2_H 1
 
 /* Define if you have the <lcms2/lcms2.h> header file. */
-#cmakedefine HAVE_LCMS2_LCMS2_H
+#cmakedefine HAVE_LCMS2_LCMS2_H 1
 
 /* Define if you have the <libraw/libraw.h> header file. */
-#cmakedefine HAVE_LIBRAW_LIBRAW_H
+#cmakedefine HAVE_LIBRAW_LIBRAW_H 1
 
 /* Define if you have the <libheif/heif.h> header file. */
-#cmakedefine HAVE_LIBHEIF_LIBHEIF_H
+#cmakedefine HAVE_LIBHEIF_LIBHEIF_H 1
 
 /* Define to 1 if you have the `gcov' library (-lgcov). */
 #cmakedefine HAVE_LIBGCOV 1
@@ -280,7 +279,7 @@
 #cmakedefine HAVE_LIMITS_H 1
 
 /* Define if you have Linux-compatible sendfile() */
-#cmakedefine HAVE_LINUX_SENDFILE
+#cmakedefine HAVE_LINUX_SENDFILE 1
 
 /* Define to 1 if you have the <linux/unistd.h> header file. */
 #cmakedefine HAVE_LINUX_UNISTD_H 1
@@ -338,7 +337,7 @@
 #cmakedefine HAVE_MMAP 1
 
 /* Define if you have the mtmalloc memory allocation library */
-#cmakedefine HAVE_MTMALLOC
+#cmakedefine HAVE_MTMALLOC 1
 
 /* Define to 1 if you have the `munmap' function. */
 #cmakedefine HAVE_MUNMAP 1
@@ -404,10 +403,10 @@
 #cmakedefine HAVE_PROCESS_H 1
 
 /* Define if you have POSIX threads libraries and header files. */
-#cmakedefine HAVE_PTHREAD
+#cmakedefine HAVE_PTHREAD 1
 
 /* Have PTHREAD_PRIO_INHERIT. */
-#cmakedefine HAVE_PTHREAD_PRIO_INHERIT
+#cmakedefine HAVE_PTHREAD_PRIO_INHERIT 1
 
 /* Define to 1 if you have the `putenv' function. */
 #cmakedefine HAVE_PUTENV 1
@@ -446,10 +445,10 @@
 #cmakedefine HAVE_SETVBUF 1
 
 /* X11 server supports shape extension */
-#cmakedefine HAVE_SHAPE
+#cmakedefine HAVE_SHAPE 1
 
 /* X11 server supports shared memory extension */
-#cmakedefine HAVE_SHARED_MEMORY
+#cmakedefine HAVE_SHARED_MEMORY 1
 
 /* Define to 1 if you have the `sigaction' function. */
 #cmakedefine HAVE_SIGACTION 1
@@ -474,6 +473,9 @@
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #cmakedefine HAVE_STDBOOL_H 1
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#cmakedefine HAVE_STDDEF_H 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #cmakedefine HAVE_STDINT_H 1
@@ -503,7 +505,7 @@
 #cmakedefine HAVE_STRERROR 1
 
 /* Define if you have `strerror_r'. */
-#cmakedefine HAVE_STRERROR_R
+#cmakedefine HAVE_STRERROR_R 1
 
 /* Define to 1 if cpp supports the ANSI # stringizing operator. */
 #cmakedefine HAVE_STRINGIZE 1
@@ -609,6 +611,9 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #cmakedefine HAVE_SYS_WAIT_H 1
 
+/* Define if you have the tcmalloc memory allocation library */
+#cmakedefine HAVE_TCMALLOC 1
+
 /* Define to 1 if you have the `telldir' function. */
 #cmakedefine HAVE_TELLDIR 1
 
@@ -629,6 +634,9 @@
 
 /* Define to 1 if you have the `TIFFReadEXIFDirectory' function. */
 #cmakedefine HAVE_TIFFREADEXIFDIRECTORY 1
+
+/* Define to 1 if you have the `TIFFReadGPSDirectory' function. */
+#cmakedefine HAVE_TIFFREADGPSDIRECTORY 1
 
 /* Define to 1 if you have the `TIFFSetErrorHandlerExt' function. */
 #cmakedefine HAVE_TIFFSETERRORHANDLEREXT 1
@@ -663,7 +671,7 @@
 #cmakedefine HAVE_ULLTOSTR 1
 
 /* Define if you have umem memory allocation library */
-#cmakedefine HAVE_UMEM
+#cmakedefine HAVE_UMEM 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
@@ -738,10 +746,10 @@
 #cmakedefine HAVE__WSTAT 1
 
 /* define if your compiler has __attribute__ */
-#cmakedefine HAVE___ATTRIBUTE__
+#cmakedefine HAVE___ATTRIBUTE__ 1
 
 /* Define if you have libheif library */
-#cmakedefine HEIC_DELEGATE
+#cmakedefine HEIC_DELEGATE 1
 
 /* Directory where ImageMagick architecture headers live. */
 #cmakedefine INCLUDEARCH_PATH "@INCLUDEARCH_PATH@"
@@ -750,22 +758,22 @@
 #cmakedefine INCLUDE_PATH "@INCLUDE_PATH@"
 
 /* ImageMagick is formally installed under prefix */
-#cmakedefine INSTALLED_SUPPORT
+#cmakedefine INSTALLED_SUPPORT 1
 
 /* Define if you have JBIG library */
-#cmakedefine JBIG_DELEGATE
+#cmakedefine JBIG_DELEGATE 1
 
 /* Define if you have JPEG library */
-#cmakedefine JPEG_DELEGATE
+#cmakedefine JPEG_DELEGATE 1
 
 /* Define if you have JXL library */
-#cmakedefine JXL_DELEGATE
+#cmakedefine JXL_DELEGATE 1
 
 /* Define if you have LCMS library */
-#cmakedefine LCMS_DELEGATE
+#cmakedefine LCMS_DELEGATE 1
 
 /* Define if you have OPENJP2 library */
-#cmakedefine LIBOPENJP2_DELEGATE
+#cmakedefine LIBOPENJP2_DELEGATE 1
 
 /* Directory where architecture-dependent files live. */
 #cmakedefine LIBRARY_PATH "@LIBRARY_PATH@"
@@ -779,11 +787,11 @@
 #cmakedefine LIB_BIN_BASEDIRNAME "@LIB_BIN_BASEDIRNAME@"
 
 /* Define if you have LQR library */
-#cmakedefine LQR_DELEGATE
+#cmakedefine LQR_DELEGATE 1
 
 /* Define if using libltdl to support dynamically loadable modules and OpenCL
    */
-#cmakedefine LTDL_DELEGATE
+#cmakedefine LTDL_DELEGATE 1
 
 /* Native module suffix */
 #cmakedefine LTDL_MODULE_EXT "@LTDL_MODULE_EXT@"
@@ -792,7 +800,7 @@
 #cmakedefine LT_OBJDIR "@LT_OBJDIR@"
 
 /* Define if you have LZMA library */
-#cmakedefine LZMA_DELEGATE
+#cmakedefine LZMA_DELEGATE 1
 
 /* Define to prepend to default font search path. */
 #cmakedefine MAGICK_FONT_PATH "@MAGICK_FONT_PATH@"
@@ -819,7 +827,7 @@
 #cmakedefine NAMESPACE_PREFIX_TAG "@NAMESPACE_PREFIX_TAG@"
 
 /* Define if you have OPENEXR library */
-#cmakedefine OPENEXR_DELEGATE
+#cmakedefine OPENEXR_DELEGATE 1
 
 /* Name of package */
 #cmakedefine PACKAGE "@PACKAGE@"
@@ -843,16 +851,16 @@
 #cmakedefine PACKAGE_VERSION "@PACKAGE_VERSION@"
 
 /* Define if you have PANGOCAIRO library */
-#cmakedefine PANGOCAIRO_DELEGATE
+#cmakedefine PANGOCAIRO_DELEGATE 1
 
 /* Define if you have PANGO library */
-#cmakedefine PANGO_DELEGATE
+#cmakedefine PANGO_DELEGATE 1
 
 /* enable pipes (|) in filenames */
-#cmakedefine PIPES_SUPPORT
+#cmakedefine PIPES_SUPPORT 1
 
 /* Define if you have PNG library */
-#cmakedefine PNG_DELEGATE
+#cmakedefine PNG_DELEGATE 1
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -865,19 +873,16 @@
 #cmakedefine QUANTUM_DEPTH_OBSOLETE_IN_H @QUANTUM_DEPTH_OBSOLETE_IN_H@
 
 /* Define if you have RAQM library */
-#cmakedefine RAQM_DELEGATE
+#cmakedefine RAQM_DELEGATE 1
 
 /* Define if you have LIBRAW library */
-#cmakedefine RAW_R_DELEGATE
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#cmakedefine RETSIGTYPE @RETSIGTYPE@
+#cmakedefine RAW_R_DELEGATE 1
 
 /* Define if you have RSVG library */
-#cmakedefine RSVG_DELEGATE
+#cmakedefine RSVG_DELEGATE 1
 
 /* Setjmp/longjmp are thread safe */
-#cmakedefine SETJMP_IS_THREAD_SAFE
+#cmakedefine SETJMP_IS_THREAD_SAFE 1
 
 /* Sharearch directory name without ABI part. */
 #cmakedefine SHAREARCH_BASEDIRNAME "@SHAREARCH_BASEDIRNAME@"
@@ -902,7 +907,7 @@
 #cmakedefine SIZEOF_FLOAT @SIZEOF_FLOAT@
 
 /* The size of `float_t', as computed by sizeof. */
-#cmakedefine SIZEOF_FLOAT_T @SIZEOF_FLOAT_T@"
+#cmakedefine SIZEOF_FLOAT_T @SIZEOF_FLOAT_T@
 
 /* The size of `long double', as computed by sizeof. */
 #cmakedefine SIZEOF_LONG_DOUBLE @SIZEOF_LONG_DOUBLE@
@@ -925,8 +930,8 @@
 /* The size of `size_t', as computed by sizeof. */
 #cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
 
-/* The size of `size_t', as computed by sizeof. */
-#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
+/* The size of `ssize_t', as computed by sizeof. */
+#cmakedefine SIZEOF_SSIZE_T @SIZEOF_SSIZE_T@
 
 /* The size of `unsigned int', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_INT @SIZEOF_UNSIGNED_INT@
@@ -949,43 +954,108 @@
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
 #cmakedefine STAT_MACROS_BROKEN 1
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #cmakedefine STDC_HEADERS 1
 
 /* Define to 1 if strerror_r returns char *. */
 #cmakedefine STRERROR_R_CHAR_P 1
 
 /* Define if you have POSIX threads libraries and header files. */
-#cmakedefine THREAD_SUPPORT
+#cmakedefine THREAD_SUPPORT 1
 
 /* Define if you have TIFF library */
-#cmakedefine TIFF_DELEGATE
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#cmakedefine TIME_WITH_SYS_TIME 1
+#cmakedefine TIFF_DELEGATE 1
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #cmakedefine TM_IN_SYS_TIME 1
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
-#cmakedefine _ALL_SOURCE
+#cmakedefine _ALL_SOURCE 1
 #endif
-/* Enable GNU extensions on systems that have them.  */
-#ifndef _GNU_SOURCE
-#cmakedefine _GNU_SOURCE
-#endif
-/* Enable threading extensions on Solaris.  */
-#ifndef _POSIX_PTHREAD_SEMANTICS
-#cmakedefine _POSIX_PTHREAD_SEMANTICS
-#endif
-/* Enable extensions on HP NonStop.  */
-#ifndef _TANDEM_SOURCE
-#cmakedefine _TANDEM_SOURCE
+/* Enable general extensions on macOS.  */
+#ifndef _DARWIN_C_SOURCE
+#cmakedefine _DARWIN_C_SOURCE 1
 #endif
 /* Enable general extensions on Solaris.  */
 #ifndef __EXTENSIONS__
-#cmakedefine __EXTENSIONS__
+#cmakedefine __EXTENSIONS__ 1
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+#cmakedefine _GNU_SOURCE 1
+#endif
+/* Enable X/Open compliant socket functions that do not require linking
+   with -lxnet on HP-UX 11.11.  */
+#ifndef _HPUX_ALT_XOPEN_SOCKET_API
+#cmakedefine _HPUX_ALT_XOPEN_SOCKET_API 1
+#endif
+/* Identify the host operating system as Minix.
+   This macro does not affect the system headers' behavior.
+   A future release of Autoconf may stop defining this macro.  */
+#ifndef _MINIX
+#cmakedefine _MINIX 1
+#endif
+/* Enable general extensions on NetBSD.
+   Enable NetBSD compatibility extensions on Minix.  */
+#ifndef _NETBSD_SOURCE
+#cmakedefine _NETBSD_SOURCE 1
+#endif
+/* Enable OpenBSD compatibility extensions on NetBSD.
+   Oddly enough, this does nothing on OpenBSD.  */
+#ifndef _OPENBSD_SOURCE
+#cmakedefine _OPENBSD_SOURCE 1
+#endif
+/* Define to 1 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_SOURCE
+#cmakedefine _POSIX_SOURCE 1
+#endif
+/* Define to 2 if needed for POSIX-compatible behavior.  */
+#ifndef _POSIX_1_SOURCE
+#cmakedefine _POSIX_1_SOURCE 1
+#endif
+/* Enable POSIX-compatible threading on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+#cmakedefine _POSIX_PTHREAD_SEMANTICS 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-5:2014.  */
+#ifndef __STDC_WANT_IEC_60559_ATTRIBS_EXT__
+#cmakedefine __STDC_WANT_IEC_60559_ATTRIBS_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-1:2014.  */
+#ifndef __STDC_WANT_IEC_60559_BFP_EXT__
+#cmakedefine __STDC_WANT_IEC_60559_BFP_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-2:2015.  */
+#ifndef __STDC_WANT_IEC_60559_DFP_EXT__
+#cmakedefine __STDC_WANT_IEC_60559_DFP_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
+#ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
+#cmakedefine __STDC_WANT_IEC_60559_FUNCS_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+#ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
+#cmakedefine __STDC_WANT_IEC_60559_TYPES_EXT__ 1
+#endif
+/* Enable extensions specified by ISO/IEC TR 24731-2:2010.  */
+#ifndef __STDC_WANT_LIB_EXT2__
+#cmakedefine __STDC_WANT_LIB_EXT2__ 1
+#endif
+/* Enable extensions specified by ISO/IEC 24747:2009.  */
+#ifndef __STDC_WANT_MATH_SPEC_FUNCS__
+#cmakedefine __STDC_WANT_MATH_SPEC_FUNCS__ 1
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+#cmakedefine _TANDEM_SOURCE 1
+#endif
+/* Enable X/Open extensions.  Define to 500 only if necessary
+   to make mbstate_t available.  */
+#ifndef _XOPEN_SOURCE
+#cmakedefine _XOPEN_SOURCE 1
 #endif
 
 
@@ -993,19 +1063,19 @@
 #cmakedefine VERSION "@VERSION@"
 
 /* Define if you have WEBPMUX library */
-#cmakedefine WEBPMUX_DELEGATE
+#cmakedefine WEBPMUX_DELEGATE 1
 
 /* Define if you have WEBP library */
-#cmakedefine WEBP_DELEGATE
+#cmakedefine WEBP_DELEGATE 1
 
 /* Define to use the Windows GDI32 library */
-#cmakedefine WINGDI32_DELEGATE
+#cmakedefine WINGDI32_DELEGATE 1
 
 /* Define if using the dmalloc debugging malloc package */
-#cmakedefine WITH_DMALLOC
+#cmakedefine WITH_DMALLOC 1
 
 /* Define if you have WMF library */
-#cmakedefine WMF_DELEGATE
+#cmakedefine WMF_DELEGATE 1
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
    significant byte first (like Motorola and SPARC, unlike Intel). */
@@ -1015,7 +1085,7 @@
 # endif
 #else
 # ifndef WORDS_BIGENDIAN
-#cmakedefine WORDS_BIGENDIAN
+#cmakedefine WORDS_BIGENDIAN 1
 # endif
 #endif
 
@@ -1023,10 +1093,10 @@
 #cmakedefine X11_CONFIGURE_PATH "@X11_CONFIGURE_PATH@"
 
 /* Define if you have X11 library */
-#cmakedefine X11_DELEGATE
+#cmakedefine X11_DELEGATE 1
 
 /* Define if you have XML library */
-#cmakedefine XML_DELEGATE
+#cmakedefine XML_DELEGATE 1
 
 /* Define to 1 if the X Window System is missing or not being used. */
 #cmakedefine X_DISPLAY_MISSING 1
@@ -1035,65 +1105,51 @@
 #cmakedefine ZERO_CONFIGURATION_SUPPORT 1
 
 /* Define if you have ZIP library */
-#cmakedefine ZIP_DELEGATE
+#cmakedefine ZIP_DELEGATE 1
 
 /* Define if you have ZLIB library */
-#cmakedefine ZLIB_DELEGATE
+#cmakedefine ZLIB_DELEGATE 1
 
 /* Define if you have ZSTD library */
-#cmakedefine ZSTD_DELEGATE
-
-/* Enable large inode numbers on Mac OS X 10.5.  */
-#ifndef _DARWIN_USE_64_BIT_INODE
-# define _DARWIN_USE_64_BIT_INODE 1
-#endif
+#cmakedefine ZSTD_DELEGATE 1
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
 
 /* enable run-time bounds-checking */
-#cmakedefine _FORTIFY_SOURCE
+#cmakedefine _FORTIFY_SOURCE 1
 
 /* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
 #cmakedefine _LARGEFILE_SOURCE 1
 
 /* Define for large files, on AIX-style hosts. */
-#cmakedefine _LARGE_FILES
-
-/* Define to 1 if on MINIX. */
-#cmakedefine _MINIX 1
+#cmakedefine _LARGE_FILES 1
 
 /* Define this for the OpenCL Accelerator */
-#cmakedefine _OPENCL
-
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-#cmakedefine _POSIX_1_SOURCE 2
-
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-#cmakedefine _POSIX_SOURCE 1
+#cmakedefine _OPENCL 1
 
 /* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#cmakedefine _UINT32_T
+#cmakedefine _UINT32_T 1
 
 /* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#cmakedefine _UINT64_T
+#cmakedefine _UINT64_T 1
 
 /* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
-#cmakedefine _UINT8_T
+#cmakedefine _UINT8_T 1
 
-/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
+/* Define to 1 if type `char' is unsigned and your compiler does not
+   predefine this macro.  */
 #ifndef __CHAR_UNSIGNED__
-#cmakedefine __CHAR_UNSIGNED__
+#cmakedefine __CHAR_UNSIGNED__ 1
 #endif
 
-/* Define to appropriate substitue if compiler does not have __func__ */
+/* Define to appropriate substitute if compiler does not have __func__ */
 #cmakedefine __func__ @__func__@
 
 /* Define to empty if `const' does not conform to ANSI C. */
@@ -1141,20 +1197,20 @@
 /* Define to `long int' if <sys/types.h> does not define. */
 #cmakedefine off_t @off_t@
 
-/* Define to `int' if <sys/types.h> does not define. */
+/* Define as a signed integer type capable of holding a process identifier. */
 #cmakedefine pid_t @pid_t@
 
 /* Define to the equivalent of the C99 'restrict' keyword, or to
    nothing if this is not supported.  Do not define if restrict is
-   supported directly.  */
+   supported only directly.  */
 #cmakedefine restrict @restrict@
-
-/* Work around a bug in Sun C++: it does not support _Restrict or
-   __restrict__, even though the corresponding Sun C compiler ends up with
-   "#define restrict _Restrict" or "#define restrict __restrict__" in the
-   previous line.  Perhaps some future version of Sun C++ will work with
-   restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
-#if defined __SUNPRO_CC && !defined __RESTRICT
+/* Work around a bug in older versions of Sun C++, which did not
+   #define __restrict__ or support _Restrict or __restrict__
+   even though the corresponding Sun C compiler ended up with
+   "#define restrict _Restrict" or "#define restrict __restrict__"
+   in the previous line.  This workaround can be removed once
+   we assume Oracle Developer Studio 12.5 (2016) or later.  */
+#if defined __SUNPRO_CC && !defined __RESTRICT && !defined __restrict__
 # define _Restrict
 # define __restrict__
 #endif
