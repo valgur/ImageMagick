@@ -16,6 +16,9 @@
 /* Define if you have CAIRO library */
 #cmakedefine CAIRO_DELEGATE
 
+/* Channel mask depth */
+#cmakedefine CHANNEL_MASK_DEPTH @CHANNEL_MASK_DEPTH@
+
 /* permit enciphering and deciphering image pixels */
 #cmakedefine CIPHER_SUPPORT
 
