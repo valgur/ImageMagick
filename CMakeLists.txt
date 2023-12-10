@@ -127,6 +127,13 @@ option(WITH_DMALLOC "Use dmalloc for memory profiling" FALSE)
 option(ZERO_CONFIGURATION_SUPPORT "Build self-contained, embeddable, zero-configuration ImageMagick" FALSE)
 option(DPC_SUPPORT "Enable distributed pixel cache support" TRUE)
 
+option(WITH_64BIT_CHANNEL_MASK_SUPPORT "Enable 64-bit channel masks" FALSE)
+if(WITH_64BIT_CHANNEL_MASK_SUPPORT)
+  set(CHANNEL_MASK_DEPTH 64)
+else()
+  set(CHANNEL_MASK_DEPTH 32)
+endif()
+
 set(SECURITY_POLICY "open" CACHE STRING "Set the security policy variant to enforce")
 set_property(CACHE SECURITY_POLICY PROPERTY STRINGS "open;limited;secure;websafe")
 message(STATUS "Security policy variant to enforce: ${SECURITY_POLICY}")
