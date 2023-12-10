@@ -126,6 +126,15 @@ set(PixelCacheThreshold "" CACHE STRING "Set pixel cache threshhold in MB (defau
 option(WITH_DMALLOC "Use dmalloc for memory profiling" FALSE)
 option(ZERO_CONFIGURATION_SUPPORT "Build self-contained, embeddable, zero-configuration ImageMagick" FALSE)
 
+set(SECURITY_POLICY "open" CACHE STRING "Set the security policy variant to enforce")
+set_property(CACHE SECURITY_POLICY PROPERTY STRINGS "open;limited;secure;websafe")
+message(STATUS "Security policy variant to enforce: ${SECURITY_POLICY}")
+if(NOT SECURITY_POLICY STREQUAL "open")
+  message(FATAL_ERROR "Only 'open' security policy is supported at this time.")
+  # TODO: Implement installation of config/ files
+  # Copy config/policy-${SECURITY_POLICY}.xml to ${MAGICK_CONFIGURE_PATH}/policy.xml
+endif()
+
 # Fetch some needed values from version.sh and fill the correspondent variables
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/configure CONTENT_CONFIGURE)
 
