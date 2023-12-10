@@ -13,17 +13,8 @@ include(CheckSourceRuns)
 include(TestBigEndian)
 
 macro(magick_check_env)
-  # Check if `closedir' function returns void instead of `int'
+  # Check if `<dirent.h>' exists
   check_include_file(dirent.h HAVE_DIRENT_H)
-  if(HAVE_DIRENT_H)
-      unset(HAVE_DIRENT_H)
-      check_symbol_exists(DIR dirent.h HAVE_DIRENT_H)
-      if(NOT HAVE_DIRENT_H)
-          message(STATUS "--- DIR not defined...")
-      else(NOT HAVE_DIRENT_H)
-          check_prototype_definition(closedir "void closedir(DIR *dirp)" "NULL" "dirent.h" CLOSEDIR_VOID)
-      endif(NOT HAVE_DIRENT_H)
-  endif(HAVE_DIRENT_H)
 
   # Check if `acosh' exists
   check_function_exists(acosh HAVE_ACOSH)
@@ -136,9 +127,6 @@ macro(magick_check_env)
 
   # Check if `floor' exists
   check_function_exists(floor HAVE_FLOOR)
-
-  # Check if `fork' exists
-  check_function_exists(fork HAVE_FORK)
 
   # Check if `fseeko' exists
   check_function_exists(fseeko HAVE_FSEEKO)
@@ -529,9 +517,6 @@ macro(magick_check_env)
   # Check if <sys/resource.h> exists
   check_include_file(sys/resource.h HAVE_SYS_RESOURCE_H)
 
-  # Check if <sys/select.h> exists
-  check_include_file(sys/select.h HAVE_SYS_SELECT_H)
-
   # Check if <sys/sendfile.h> exists
   check_include_file(sys/sendfile.h HAVE_SYS_SENDFILE_H)
 
@@ -612,24 +597,11 @@ macro(magick_check_env)
   # Check if <utime.h> exists
   check_include_file(utime.h HAVE_UTIME_H)
 
-  # Check if `vfork' exists
-  check_function_exists(vfork HAVE_VFORK)
-
-  # Check if <vfork.h> exists
-  check_include_file(vfork.h HAVE_VFORK_H)
-
   # Check if `vfprintf' exists
   check_symbol_exists(vfprintf stdio.h HAVE_VFPRINTF)
 
   # Check if `vfprintf_l' exists
   check_symbol_exists(vfprintf_l stdio.h HAVE_VFPRINTF_L)
-
-  # Check if `vprintf' exists
-  check_symbol_exists(vprintf stdio.h HAVE_VPRINTF)
-  # Check if `_doprnt' exists only if `vprintf' do not exists
-  if(NOT HAVE_VPRINTF)
-    check_function_exists(_doprnt HAVE_DOPRNT)
-  endif()
 
   # Check if `vsnprintf' exists
   check_symbol_exists(vsnprintf stdio.h HAVE_VSNPRINTF)
@@ -650,48 +622,8 @@ macro(magick_check_env)
   # Check if <windows.h> exists
   check_include_file(windows.h HAVE_WINDOWS_H)
 
-  # Check if `fork' works
-  if(HAVE_FORK)
-    set(HAVE_WORKING_FORK_EXITCODE 1)
-    set(HAVE_WORKING_FORK_EXITCODE__TRYRUN_OUTPUT 1)
-    check_cxx_source_runs(
-    "
-      #ifdef HAVE_SYS_TYPES_H
-      #include <sys/types.h>
-    #endif
-    #ifdef HAVE_UNISTD_H
-      #include <unistd.h>
-    #endif
-      int main() { if (fork() < 0) return(1); return(0); }
-    "
-    HAVE_WORKING_FORK)
-  endif()
-
-  # Check if `vfork' works
-  if(HAVE_VFORK)
-    set(HAVE_WORKING_VFORK_EXITCODE 1)
-    set(HAVE_WORKING_VFORK_EXITCODE__TRYRUN_OUTPUT 1)
-    check_cxx_source_runs(
-    "
-      #ifdef HAVE_SYS_TYPES_H
-      #include <sys/types.h>
-    #endif
-    #ifdef HAVE_UNISTD_H
-      #include <unistd.h>
-    #endif
-    #ifdef HAVE_VFORK_H
-      #include <vfork.h>
-    #endif
-      int main() { if (vfork() < 0) return(1); return(0); }
-    "
-    HAVE_WORKING_VFORK)
-  endif()
-
   # Check if <xlocale.h> exists
   check_include_file(xlocale.h HAVE_XLOCALE_H)
-
-  # Check if `_aligned_malloc' exists
-  check_function_exists(_aligned_malloc HAVE__ALIGNED_MALLOC)
 
   # Check if `_Bool' exists
   check_type_size(_Bool _BOOL)
@@ -747,11 +679,6 @@ macro(magick_check_env)
     set(RETSIGTYPE int)
   endif(SIGNAL_RETURN_TYPE_IS_VOID)
 
-  #TODO These seems to be obsolet but should we check them ????
-  set(SELECT_TYPE_ARG1 "")
-  set(SELECT_TYPE_ARG234 "")
-  set(SELECT_TYPE_ARG5 "")
-
   # Check `double' size
   check_type_size(double SIZEOF_DOUBLE)
 
@@ -797,8 +724,8 @@ macro(magick_check_env)
   # Check `size_t' size
   check_type_size("size_t" SIZEOF_SIZE_T)
 
-  # Check `ssize_t' size
-  check_type_size("ssize_t" SIZEOF_SSIZE_T)
+  # Check `size_t' size
+  check_type_size("size_t" SIZEOF_SIZE_T)
 
   # Check `unsigned int' size
   check_type_size("unsigned int" SIZEOF_UNSIGNED_INT)
@@ -988,23 +915,6 @@ macro(magick_check_env)
     endif()
   endif()
 
-  # Check if <sys/types.h> doesn't define `ssize_t'
-  if(HAVE_SYS_TYPES_H)
-    if(SIZEOF_SSIZE_T)
-      set(HAVE_SSIZE_T 1)
-    else()
-      check_symbol_exists(ssize_t sys/types.h HAVE_SSIZE_T)
-      if(NOT HAVE_SSIZE_T)
-        if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
-          set(ssize_t int)
-        else()
-          set(ssize_t "long long")
-        endif()
-        set(SIZEOF_SSIZE_T ${CMAKE_SIZEOF_VOID_P})
-      endif()
-    endif()
-  endif()
-
   # Check if <sys/types.h> doesn't define `uid_t'
   if(HAVE_SYS_TYPES_H)
     check_symbol_exists(uid_t sys/types.h HAVE_UID_T)
@@ -1020,11 +930,6 @@ macro(magick_check_env)
   set(uint8_t "")
   set(uintmax_t "")
   set(uintptr_t "")
-
-  # Check if `vfork' is not working and define it as `fork'
-  if(NOT HAVE_WORKING_VFORK)
-    set(vfork fork)
-  endif()
 
   # Check if `volatile' works
   check_cxx_source_compiles(
