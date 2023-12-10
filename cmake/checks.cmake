@@ -13,6 +13,13 @@ include(CheckSourceRuns)
 include(TestBigEndian)
 
 macro(magick_check_env)
+  # libm is required for complex.h checks
+  check_library_exists(m pow "" LIBM)
+  if (LIBM)
+    set(CMAKE_REQUIRED_LIBRARIES m)
+    link_libraries(m)
+  endif()
+
   # Check if `<dirent.h>' exists
   check_include_file(dirent.h HAVE_DIRENT_H)
 
@@ -44,13 +51,13 @@ macro(magick_check_env)
   check_cxx_source_compiles ("void main () {bool b = false;}" HAVE_BOOL)
 
   # Check if `carg' exists
-  check_function_exists(carg HAVE_CARG)
+  check_symbol_exists(carg complex.h HAVE_CARG)
 
   # Check if `cabs' exists
-  check_function_exists(cabs HAVE_CABS)
+  check_symbol_exists(cabs complex.h HAVE_CABS)
 
   # Check if `cimag' exists
-  check_function_exists(cimag HAVE_CIMAG)
+  check_symbol_exists(cimag complex.h HAVE_CIMAG)
 
   # Check if `clock' exists
   check_function_exists(clock HAVE_CLOCK)
@@ -68,7 +75,7 @@ macro(magick_check_env)
   check_include_file(complex.h HAVE_COMPLEX_H)
 
   # Check if `creal' exists
-  check_function_exists(creal HAVE_CREAL)
+  check_symbol_exists(creal complex.h HAVE_CREAL)
 
   # Check if `ctime_r' exists
   check_function_exists(ctime_r HAVE_CTIME_R)
