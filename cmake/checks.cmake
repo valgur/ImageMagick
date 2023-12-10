@@ -960,10 +960,8 @@ macro(magick_check_env)
   "
   HAVE_VOLATILE)
 
-  if(HAVE_VOLATILE)
-    set(volatile volatile)
-  else()
-    set(volatile "")
+  if(NOT HAVE_VOLATILE)
+    set(volatile " ")
   endif()
 
   #TODO check if this is actually true
