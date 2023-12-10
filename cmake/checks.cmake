@@ -33,7 +33,7 @@ macro(magick_check_env)
   check_include_file(arm/limits.h HAVE_ARM_LIMITS_H)
 
   # Check if <arpa/inet.h> exists
-  check_include_file(arpa/inet.h HAVE_ARM_LIMITS_H)
+  check_include_file(arpa/inet.h HAVE_ARPA_INET_H)
 
   # Check if `asinh' exists
   check_function_exists(asinh HAVE_ASINH)
@@ -109,7 +109,7 @@ macro(magick_check_env)
   "
     #include <math.h>
     void main () {double_t d = 0;}
-  " 
+  "
   HAVE_DOUBLE_T)
 
   # Check if `erf' exists
@@ -131,7 +131,7 @@ macro(magick_check_env)
   check_include_file(fcntl.h HAVE_FCNTL_H)
 
   # Check if <float.h> exists
-  check_include_file(fcntl.h HAVE_FLOAT_H)
+  check_include_file(float.h HAVE_FLOAT_H)
 
   # Check if `floor' exists
   check_function_exists(floor HAVE_FLOOR)
@@ -179,7 +179,7 @@ macro(magick_check_env)
   check_function_exists(gettimeofday HAVE_GETTIMEOFDAY)
 
   # Check if `gmtime_r' exists
-  check_function_exists(gettimeofday HAVE_GMTIME_R)
+  check_function_exists(gmtime_r HAVE_GMTIME_R)
 
   # I don't think our program will have a big memory impact
   set(HAVE_HUGEPAGES FALSE)
@@ -288,7 +288,7 @@ macro(magick_check_env)
   # Check if `std::' exists
   check_cxx_source_compiles (
   "
-    #include <iostream> 
+    #include <iostream>
     void main() {std::istream& is = std::cin;}
   "
   HAVE_NAMESPACE_STD)
@@ -374,7 +374,7 @@ macro(magick_check_env)
   # Check if `setvbuf' exists
   check_function_exists(setvbuf HAVE_SETVBUF)
 
-  # Check supported X11 extensions  
+  # Check supported X11 extensions
   find_package(X11)
   if(X11_Xshape_FOUND)
     set(HAVE_SHAPE 1)
@@ -407,7 +407,7 @@ macro(magick_check_env)
   # Check if <stdbool.h> exists and conforms to C99
   check_cxx_source_compiles (
   "
-    #include <stdbool.h> 
+    #include <stdbool.h>
     void main() {bool b = __bool_true_false_are_defined;}
   "
   HAVE_STDBOOL_H)
@@ -431,7 +431,7 @@ macro(magick_check_env)
     #ifdef HAVE_NAMESPACES
       using namespace std;
     #endif
-    
+
     void main() {}
   "
   HAVE_STD_LIBS)
@@ -496,7 +496,7 @@ macro(magick_check_env)
   check_function_exists(strstr HAVE_STRSTR)
 
   # Check if `strtod' exists
-  check_function_exists(strtod HAVE_STRSTR)
+  check_function_exists(strtod HAVE_STRTOD)
 
   # Check if `strtod_l' exists
   check_function_exists(strtod_l HAVE_STRTOD_L)
@@ -775,7 +775,7 @@ macro(magick_check_env)
   check_type_size("unsigned short" SIZEOF_UNSIGNED_SHORT)
 
   # TODO Not sure how to heck if the `S_IS*' macros in <sys/stat.h> are broken
-  # Should we test them all ???? 
+  # Should we test them all ????
   set(STAT_MACROS_BROKEN 0)
 
   # Check ANSI C header files exists
@@ -784,7 +784,7 @@ macro(magick_check_env)
   # Check strerror_r returns `char *'
   check_cxx_source_compiles(
   "
-    void main() 
+    void main()
     {
       char buf[100];
       char x = *strerror_r(0, buf, sizeof buf);
@@ -843,13 +843,13 @@ macro(magick_check_env)
 
   if(HAVE___FUNC__)
     set(__func__ __func__)
-  elseif(HAVE___FUNCTION__) 
+  elseif(HAVE___FUNCTION__)
     set(__func__ __FUNCTION__)
   else()
     set(__func__ "")
   endif()
 
-  # Check if `const' is supported by compiler 
+  # Check if `const' is supported by compiler
   check_c_source_compiles("void main() {const char *s = \"Test\";}" HAVE_CONST)
   # Only set const to empty if it doesn't exist otherwise magick++ will not compile
   if(NOT HAVE_CONST)
