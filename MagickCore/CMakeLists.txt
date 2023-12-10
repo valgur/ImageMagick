@@ -11,7 +11,7 @@
 #   under the License.
 #
 #   CMake script file to build ImageMagick
-# 
+#
 
 project(MagickCore C)
 
@@ -420,6 +420,7 @@ set(MAGICKCORE_CODERS_SRCS
   ${CODERS_PATH}/dib.c
   ${CODERS_PATH}/dib.h
   ${CODERS_PATH}/djvu.h
+  ${CODERS_PATH}/dmr.h
   ${CODERS_PATH}/dng.c
   ${CODERS_PATH}/dng.h
   ${CODERS_PATH}/dot.c
@@ -650,6 +651,9 @@ if(DPS_DELEGATE)
 endif()
 if(DJVU_DELEGATE)
   list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/djvu.c)
+endif()
+if(DMR_DELEGATE)
+  list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/dmr.c)
 endif()
 if(OPENEXR_DELEGATE)
   list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/exr.c)
