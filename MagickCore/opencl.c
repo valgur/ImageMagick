@@ -90,9 +90,6 @@
 #include "MagickCore/utility-private.h"
 
 #if defined(MAGICKCORE_OPENCL_SUPPORT)
-#if defined(MAGICKCORE_LTDL_DELEGATE)
-#include "ltdl.h"
-#endif
 
 #ifndef MAGICKCORE_WINDOWS_SUPPORT
 #include <dlfcn.h>
@@ -2598,8 +2595,13 @@ MagickPrivate void OpenCLTerminus()
     RelinquishSemaphoreInfo(&openCL_lock);
   if (openCL_library != (MagickLibrary *) NULL)
     {
-      if (openCL_library->library != (void *) NULL)
-        (void) lt_dlclose(openCL_library->library);
+      if (openCL_library->library != (void *) NULL) {
+#ifdef MAGICKCORE_WINDOWS_SUPPORT
+        (void) FreeLibrary((HMODULE)openCL_library->library);
+#else
+        (void) dlclose(openCL_library->library);
+#endif
+      }
       openCL_library=(MagickLibrary *) RelinquishMagickMemory(openCL_library);
     }
 }
@@ -2759,7 +2761,7 @@ MagickPrivate MagickBooleanType RecordProfileData(MagickCLDevice device,
       return(MagickTrue);
     }
   start/=1000; /* usecs */
-  end/=1000;   
+  end/=1000;
   elapsed=end-start;
   LockSemaphoreInfo(device->lock);
   i=0;
