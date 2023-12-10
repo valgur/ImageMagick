@@ -328,6 +328,9 @@
 /* Define to 1 if you have a working `mmap' system call. */
 #cmakedefine HAVE_MMAP @HAVE_MMAP@
 
+/* Define if you have the mtmalloc memory allocation library */
+#cmakedefine HAVE_MTMALLOC @HAVE_MTMALLOC@
+
 /* Define to 1 if you have the `munmap' function. */
 #cmakedefine HAVE_MUNMAP @HAVE_MUNMAP@
 
@@ -730,12 +733,6 @@
 
 /* Define if you have libheif library */
 #cmakedefine HEIC_DELEGATE
-
-/* Define if you have jemalloc memory allocation library */
-#cmakedefine HasJEMALLOC
-
-/* Define if you have umem memory allocation library */
-#cmakedefine HasUMEM
 
 /* Directory where ImageMagick architecture headers live. */
 #cmakedefine INCLUDEARCH_PATH @INCLUDEARCH_PATH@
