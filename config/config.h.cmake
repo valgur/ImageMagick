@@ -22,9 +22,6 @@
 /* permit enciphering and deciphering image pixels */
 #cmakedefine CIPHER_SUPPORT
 
-/* Define to 1 if the `closedir' function returns void instead of `int'. */
-#cmakedefine CLOSEDIR_VOID @CLOSEDIR_VOID@
-
 /* coders subdirectory. */
 #cmakedefine CODER_DIRNAME @CODER_DIRNAME@
 
@@ -561,9 +558,6 @@
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #cmakedefine HAVE_SYS_RESOURCE_H @HAVE_SYS_RESOURCE_H@
 
-/* Define to 1 if you have the <sys/select.h> header file. */
-#cmakedefine HAVE_SYS_SELECT_H @HAVE_SYS_SELECT_H@
-
 /* Define to 1 if you have the <sys/sendfile.h> header file. */
 #cmakedefine HAVE_SYS_SENDFILE_H @HAVE_SYS_SENDFILE_H@
 
@@ -662,20 +656,11 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #cmakedefine HAVE_UTIME_H @HAVE_UTIME_H@
 
-/* Define to 1 if you have the `vfork' function. */
-#cmakedefine HAVE_VFORK @HAVE_VFORK@
-
-/* Define to 1 if you have the <vfork.h> header file. */
-#cmakedefine HAVE_VFORK_H @HAVE_VFORK_H@
-
 /* Define to 1 if you have the `vfprintf' function. */
 #cmakedefine HAVE_VFPRINTF @HAVE_VFPRINTF@
 
 /* Define to 1 if you have the `vfprintf_l' function. */
 #cmakedefine HAVE_VFPRINTF_L @HAVE_VFPRINTF_L@
-
-/* Define to 1 if you have the `vprintf' function. */
-#cmakedefine HAVE_VPRINTF @HAVE_VPRINTF@
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #cmakedefine HAVE_VSNPRINTF @HAVE_VSNPRINTF@
@@ -694,12 +679,6 @@
 
 /* Define to 1 if you have the <windows.h> header file. */
 #cmakedefine HAVE_WINDOWS_H @HAVE_WINDOWS_H@
-
-/* Define to 1 if `fork' works. */
-#cmakedefine HAVE_WORKING_FORK @HAVE_WORKING_FORK@
-
-/* Define to 1 if `vfork' works. */
-#cmakedefine HAVE_WORKING_VFORK @HAVE_WORKING_VFORK@
 
 /* Define to 1 if you have the <xlocale.h> header file. */
 #cmakedefine HAVE_XLOCALE_H @HAVE_XLOCALE_H@
@@ -867,15 +846,6 @@
 /* Define if you have RSVG library */
 #cmakedefine RSVG_DELEGATE
 
-/* Define to the type of arg 1 for `select'. */
-#cmakedefine SELECT_TYPE_ARG1 @SELECT_TYPE_ARG1@
-
-/* Define to the type of args 2, 3 and 4 for `select'. */
-#cmakedefine SELECT_TYPE_ARG234 @SELECT_TYPE_ARG234@
-
-/* Define to the type of arg 5 for `select'. */
-#cmakedefine SELECT_TYPE_ARG5 @SELECT_TYPE_ARG5@
-
 /* Setjmp/longjmp are thread safe */
 #cmakedefine SETJMP_IS_THREAD_SAFE
 
@@ -925,8 +895,8 @@
 /* The size of `size_t', as computed by sizeof. */
 #cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
 
-/* The size of `ssize_t', as computed by sizeof. */
-#cmakedefine SIZEOF_SSIZE_T @SIZEOF_SSIZE_T@
+/* The size of `size_t', as computed by sizeof. */
+#cmakedefine SIZEOF_SIZE_T @SIZEOF_SIZE_T@
 
 /* The size of `unsigned int', as computed by sizeof. */
 #cmakedefine SIZEOF_UNSIGNED_INT @SIZEOF_UNSIGNED_INT@
@@ -1187,9 +1157,6 @@
 /* Define to the type of an unsigned integer type wide enough to hold a
    pointer, if such a type exists, and if the system does not define it. */
 #cmakedefine uintptr_t @uintptr_t@
-
-/* Define as `fork' if `vfork' does not work. */
-#cmakedefine vfork @vfork@
 
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */
