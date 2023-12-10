@@ -77,6 +77,9 @@
 /* Define to 1 if you have the `acosh' function. */
 #cmakedefine HAVE_ACOSH @HAVE_ACOSH@
 
+/* Define to 1 if you have the `aligned_malloc' function. */
+#cmakedefine HAVE_ALIGNED_MALLOC @HAVE_ALIGNED_MALLOC@
+
 /* Define to 1 if you have the <arm/limits.h> header file. */
 #cmakedefine HAVE_ARM_LIMITS_H @HAVE_ARM_LIMITS_H@
 
@@ -96,7 +99,7 @@
 #cmakedefine HAVE_ATOLL @HAVE_ATOLL@
 
 /* define if bool is a built-in type */
-#cmakedefine HAVE_BOOL
+#cmakedefine HAVE_BOOL @HAVE_BOOL@
 
 /* Define to 1 if you have the `cabs' function. */
 #cmakedefine HAVE_CABS @HAVE_CABS@
@@ -113,7 +116,7 @@
 /* Define to 1 if you have the `clock_getres' function. */
 #cmakedefine HAVE_CLOCK_GETRES @HAVE_CLOCK_GETRES@
 
-/* Define to 1 if you have clock_gettime. */
+/* Define to 1 if you have the `clock_gettime' function. */
 #cmakedefine HAVE_CLOCK_GETTIME @HAVE_CLOCK_GETTIME@
 
 /* Define to 1 if clock_gettime supports CLOCK_REALTIME. */
@@ -165,12 +168,6 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
 
-/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
-#cmakedefine HAVE_DOPRNT @HAVE_DOPRNT@
-
-/* Define to 1 if the system has the type `double_t'. */
-#cmakedefine HAVE_DOUBLE_T @HAVE_DOUBLE_T@
-
 /* Define to 1 if you have the `erf' function. */
 #cmakedefine HAVE_ERF @HAVE_ERF@
 
@@ -186,8 +183,8 @@
 /* Define to 1 if you have the <fcntl.h> header file. */
 #cmakedefine HAVE_FCNTL_H @HAVE_FCNTL_H@
 
-/* Define to 1 if the system has the type `float_t'. */
-#cmakedefine HAVE_FLOAT_T @HAVE_FLOAT_T@
+/* Define to 1 if you have the <float.h> header file. */
+#cmakedefine HAVE_FLOAT_H @HAVE_FLOAT_H@
 
 /* Define to 1 if you have the `floor' function. */
 #cmakedefine HAVE_FLOOR @HAVE_FLOOR@
@@ -213,6 +210,9 @@
 /* Define to 1 if you have the `getdtablesize' function. */
 #cmakedefine HAVE_GETDTABLESIZE @HAVE_GETDTABLESIZE@
 
+/* Define to 1 if you have the `getentropy' function. */
+#cmakedefine HAVE_GETENTROPY @HAVE_GETENTROPY@
+
 /* Define to 1 if you have the `getexecname' function. */
 #cmakedefine HAVE_GETEXECNAME @HAVE_GETEXECNAME@
 
@@ -221,6 +221,9 @@
 
 /* Define to 1 if you have the `getpid' function. */
 #cmakedefine HAVE_GETPID @HAVE_GETPID@
+
+/* Define to 1 if you have the `getpwnam_r' function. */
+#cmakedefine HAVE_GETPWNAM_R @HAVE_GETPWNAM_R@
 
 /* Define to 1 if you have the `getrlimit' function. */
 #cmakedefine HAVE_GETRLIMIT @HAVE_GETRLIMIT@
@@ -235,7 +238,7 @@
 #cmakedefine HAVE_GMTIME_R @HAVE_GMTIME_R@
 
 /* Compile with hugepage support */
-#cmakedefine HAVE_HUGEPAGES
+#cmakedefine HAVE_HUGEPAGES @HAVE_HUGEPAGES@
 
 /* Define to 1 if the system has the type `intmax_t'. */
 #cmakedefine HAVE_INTMAX_T @HAVE_INTMAX_T@
@@ -255,11 +258,14 @@
 /* Define to 1 if you have the `j1' function. */
 #cmakedefine HAVE_J1 @HAVE_J1@
 
+/* Define if you have jemalloc memory allocation library */
+#cmakedefine HAVE_JEMALLOC @HAVE_JEMALLOC@
+
 /* Define if you have the <lcms2.h> header file. */
-#cmakedefine HAVE_LCMS2_H
+#cmakedefine HAVE_LCMS2_H @HAVE_LCMS2_H@
 
 /* Define if you have the <lcms2/lcms2.h> header file. */
-#cmakedefine HAVE_LCMS2_LCMS2_H
+#cmakedefine HAVE_LCMS2_LCMS2_H @HAVE_LCMS2_LCMS2_H@
 
 /* Define if you have the <libraw/libraw.h> header file. */
 #cmakedefine HAVE_LIBRAW_LIBRAW_H
@@ -273,6 +279,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #cmakedefine HAVE_LIMITS_H @HAVE_LIMITS_H@
 
+/* Define if you have Linux-compatible sendfile() */
+#cmakedefine HAVE_LINUX_SENDFILE @HAVE_LINUX_SENDFILE@
+
 /* Define to 1 if you have the <linux/unistd.h> header file. */
 #cmakedefine HAVE_LINUX_UNISTD_H @HAVE_LINUX_UNISTD_H@
 
@@ -281,9 +290,6 @@
 
 /* Define to 1 if you have the <locale.h> header file. */
 #cmakedefine HAVE_LOCALE_H @HAVE_LOCALE_H@
-
-/* Define to 1 if the system has the type `locale_t'. */
-#cmakedefine HAVE_LOCALE_T @HAVE_LOCALE_T@
 
 /* Define to 1 if you have the `localtime_r' function. */
 #cmakedefine HAVE_LOCALTIME_R @HAVE_LOCALTIME_R@
@@ -307,17 +313,23 @@
 /* Define to 1 if you have the <mach-o/dyld.h> header file. */
 #cmakedefine HAVE_MACH_O_DYLD_H @HAVE_MACH_O_DYLD_H@
 
+/* Define to 1 if you have the <malloc.h> header file. */
+#cmakedefine HAVE_MALLOC_H @HAVE_MALLOC_H@
+
 /* Define to 1 if <wchar.h> declares mbstate_t. */
 #cmakedefine HAVE_MBSTATE_T @HAVE_MBSTATE_T@
 
 /* Define to 1 if you have the `memmove' function. */
 #cmakedefine HAVE_MEMMOVE @HAVE_MEMMOVE@
 
-/* Define to 1 if you have the <memory.h> header file. */
-#cmakedefine HAVE_MEMORY_H @HAVE_MEMORY_H@
-
 /* Define to 1 if you have the `memset' function. */
 #cmakedefine HAVE_MEMSET @HAVE_MEMSET@
+
+/* Define to 1 if you have the <minix/config.h> header file. */
+#cmakedefine HAVE_MINIX_CONFIG_H @HAVE_MINIX_CONFIG_H@
+
+/* Define to 1 if you have the `mkdir' function. */
+#cmakedefine HAVE_MKDIR @HAVE_MKDIR@
 
 /* Define to 1 if you have the `mkstemp' function. */
 #cmakedefine HAVE_MKSTEMP @HAVE_MKSTEMP@
@@ -342,6 +354,9 @@
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #cmakedefine HAVE_NDIR_H @HAVE_NDIR_H@
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#cmakedefine HAVE_NETDB_H @HAVE_NETDB_H@
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #cmakedefine HAVE_NETINET_IN_H @HAVE_NETINET_IN_H@
@@ -389,10 +404,13 @@
 #cmakedefine HAVE_PROCESS_H @HAVE_PROCESS_H@
 
 /* Define if you have POSIX threads libraries and header files. */
-#cmakedefine HAVE_PTHREAD
+#cmakedefine HAVE_PTHREAD @HAVE_PTHREAD@
 
 /* Have PTHREAD_PRIO_INHERIT. */
-#cmakedefine HAVE_PTHREAD_PRIO_INHERIT
+#cmakedefine HAVE_PTHREAD_PRIO_INHERIT @HAVE_PTHREAD_PRIO_INHERIT@
+
+/* Define to 1 if you have the `putenv' function. */
+#cmakedefine HAVE_PUTENV @HAVE_PUTENV@
 
 /* Define to 1 if you have the `pwrite' function. */
 #cmakedefine HAVE_PWRITE @HAVE_PWRITE@
@@ -428,10 +446,10 @@
 #cmakedefine HAVE_SETVBUF @HAVE_SETVBUF@
 
 /* X11 server supports shape extension */
-#cmakedefine HAVE_SHAPE
+#cmakedefine HAVE_SHAPE @HAVE_SHAPE@
 
 /* X11 server supports shared memory extension */
-#cmakedefine HAVE_SHARED_MEMORY
+#cmakedefine HAVE_SHARED_MEMORY @HAVE_SHARED_MEMORY@
 
 /* Define to 1 if you have the `sigaction' function. */
 #cmakedefine HAVE_SIGACTION @HAVE_SIGACTION@
@@ -469,6 +487,9 @@
 /* Define to 1 if you have the `strcasecmp' function. */
 #cmakedefine HAVE_STRCASECMP @HAVE_STRCASECMP@
 
+/* Define to 1 if you have the `strcasestr' function. */
+#cmakedefine HAVE_STRCASESTR @HAVE_STRCASESTR@
+
 /* Define to 1 if you have the `strchr' function. */
 #cmakedefine HAVE_STRCHR @HAVE_STRCHR@
 
@@ -481,7 +502,7 @@
 /* Define to 1 if you have the `strerror' function. */
 #cmakedefine HAVE_STRERROR @HAVE_STRERROR@
 
-/* Define to 1 if you have the `strerror_r' function. */
+/* Define if you have `strerror_r'. */
 #cmakedefine HAVE_STRERROR_R @HAVE_STRERROR_R@
 
 /* Define to 1 if cpp supports the ANSI # stringizing operator. */
@@ -538,6 +559,9 @@
 /* Define to 1 if you have the `sysconf' function. */
 #cmakedefine HAVE_SYSCONF @HAVE_SYSCONF@
 
+/* Define to 1 if you have the `system' function. */
+#cmakedefine HAVE_SYSTEM @HAVE_SYSTEM@
+
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
 #cmakedefine HAVE_SYS_DIR_H @HAVE_SYS_DIR_H@
@@ -570,9 +594,6 @@
 /* Define to 1 if you have the <sys/syslimits.h> header file. */
 #cmakedefine HAVE_SYS_SYSLIMITS_H @HAVE_SYS_SYSLIMITS_H@
 
-/* Define to 1 if you have the <sys/timeb.h> header file. */
-#cmakedefine HAVE_SYS_TIMEB_H @HAVE_SYS_TIMEB_H@
-
 /* Define to 1 if you have the <sys/times.h> header file. */
 #cmakedefine HAVE_SYS_TIMES_H @HAVE_SYS_TIMES_H@
 
@@ -581,6 +602,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #cmakedefine HAVE_SYS_TYPES_H @HAVE_SYS_TYPES_H@
+
+/* Define to 1 if you have the <sys/uio.h> header file. */
+#cmakedefine HAVE_SYS_UIO_H @HAVE_SYS_UIO_H@
 
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #cmakedefine HAVE_SYS_WAIT_H @HAVE_SYS_WAIT_H@
@@ -638,6 +662,9 @@
 /* Define to 1 if you have the `ulltostr' function. */
 #cmakedefine HAVE_ULLTOSTR @HAVE_ULLTOSTR@
 
+/* Define if you have umem memory allocation library */
+#cmakedefine HAVE_UMEM @HAVE_UMEM@
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
@@ -652,6 +679,9 @@
 
 /* Define to 1 if you have the `utime' function. */
 #cmakedefine HAVE_UTIME @HAVE_UTIME@
+
+/* Define to 1 if you have the `utimensat' function. */
+#cmakedefine HAVE_UTIMENSAT @HAVE_UTIMENSAT@
 
 /* Define to 1 if you have the <utime.h> header file. */
 #cmakedefine HAVE_UTIME_H @HAVE_UTIME_H@
@@ -828,7 +858,7 @@
    your system. */
 #cmakedefine PTHREAD_CREATE_JOINABLE @PTHREAD_CREATE_JOINABLE@
 
-/* Pixel cache threshold in MB (defaults to available memory) */
+/* Pixel cache memory threshold in MB (defaults to available memory) */
 #cmakedefine PixelCacheThreshold @PixelCacheThreshold@
 
 /* Number of bits in a pixel Quantum (8/16/32/64) */
@@ -1004,6 +1034,9 @@
 /* Build self-contained, embeddable, zero-configuration ImageMagick */
 #cmakedefine01 ZERO_CONFIGURATION_SUPPORT
 
+/* Define if you have ZIP library */
+#cmakedefine ZIP_DELEGATE
+
 /* Define if you have ZLIB library */
 #cmakedefine ZLIB_DELEGATE
 
@@ -1160,4 +1193,4 @@
 
 /* Define to empty if the keyword `volatile' does not work. Warning: valid
    code using `volatile' can become incorrect without. Disable with care. */
-#define volatile @volatile@
+#cmakedefine volatile @volatile@
