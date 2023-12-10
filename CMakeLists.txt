@@ -353,6 +353,7 @@ magick_find_delegate(DELEGATE JXL_DELEGATE NAME libjxl DEFAULT TRUE)
 # TODO are these correct and should they be off by default?
 magick_find_delegate(DELEGATE AUTOTRACE_DELEGATE NAME AUTOTRACE DEFAULT FALSE)
 magick_find_delegate(DELEGATE CAIRO_DELEGATE NAME Cairo DEFAULT FALSE)
+magick_find_delegate(DELEGATE DMR_DELEGATE NAME MagickCache DEFAULT FALSE)
 magick_find_delegate(DELEGATE DJVU_DELEGATE NAME DJVU DEFAULT FALSE)
 magick_find_delegate(DELEGATE DPS_DELEGATE NAME DPS DEFAULT FALSE)
 magick_find_delegate(DELEGATE FFTW_DELEGATE NAME FFTW DEFAULT FALSE)
