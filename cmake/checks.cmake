@@ -19,6 +19,9 @@ macro(magick_check_env)
   # Check if `acosh' exists
   check_function_exists(acosh HAVE_ACOSH)
 
+  # Check if `aligned_malloc' exists
+  check_function_exists(aligned_malloc HAVE_ALIGNED_MALLOC)
+
   # Check if <arm/limits.h> exists
   check_include_file(arm/limits.h HAVE_ARM_LIMITS_H)
 
@@ -73,6 +76,9 @@ macro(magick_check_env)
   # Check if `pread' exists
   check_function_exists(pread HAVE_DECL_PREAD)
 
+  # Check if `putenv' exists
+  check_function_exists(putenv HAVE_PUTENV)
+
   # Check if `pwrite' exists
   check_function_exists(pwrite HAVE_DECL_PWRITE)
 
@@ -117,13 +123,8 @@ macro(magick_check_env)
   # Check if <fcntl.h> exists
   check_include_file(fcntl.h HAVE_FCNTL_H)
 
-  # Check if `float_t' exists
-  check_cxx_source_compiles (
-  "
-    #include <math.h> 
-    void main () {float_t f = 0;}
-  " 
-  HAVE_FLOAT_T)
+  # Check if <float.h> exists
+  check_include_file(fcntl.h HAVE_FLOAT_H)
 
   # Check if `floor' exists
   check_function_exists(floor HAVE_FLOOR)
@@ -140,6 +141,9 @@ macro(magick_check_env)
   # Check if `getcwd' exists
   check_function_exists(getcwd HAVE_GETCWD)
 
+  # Check if `getentropy' exists
+  check_function_exists(getentropy HAVE_GETENTROPY)
+
   # Check if `getc_unlocked' exists
   check_function_exists(getc_unlocked HAVE_GETC_UNLOCKED)
 
@@ -154,6 +158,9 @@ macro(magick_check_env)
 
   # Check if `getpid' exists
   check_function_exists(getpid HAVE_GETPID)
+
+  # Check if `getpwnam_r' exists
+  check_function_exists(getpwnam_r HAVE_GETPWNAM_R)
 
   # Check if `getrlimit' exists
   check_function_exists(getrlimit HAVE_GETRLIMIT)
@@ -200,6 +207,9 @@ macro(magick_check_env)
   # Check if <limits.h> exists
   check_include_file(limits.h HAVE_LIMITS_H)
 
+  # Check if you have Linux-compatible sendfile()
+  # HAVE_LINUX_SENDFILE ?
+
   # Check if <linux/unistd.h> exists
   check_include_file(linux/unistd.h HAVE_LINUX_UNISTD_H)
 
@@ -208,12 +218,6 @@ macro(magick_check_env)
 
   # Check if <locale.h> exists
   check_include_file(locale.h HAVE_LOCALE_H)
-
-  # Check if `locale_t' exists
-  check_type_size(locale_t LOCALE_T)
-  if(HAVE_LOCALE_T ) # it was TRUE and we need it to be 1
-    set(HAVE_LOCALE_T 1)
-  endif()
 
   # Check if `localtime_r' exists
   check_function_exists(localtime_r HAVE_LOCALTIME_R)
@@ -244,17 +248,23 @@ macro(magick_check_env)
   # Check if <mach-o/dyld.h.h> exists
   check_include_file(mach-o/dyld.h HAVE_MACH_O_DYLD_H)
 
+  # Check if <malloc.h> exists
+  check_include_file(malloc.h HAVE_MALLOC_H)
+
   # Check if `mbstate_t' exists in <wchar.h>
   check_symbol_exists(mbstate_t wchar.h HAVE_MBSTATE_T)
 
   # Check if `memmove' exists
   check_function_exists(memmove HAVE_MEMMOVE)
 
-  # Check if <memory.h> exists
-  check_include_file(memory.h HAVE_MEMORY_H)
-
   # Check if `memset' exists
   check_function_exists(memset HAVE_MEMSET)
+
+  # Check if <minix/config.h> exists
+  check_include_file(minix/config.h HAVE_MINIX_CONFIG_H)
+
+  # Check if `mkdir' exists
+  check_function_exists(mkdir HAVE_MKDIR)
 
   # Check if `mkstemp' exists
   check_function_exists(mkstemp HAVE_MKSTEMP)
@@ -423,6 +433,9 @@ macro(magick_check_env)
   # Check if `strcasecmp' exists
   check_function_exists(strcasecmp HAVE_STRCASECMP)
 
+  # Check if `strcasestr' exists
+  check_function_exists(strcasestr HAVE_STRCASESTR)
+
   # Check if `strchr' exists
   check_function_exists(strchr HAVE_STRCHR)
 
@@ -499,6 +512,9 @@ macro(magick_check_env)
   # Check if `sysconf' exists
   check_function_exists(sysconf HAVE_SYSCONF)
 
+  # Check if `system' exists
+  check_function_exists(system HAVE_SYSTEM)
+
   # Check if <sys/dir.h> exists and defines `DIR'
   check_symbol_exists(DIR sys/dir.h HAVE_SYS_DIR_H)
 
@@ -510,6 +526,9 @@ macro(magick_check_env)
 
   # Check if <sys/ndir.h> exists and defines `DIR'
   check_symbol_exists(DIR sys/ndir.h HAVE_SYS_NDIR_H)
+
+  # Check if <netdb.h> exists
+  check_include_file(netdb.h HAVE_NETDB_H)
 
   # Check if <sys/param.h> exists
   check_include_file(sys/param.h HAVE_SYS_PARAM_H)
@@ -529,9 +548,6 @@ macro(magick_check_env)
   # Check if <sys/syslimits.h> exists
   check_include_file(sys/syslimits.h HAVE_SYS_SYSLIMITS_H)
 
-  # Check if <sys/timeb.h> exists
-  check_include_file(sys/timeb.h HAVE_SYS_TIMEB_H)
-
   # Check if <sys/times.h> exists
   check_include_file(sys/times.h HAVE_SYS_TIMES_H)
 
@@ -540,6 +556,9 @@ macro(magick_check_env)
 
   # Check if <sys/types.h> exists
   check_include_file(sys/types.h HAVE_SYS_TYPES_H)
+
+  # Check if <sys/uio.h> exists
+  check_include_file(sys/uio.h HAVE_SYS_UIO_H)
 
   # Check if <sys/wait.h> exists
   check_include_file(sys/wait.h HAVE_SYS_WAIT_H)
@@ -593,6 +612,9 @@ macro(magick_check_env)
 
   # Check if `utime' exists
   check_function_exists(utime HAVE_UTIME)
+
+  # Check if `utimensat' exists
+  check_function_exists(utimensat HAVE_UTIMENSAT)
 
   # Check if <utime.h> exists
   check_include_file(utime.h HAVE_UTIME_H)
