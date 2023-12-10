@@ -125,6 +125,7 @@ set(NAMESPACE_PREFIX_TAG ${NAMESPACE_PREFIX})
 set(PixelCacheThreshold "" CACHE STRING "Set pixel cache threshhold in MB (default available memory)")
 option(WITH_DMALLOC "Use dmalloc for memory profiling" FALSE)
 option(ZERO_CONFIGURATION_SUPPORT "Build self-contained, embeddable, zero-configuration ImageMagick" FALSE)
+option(DPC_SUPPORT "Enable distributed pixel cache support" TRUE)
 
 set(SECURITY_POLICY "open" CACHE STRING "Set the security policy variant to enforce")
 set_property(CACHE SECURITY_POLICY PROPERTY STRINGS "open;limited;secure;websafe")

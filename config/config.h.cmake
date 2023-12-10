@@ -38,6 +38,9 @@
 /* Directory where ImageMagick documents live. */
 #cmakedefine DOCUMENTATION_PATH @DOCUMENTATION_PATH@
 
+/* Define to 1 to enable distributed pixel cache support. */
+#cmakedefine DPC_SUPPORT
+
 /* Define if you have Display Postscript */
 #cmakedefine DPS_DELEGATE
 
