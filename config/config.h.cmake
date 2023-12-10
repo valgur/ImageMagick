@@ -722,9 +722,6 @@
 /* define if your compiler has __attribute__ */
 #cmakedefine HAVE___ATTRIBUTE__
 
-/* Whether hdri is enabled or not */
-#cmakedefine HDRI_ENABLE_OBSOLETE_IN_H 
-
 /* Define if you have libheif library */
 #cmakedefine HEIC_DELEGATE
 
