@@ -11,7 +11,7 @@
 #   under the License.
 #
 #   CMake script file to build ImageMagick
-# 
+#
 
 project(MagickWand C)
 
@@ -99,20 +99,19 @@ set(MAGICKWAND_PUBLIC_HEADERS
   wand-view.h
 )
 
-if(MAGICK_BUILD_STATIC)
-  add_library(${MAGICKWAND_BINARY_NAME} STATIC ${MAGICKWAND_SRC} ${MAGICK_RESOURCE_FILE_PATH})
-else()
-  add_library(${MAGICKWAND_BINARY_NAME} SHARED ${MAGICKWAND_SRC} ${MAGICK_RESOURCE_FILE_PATH})
-endif()
+add_library(MagickWand ${MAGICKWAND_SRC} ${MAGICK_RESOURCE_FILE_PATH})
 
-set_target_properties(${MAGICKWAND_BINARY_NAME} PROPERTIES PUBLIC_HEADER "${MAGICKWAND_PUBLIC_HEADERS}")
-target_include_directories(${MAGICKWAND_BINARY_NAME} PUBLIC ${IMAGEMAGICK_BASE_PATH})
-target_include_directories(${MAGICKWAND_BINARY_NAME} PRIVATE  ${IMAGEMAGICK_DELEGATES_INCLUDE_DIRS})
+set_target_properties(MagickWand PROPERTIES
+    OUTPUT_NAME "MagickWand-${MAGICK_BINARY_SUFFIX}"
+    PUBLIC_HEADER "${MAGICKWAND_PUBLIC_HEADERS}"
+)
+target_include_directories(MagickWand PUBLIC ${IMAGEMAGICK_BASE_PATH})
+target_include_directories(MagickWand PRIVATE ${IMAGEMAGICK_DELEGATES_INCLUDE_DIRS})
 # Set the MAGICKCORE_SHAREARCH_BASEDIRNAME to "config", not sure if I should add it to the <config.h>
-target_compile_definitions(${MAGICKWAND_BINARY_NAME} PRIVATE ${MAGICK_BUILD_DEFINES} -D_MAGICKLIB_ -DMAGICKCORE_SHAREARCH_BASEDIRNAME=\"config\")
-target_link_libraries(${MAGICKWAND_BINARY_NAME} PUBLIC ${MAGICKCORE_BINARY_NAME})
+target_compile_definitions(MagickWand PRIVATE -D_MAGICKLIB_ -DMAGICKCORE_SHAREARCH_BASEDIRNAME=\"config\")
+target_link_libraries(MagickWand PUBLIC MagickCore)
 
-install(TARGETS ${MAGICKWAND_BINARY_NAME}
+install(TARGETS MagickWand
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

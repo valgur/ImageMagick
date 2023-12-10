@@ -11,7 +11,7 @@
 #   under the License.
 #
 #   CMake script file to build ImageMagick
-# 
+#
 
 project(Magick++ CXX)
 
@@ -77,18 +77,17 @@ set(MAGICKXX_SRC
   lib/Magick++/TypeMetric.h
 )
 
-if(MAGICK_BUILD_STATIC)
-  add_library(${MAGICKXX_BINARY_NAME} STATIC ${MAGICKXX_SRC} ${MAGICK_RESOURCE_FILE_PATH})
-else()
-  add_library(${MAGICKXX_BINARY_NAME} SHARED ${MAGICKXX_SRC} ${MAGICK_RESOURCE_FILE_PATH})
-endif()
+add_library(Magick++ ${MAGICKXX_SRC} ${MAGICK_RESOURCE_FILE_PATH})
 
-set_target_properties(${MAGICKXX_BINARY_NAME} PROPERTIES PUBLIC_HEADER "${MAGICKXX_PUBLIC_HEADERS}")
-target_include_directories(${MAGICKXX_BINARY_NAME} PUBLIC ${IMAGEMAGICK_BASE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-target_compile_definitions(${MAGICKXX_BINARY_NAME} PRIVATE ${MAGICK_BUILD_DEFINES} -D_MAGICKLIB_)
-target_link_libraries(${MAGICKXX_BINARY_NAME} PUBLIC ${MAGICKWAND_BINARY_NAME})
+set_target_properties(Magick++ PROPERTIES
+    OUTPUT_NAME "Magick++-${MAGICK_BINARY_SUFFIX}"
+    PUBLIC_HEADER "${MAGICKXX_PUBLIC_HEADERS}"
+)
+target_include_directories(Magick++ PUBLIC ${IMAGEMAGICK_BASE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+target_compile_definitions(Magick++ PRIVATE -D_MAGICKLIB_)
+target_link_libraries(Magick++ PUBLIC MagickWand)
 
-install(TARGETS ${MAGICKXX_BINARY_NAME}
+install(TARGETS Magick++
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
