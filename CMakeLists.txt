@@ -80,16 +80,15 @@ include(cmake/configure.cmake)
 # Set ImageMagick base dir to be used inside sub-projects
 set(IMAGEMAGICK_BASE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
-# Set coders andd filters path
+# Set coders and filters path
 set(CODERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/coders)
 set(FILTERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/filters)
 
-set(IMAGEMAGICK_INC_DIR "include/ImageMagick-${MAGICK_VERSION_MAJOR}")
-
 # Set the binaries name
-set(MAGICK_BINARY_SUFFIX "${MAGICK_VERSION_MAJOR}.${MagickQuantumDepth}${HDRI_SUFFIX}")
+set(MAGICK_BINARY_SUFFIX "${MAGICK_VERSION_MAJOR}.${MAGICK_ABI_SUFFIX}")
 
 # Add the subdirectories to be compiled
+add_subdirectory(config)
 add_subdirectory(MagickCore)
 add_subdirectory(MagickWand)
 if(BUILD_MAGICKPP)
@@ -107,10 +106,9 @@ if(BUILD_TESTS)
     add_subdirectory(Magick++/demo)
   endif()
 endif()
-add_subdirectory(config)
 
 install(FILES
-  LICENSE
-  NOTICE
-  DESTINATION licenses
+    LICENSE
+    NOTICE
+    DESTINATION licenses
 )

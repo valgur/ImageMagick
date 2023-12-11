@@ -22,6 +22,7 @@ function(add_tap_test TEST_FILE)
       "TOPSRCDIR=${CMAKE_BINARY_DIR}/"
       "top_srcdir=${CMAKE_BINARY_DIR}/"
       "MAGICK_CONFIGURE_PATH=${CMAKE_BINARY_DIR}/config/"
+      "MAGICK_FONT=${CMAKE_SOURCE_DIR}/PerlMagick/demo/Generic.ttf"
   )
 
   if(ARGC GREATER 1)

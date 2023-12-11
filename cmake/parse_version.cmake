@@ -1,5 +1,5 @@
 # Fetch some needed values from version.sh and fill the correspondent variables
-file(READ ${CMAKE_CURRENT_SOURCE_DIR}/configure CONTENT_CONFIGURE)
+file(READ ${CMAKE_SOURCE_DIR}/configure CONTENT_CONFIGURE)
 
 # Try to find the date in the format yyyy-mm-dd
 string(REGEX MATCH "\nPACKAGE_RELEASE_DATE=([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9])\n" FOUND_LAST_CHANGE_DATE "${CONTENT_CONFIGURE}")
