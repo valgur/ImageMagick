@@ -81,6 +81,16 @@ include(cmake/delegates.cmake)
 include(cmake/configure.cmake)
 
 ####### BUILD #######
+
+# Set ImageMagick base dir to be used inside sub-projects
+set(IMAGEMAGICK_BASE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+# Set coders andd filters path
+set(CODERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/coders)
+set(FILTERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/filters)
+
+set(IMAGEMAGICK_INC_DIR "include/ImageMagick-${MAGICK_VERSION_MAJOR}")
+
 # Set the binaries name
 set(MAGICK_BINARY_SUFFIX "${MAGICK_VERSION_MAJOR}.${MagickQuantumDepth}${HDRI_SUFFIX}")
 
