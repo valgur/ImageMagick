@@ -29,7 +29,7 @@ option(BUILD_MODULES "Compile coders and filters as modules" FALSE) # TODO
 option(CIPHER_SUPPORT "Permit enciphering and deciphering image pixels" TRUE)
 option(EXCLUDE_DEPRECATED "Exclude deprecated methods" TRUE)
 set(NAMESPACE_PREFIX "" CACHE STRING "Prefix MagickCore API methods")
-set(PixelCacheThreshold "" CACHE STRING "Set pixel cache threshhold in MB (default available memory)")
+set(PixelCacheThreshold "" CACHE STRING "Set pixel cache threshold in MB (default available memory)")
 option(WITH_DMALLOC "Use dmalloc for memory profiling" FALSE)
 option(ZERO_CONFIGURATION_SUPPORT "Build self-contained, embeddable, zero-configuration ImageMagick" FALSE)
 option(DPC_SUPPORT "Enable distributed pixel cache support" TRUE)
