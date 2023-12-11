@@ -238,7 +238,7 @@ set(MAGICKCORE_SRC
   utility.h
   utility-private.h
   version.c
-  version.h
+  # version.h
   version-private.h
   visual-effects.c
   visual-effects.h
@@ -655,8 +655,7 @@ if(DMR_DELEGATE)
 endif()
 if(OPENEXR_DELEGATE)
   list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/exr.c)
-  # OpenEXR should export this dep but it isn't currently so we have to make sure this object uses c++
-  set_source_files_properties(${CODERS_PATH}/exr.c PROPERTIES LANGUAGE CXX)
+  set_source_files_properties(${CODERS_PATH}/exr.c PROPERTIES LINKER_LANGUAGE CXX)
 endif()
 if(FLIF_DELEGATE)
   list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/flif.c)
@@ -690,8 +689,10 @@ if(WEBP_DELEGATE)
 endif()
 if(WINGDI32_DELEGATE)
   list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/clipboard.c ${CODERS_PATH}/emf.c)
-  # Seems that emf.c uses namespaces so we need to compile as c++
-  set_source_files_properties(${CODERS_PATH}/emf.c PROPERTIES LANGUAGE CXX)
+  if(BUILD_MAGICKPP)
+    # Seems that emf.c uses namespaces so we need to compile as c++
+    set_source_files_properties(${CODERS_PATH}/emf.c PROPERTIES LANGUAGE CXX)
+  endif()
 endif()
 if(WMF_DELEGATE)
   list(APPEND MAGICKCORE_CODERS_DELEGATES_SRCS ${CODERS_PATH}/wmf.c)
@@ -709,7 +710,7 @@ set_target_properties(MagickCore PROPERTIES
 target_include_directories(MagickCore PUBLIC ${IMAGEMAGICK_BASE_PATH})
 target_link_libraries(MagickCore PUBLIC ${IMAGEMAGICK_DELEGATES_LIBRARIES})
 if(UNIX)
-  target_link_libraries(MagickCore PUBLIC -lm)
+  target_link_libraries(MagickCore PUBLIC m)
 endif()
 # Set the MAGICKCORE_SHAREARCH_BASEDIRNAME to "config", not sure if I should add it to the <config.h>
 target_compile_definitions(MagickCore PRIVATE -D_MAGICKLIB_ -DMAGICKCORE_SHAREARCH_BASEDIRNAME=\"config\")

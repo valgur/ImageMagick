@@ -1,18 +1,23 @@
-include(CheckIncludeFile)
-include(CheckIncludeFiles)
-include(CheckSymbolExists)
-include(CheckPrototypeDefinition)
-include(CheckFunctionExists)
-include(CheckCXXSourceCompiles)
-include(CheckTypeSize)
-include(CheckLibraryExists)
-include(CheckCXXSourceRuns)
-include(CheckStructHasMember)
-include(CheckCSourceCompiles)
-include(CheckSourceRuns)
-include(TestBigEndian)
-
 macro(magick_check_env)
+  include(CheckCSourceCompiles)
+  include(CheckCSourceCompiles)
+  include(CheckCSourceRuns)
+  include(CheckFunctionExists)
+  include(CheckIncludeFile)
+  include(CheckIncludeFiles)
+  include(CheckLibraryExists)
+  include(CheckPrototypeDefinition)
+  include(CheckSourceRuns)
+  include(CheckStructHasMember)
+  include(CheckSymbolExists)
+  include(CheckTypeSize)
+  include(TestBigEndian)
+
+  if(BUILD_MAGICKPP)
+    include(CheckCXXSourceCompiles)
+    include(CheckCXXSourceRuns)
+  endif()
+
   # libm is required for complex.h checks
   check_library_exists(m pow "" LIBM)
   if (LIBM)
@@ -47,8 +52,10 @@ macro(magick_check_env)
   # Check if `atoll' exists
   check_function_exists(atoll HAVE_ATOLL)
 
-  # Check if `bool' exists (check_type_size is not working at least on windows)
-  check_cxx_source_compiles ("int main () {bool b = false;}" HAVE_BOOL)
+  if(BUILD_MAGICKPP)
+    # Check if `bool' exists (check_type_size is not working at least on windows)
+    check_cxx_source_compiles ("int main () {bool b = false;}" HAVE_BOOL)
+  endif()
 
   # Check if `carg' exists
   check_symbol_exists(carg complex.h HAVE_CARG)
@@ -322,16 +329,18 @@ macro(magick_check_env)
   # Check if `munmap' exists
   check_function_exists(munmap HAVE_MUNMAP)
 
-  # Check if `namespace' exists
-  check_cxx_source_compiles ("namespace test {} int main() {using namespace ::test;}" HAVE_NAMESPACES)
+  if(BUILD_MAGICKPP)
+    # Check if `namespace' exists
+    check_cxx_source_compiles ("namespace test {} int main() {using namespace ::test;}" HAVE_NAMESPACES)
 
-  # Check if `std::' exists
-  check_cxx_source_compiles (
-  "
-    #include <iostream>
-    int main() {std::istream& is = std::cin;}
-  "
-  HAVE_NAMESPACE_STD)
+    # Check if `std::' exists
+    check_cxx_source_compiles (
+    "
+      #include <iostream>
+      int main() {std::istream& is = std::cin;}
+    "
+    HAVE_NAMESPACE_STD)
+  endif()
 
   # Check if `nanosleep' exists
   check_function_exists(nanosleep HAVE_NANOSLEEP)
@@ -444,13 +453,15 @@ macro(magick_check_env)
   # Check if `<stdarg.h>' exists
   check_include_file(stdarg.h HAVE_STDARG_H)
 
-  # Check if <stdbool.h> exists and conforms to C99
-  check_cxx_source_compiles (
-  "
-    #include <stdbool.h>
-    int main() {bool b = __bool_true_false_are_defined;}
-  "
-  HAVE_STDBOOL_H)
+  if(BUILD_MAGICKPP)
+    # Check if <stdbool.h> exists and conforms to C99
+    check_cxx_source_compiles (
+    "
+      #include <stdbool.h>
+      int main() {bool b = __bool_true_false_are_defined;}
+    "
+    HAVE_STDBOOL_H)
+  endif()
 
   # Check if <stddef.h> exists
   check_include_file(stddef.h HAVE_STDDEF_H)
@@ -461,24 +472,26 @@ macro(magick_check_env)
   # Check if <stdlib.h> exists
   check_include_file(stdlib.h HAVE_STDLIB_H)
 
-  # Check if compiler supports ISO C++ standard library
-  set(CMAKE_REQUIRED_DEFINITIONS_SAVE ${CMAKE_REQUIRED_DEFINITIONS})
-  if(HAVE_NAMESPACES)
-    set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS} -DHAVE_NAMESPACES)
-  endif()
-  check_cxx_source_compiles (
-  "
-    #include <map>
-    #include <iomanip>
-    #include <cmath>
-    #ifdef HAVE_NAMESPACES
-      using namespace std;
-    #endif
+  if(BUILD_MAGICKPP)
+    # Check if compiler supports ISO C++ standard library
+    set(CMAKE_REQUIRED_DEFINITIONS_SAVE ${CMAKE_REQUIRED_DEFINITIONS})
+    if(HAVE_NAMESPACES)
+      set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS} -DHAVE_NAMESPACES)
+    endif()
+    check_cxx_source_compiles (
+    "
+      #include <map>
+      #include <iomanip>
+      #include <cmath>
+      #ifdef HAVE_NAMESPACES
+        using namespace std;
+      #endif
 
-    int main() {}
-  "
-  HAVE_STD_LIBS)
-  set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS_SAVE})
+      int main() {}
+    "
+    HAVE_STD_LIBS)
+    set(CMAKE_REQUIRED_DEFINITIONS ${CMAKE_REQUIRED_DEFINITIONS_SAVE})
+  endif()
 
   # Check if `strcasecmp' exists
   check_function_exists(strcasecmp HAVE_STRCASECMP)
@@ -504,7 +517,7 @@ macro(magick_check_env)
   # Check if `#' stringizing operator is supported
   set(HAVE_STRINGIZE_EXITCODE 1)
   set(HAVE_STRINGIZE_EXITCODE__TRYRUN_OUTPUT 1)
-  check_cxx_source_runs(
+  check_c_source_runs(
   "
     #define x(y) #y
     int main() { char c[] = \"c\"; char* p = x(c); return (c[0] != p[0]) || (c[1] != p[1]); }
@@ -804,7 +817,7 @@ macro(magick_check_env)
   check_include_fileS("stdlib.h;stdarg.h;string.h;float.h" STDC_HEADERS)
 
   # Check strerror_r returns `char *'
-  check_cxx_source_compiles(
+  check_c_source_compiles(
   "
     #include <string.h>
     int main() {
@@ -966,7 +979,7 @@ macro(magick_check_env)
   set(uintptr_t "")
 
   # Check if `volatile' works
-  check_cxx_source_compiles(
+  check_c_source_compiles(
   "
   int main() { volatile int i = 1; }
   "
