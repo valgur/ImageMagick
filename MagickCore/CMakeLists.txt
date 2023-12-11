@@ -712,8 +712,7 @@ target_link_libraries(MagickCore PUBLIC ${IMAGEMAGICK_DELEGATES_LIBRARIES})
 if(UNIX)
   target_link_libraries(MagickCore PUBLIC m)
 endif()
-# Set the MAGICKCORE_SHAREARCH_BASEDIRNAME to "config", not sure if I should add it to the <config.h>
-target_compile_definitions(MagickCore PRIVATE -D_MAGICKLIB_ -DMAGICKCORE_SHAREARCH_BASEDIRNAME=\"config\")
+target_compile_definitions(MagickCore PRIVATE -D_MAGICKLIB_)
 
 install(TARGETS MagickCore
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -726,4 +725,10 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/magick-baseconfig.h
   ${CMAKE_CURRENT_BINARY_DIR}/version.h
   DESTINATION ${INCLUDE_PATH}/MagickCore
+)
+
+configure_file(MagickCore-config.in ${CMAKE_CURRENT_BINARY_DIR}/MagickCore-config @ONLY)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/MagickCore-config DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )

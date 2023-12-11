@@ -105,8 +105,7 @@ set_target_properties(MagickWand PROPERTIES
 )
 target_include_directories(MagickWand PUBLIC ${IMAGEMAGICK_BASE_PATH})
 target_include_directories(MagickWand PRIVATE ${IMAGEMAGICK_DELEGATES_INCLUDE_DIRS})
-# Set the MAGICKCORE_SHAREARCH_BASEDIRNAME to "config", not sure if I should add it to the <config.h>
-target_compile_definitions(MagickWand PRIVATE -D_MAGICKLIB_ -DMAGICKCORE_SHAREARCH_BASEDIRNAME=\"config\")
+target_compile_definitions(MagickWand PRIVATE -D_MAGICKLIB_)
 target_link_libraries(MagickWand PUBLIC MagickCore)
 
 install(TARGETS MagickWand
@@ -114,4 +113,10 @@ install(TARGETS MagickWand
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER DESTINATION ${INCLUDE_PATH}/MagickWand
+)
+
+configure_file(MagickWand-config.in ${CMAKE_CURRENT_BINARY_DIR}/MagickWand-config @ONLY)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/MagickWand-config DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
