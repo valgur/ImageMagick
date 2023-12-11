@@ -19,8 +19,8 @@ function(add_tap_test TEST_FILE)
 
       "SRCDIR=${CMAKE_CURRENT_BINARY_DIR}/"
       "srcdir=${CMAKE_CURRENT_BINARY_DIR}/"
-      "TOPSRCDIR=${CMAKE_SOURCE_DIR}/"
-      "REFERENCE_IMAGE=${CMAKE_SOURCE_DIR}/images/rose.pnm"
+      "TOPSRCDIR=${CMAKE_BINARY_DIR}/"
+      "top_srcdir=${CMAKE_BINARY_DIR}/"
   )
 
   if(ARGC GREATER 1)
@@ -56,3 +56,5 @@ function(copy_test_resources suffix)
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/common.shi "")
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tests/common.shi "")
 endfunction()
+
+set_property(DIRECTORY PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_BINARY_DIR}/*_out.*")

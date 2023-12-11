@@ -35,4 +35,7 @@ install(TARGETS magick
 )
 foreach(utility ${MAGICK_LINKED_UTILITIES})
   install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink magick ${CMAKE_INSTALL_PREFIX}/bin/${utility})")
+  list(APPEND BINARY_DIR_SYMLINKS ${CMAKE_CURRENT_BINARY_DIR}/${utility})
 endforeach()
+
+set_property(DIRECTORY PROPERTY ADDITIONAL_CLEAN_FILES "${BINARY_DIR_SYMLINKS}")

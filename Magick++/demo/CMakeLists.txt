@@ -22,5 +22,3 @@ endforeach()
 copy_test_resources(magickpp-demo)
 
 add_tap_test(demos magick++-demos)
-
-set_property(DIRECTORY PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/*_out.*")
