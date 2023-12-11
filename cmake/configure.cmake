@@ -29,9 +29,7 @@ set(MAGICK_LDFLAGS)
 set(MAGICK_LIBS)
 set(MAGICK_PCFLAGS)
 set(MAGICK_SECURITY_POLICY ${SECURITY_POLICY})
-set(PACKAGE_VERSION ${MAGICK_VERSION})
 set(QUANTUM_DEPTH ${MAGICKCORE_QUANTUM_DEPTH})
-set(VERSION ${MAGICK_VERSION})
 
 # TODO
 # set(MAGICK_DELEGATES)
@@ -39,13 +37,6 @@ set(VERSION ${MAGICK_VERSION})
 # set(MAGICK_TARGET_CPU)
 # set(MAGICK_TARGET_OS)
 # set(MAGICK_TARGET_VENDOR)
-# set(PACKAGE)
-# set(PACKAGE_BASE_VERSION)
-# set(PACKAGE_BUGREPORT)
-# set(PACKAGE_LIB_VERSION_NUMBER)
-# set(PACKAGE_STRING)
-# set(PACKAGE_TARNAME)
-# set(PACKAGE_URL)
 # set(host)
 
 # Set if pipe (|) is enabled on filenames
@@ -96,10 +87,22 @@ set(_FORTIFY_SOURCE FALSE)
 # Used to build distributions located via MAGICK_HOME / executable path
 set(INSTALLED_SUPPORT)
 
+if(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 8)
+  set(MagickQuantumDepth "Q8")
+elseif(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 16)
+  set(MagickQuantumDepth "Q16")
+elseif(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 32)
+  set(MagickQuantumDepth "Q32")
+elseif(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 64)
+  set(MagickQuantumDepth "Q64")
+else()
+  set(MagickQuantumDepth "Q?")
+endif()
+
 ####### PATHS #######
 include(GNUInstallDirs)
 
-set(RELATIVE_PATH ${PACKAGE_NAME}-${MAGICK_VERSION_MAJOR})
+set(RELATIVE_PATH ${PACKAGE_NAME}-${PACKAGE_MAJOR_VERSION})
 set(MAGICK_ABI_SUFFIX ${MagickQuantumDepth}${HDRI_SUFFIX})
 
 set(CONFIGURE_PATH ${CMAKE_INSTALL_SYSCONFDIR}/${RELATIVE_PATH} CACHE INTERNAL "Installation path for configuration files")
@@ -121,7 +124,7 @@ set(MODULES_PATH ${CMAKE_INSTALL_LIBDIR}/${RELATIVE_PATH}/${MODULES_DIRNAME} CAC
 set(PREFIX_DIR ${CMAKE_INSTALL_PREFIX})
 set(SHAREARCH_BASEDIRNAME config)
 set(SHAREARCH_DIRNAME ${SHAREARCH_BASEDIRNAME}-${MAGICK_ABI_SUFFIX})
-set(SHAREARCH_PATH ${CMAKE_INSTALL_LIBDIR}/${RELATIVE_PATH}/${SHAREARCH_DIRNAME} CACHE INTERNAL "Installation path for platform-dependent data")
+set(SHAREARCH_PATH ${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}-${MAGICK_BASE_VERSION}/${SHAREARCH_DIRNAME} CACHE INTERNAL "Installation path for platform-dependent data")
 set(SHARE_PATH ${CMAKE_INSTALL_DATAROOTDIR}/${RELATIVE_PATH} CACHE INTERNAL "Installation path for platform-independent data")
 set(SHARE_RELATIVE_PATH ${RELATIVE_PATH})
 
@@ -129,18 +132,6 @@ set(CODER_DIRNAME coders)
 set(CODER_PATH ${MODULES_PATH}/${CODER_DIRNAME})
 set(FILTER_DIRNAME filters)
 set(FILTER_PATH ${MODULES_PATH}/${FILTER_DIRNAME})
-
-if(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 8)
-  set(MagickQuantumDepth "Q8")
-elseif(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 16)
-  set(MagickQuantumDepth "Q16")
-elseif(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 32)
-  set(MagickQuantumDepth "Q32")
-elseif(${MAGICKCORE_QUANTUM_DEPTH} EQUAL 64)
-  set(MagickQuantumDepth "Q64")
-else()
-  set(MagickQuantumDepth "Q?")
-endif()
 
 # rc files are only used on Windows binaries
 if(WIN32)

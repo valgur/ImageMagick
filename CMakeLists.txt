@@ -85,7 +85,7 @@ set(CODERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/coders)
 set(FILTERS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/filters)
 
 # Set the binaries name
-set(MAGICK_BINARY_SUFFIX "${MAGICK_VERSION_MAJOR}.${MAGICK_ABI_SUFFIX}")
+set(MAGICK_BINARY_SUFFIX "${PACKAGE_MAJOR_VERSION}.${MAGICK_ABI_SUFFIX}")
 
 # Add the subdirectories to be compiled
 add_subdirectory(config)
