@@ -295,7 +295,7 @@ class ImageMagicConan(ConanFile):
 
     def _patch_sources(self):
         # PangoCairo is provided by Pango
-        replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"),
+        replace_in_file(self, os.path.join(self.source_folder, "cmake", "delegates.cmake"),
                         "magick_find_delegate(DELEGATE PANGOCAIRO_DELEGATE NAME PangoCairo DEFAULT FALSE)\n",
                         "magick_find_delegate(DELEGATE PANGOCAIRO_DELEGATE NAME Pango DEFAULT FALSE TARGETS Pango::Pango)\n")
 
