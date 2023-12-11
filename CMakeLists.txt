@@ -13,9 +13,7 @@
 #   CMake script file to build ImageMagick
 #
 cmake_minimum_required(VERSION 3.19.0)
-cmake_policy(VERSION 3.19.0)
-
-project(ImageMagick)
+project(ImageMagick LANGUAGES C)
 
 include(cmake/checks.cmake)
 

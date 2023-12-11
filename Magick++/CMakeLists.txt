@@ -13,7 +13,7 @@
 #   CMake script file to build ImageMagick
 #
 
-project(Magick++ CXX)
+enable_language(CXX)
 
 SET(MAGICKXX_PUBLIC_HEADERS
   lib/Magick++/Blob.h

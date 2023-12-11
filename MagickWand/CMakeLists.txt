@@ -13,8 +13,6 @@
 #   CMake script file to build ImageMagick
 #
 
-project(MagickWand C)
-
 set(MAGICKWAND_SRC
   MagickWand.h
   animate.c

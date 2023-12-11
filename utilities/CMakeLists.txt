@@ -13,8 +13,6 @@
 #   CMake script file to build ImageMagick
 #
 
-project(Magick C)
-
 set(MAGICK_SRC
   magick.c
 )
