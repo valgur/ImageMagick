@@ -193,6 +193,7 @@ class ImageMagicConan(ConanFile):
         tc.variables["MAGICK_BUILD_STATIC"] = not self.options.shared
         tc.variables["BUILD_MAGICKPP"] = self.options.magickpp
         tc.variables["BUILD_UTILITIES"] = self.options.utilities
+        tc.variables["BUILD_TESTS"] = False
         tc.variables["CIPHER_SUPPORT"] = self.options.cipher_support
         tc.variables["EXCLUDE_DEPRECATED"] = self.options.exclude_deprecated
         tc.variables["MAGICKCORE_QUANTUM_DEPTH"] = self.options.quantum_depth
