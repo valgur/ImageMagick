@@ -21,6 +21,7 @@ function(add_tap_test TEST_FILE)
       "srcdir=${CMAKE_CURRENT_BINARY_DIR}/"
       "TOPSRCDIR=${CMAKE_BINARY_DIR}/"
       "top_srcdir=${CMAKE_BINARY_DIR}/"
+      "MAGICK_CONFIGURE_PATH=${CMAKE_BINARY_DIR}/config/"
   )
 
   if(ARGC GREATER 1)

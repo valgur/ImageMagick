@@ -64,11 +64,6 @@ else()
 endif()
 
 message(STATUS "Security policy variant to enforce: ${SECURITY_POLICY}")
-if(NOT SECURITY_POLICY STREQUAL "open")
-  message(FATAL_ERROR "Only 'open' security policy is supported at this time.")
-  # TODO: Implement installation of config/ files
-  # Copy config/policy-${SECURITY_POLICY}.xml to ${MAGICK_CONFIGURE_PATH}/policy.xml
-endif()
 
 if(BUILD_MAGICKPP)
   enable_language(CXX)
