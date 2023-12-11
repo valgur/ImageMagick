@@ -21,14 +21,27 @@ target_link_libraries(drawtest PRIVATE MagickCore MagickWand)
 add_executable(wandtest wandtest.c)
 target_link_libraries(wandtest PRIVATE MagickCore MagickWand)
 
+# Adding CTEST_PARALLEL_LEVEL=15 env var to the ctest command is recommended.
 enable_testing()
 
 set(TEST_ENV
-    "CONVERT=${CMAKE_BINARY_DIR}/utilities/magick"
-    "IDENTIFY=${CMAKE_BINARY_DIR}/utilities/magick"
+    "MAGICK=${CMAKE_BINARY_DIR}/utilities/magick"
+    "ANIMATE=${CMAKE_BINARY_DIR}/utilities/animate"
+    "COMPARE=${CMAKE_BINARY_DIR}/utilities/compare"
+    "COMPOSITE=${CMAKE_BINARY_DIR}/utilities/composite"
+    "CONJURE=${CMAKE_BINARY_DIR}/utilities/conjure"
+    "CONVERT=${CMAKE_BINARY_DIR}/utilities/convert"
+    "DISPLAY=${CMAKE_BINARY_DIR}/utilities/display"
+    "IDENTIFY=${CMAKE_BINARY_DIR}/utilities/identify"
+    "IMPORT=${CMAKE_BINARY_DIR}/utilities/import"
+    "MOGRIFY=${CMAKE_BINARY_DIR}/utilities/mogrify"
+    "MONTAGE=${CMAKE_BINARY_DIR}/utilities/montage"
+    "STREAM=${CMAKE_BINARY_DIR}/utilities/stream"
+
     "VALIDATE=${CMAKE_BINARY_DIR}/tests/validate"
     "DRAWTEST=${CMAKE_BINARY_DIR}/tests/drawtest"
     "WANDTEST=${CMAKE_BINARY_DIR}/tests/wandtest"
+
     "SRCDIR=${CMAKE_CURRENT_BINARY_DIR}"
     "srcdir=${CMAKE_CURRENT_BINARY_DIR}"
     "TOPSRCDIR=${CMAKE_SOURCE_DIR}"

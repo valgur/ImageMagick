@@ -20,10 +20,19 @@ set(MAGICK_SRC
 add_executable(magick ${MAGICK_SRC} ${MAGICK_RESOURCE_FILE_PATH})
 
 target_include_directories(magick PRIVATE ${IMAGEMAGICK_BASE_PATH})
-target_compile_definitions(magick PRIVATE ${MAGICK_BUILD_DEFINES})
 target_link_libraries(magick PRIVATE MagickWand)
+
+set(MAGICK_LINKED_UTILITIES animate compare composite conjure convert display identify import magick-script mogrify montage stream)
+foreach(utility ${MAGICK_LINKED_UTILITIES})
+  add_custom_command(TARGET magick POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink magick $<TARGET_FILE_DIR:magick>/${utility}
+  )
+endforeach()
 
 install(TARGETS magick
   RUNTIME DESTINATION bin
   BUNDLE DESTINATION bin
 )
+foreach(utility ${MAGICK_LINKED_UTILITIES})
+  install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink magick ${CMAKE_INSTALL_PREFIX}/bin/${utility})")
+endforeach()
