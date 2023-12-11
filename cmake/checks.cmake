@@ -121,7 +121,7 @@ macro(magick_check_env)
   # Check if <dlfcn.h> exists
   check_include_file(dlfcn.h HAVE_DLFCN_H)
 
-  # Check if `double_t' exists
+  # Check if `float_t' exists
   check_c_source_compiles (
   "
     #include <math.h>
@@ -958,6 +958,23 @@ macro(magick_check_env)
           set(size_t "unsigned long long")
         endif()
       set(SIZEOF_SIZE_T ${CMAKE_SIZEOF_VOID_P})
+      endif()
+    endif()
+  endif()
+
+  # Check if <sys/types.h> doesn't define `ssize_t'
+  if(HAVE_SYS_TYPES_H)
+    if(SIZEOF_SSIZE_T)
+      set(HAVE_SSIZE_T 1)
+    else()
+      check_symbol_exists(ssize_t sys/types.h HAVE_SSIZE_T)
+      if(NOT HAVE_SSIZE_T)
+        if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
+          set(ssize_t int)
+        else()
+          set(ssize_t "long long")
+        endif()
+        set(SIZEOF_SSIZE_T ${CMAKE_SIZEOF_VOID_P})
       endif()
     endif()
   endif()
