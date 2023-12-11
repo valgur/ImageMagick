@@ -11,33 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-#  CMakeLists.txt for the ImageMagick validation suite.
 
 include(${CMAKE_SOURCE_DIR}/cmake/test_helpers.cmake)
 
-foreach(executable validate drawtest wandtest)
-  add_executable(${executable} ${executable}.c)
-  target_link_libraries(${executable} PRIVATE MagickCore MagickWand)
+foreach(demo analyze button demo flip gravity piddle shapes zoom)
+  add_executable(${demo} "${CMAKE_SOURCE_DIR}/Magick++/demo/${demo}.cpp")
+  target_link_libraries(${demo} PRIVATE Magick++)
 endforeach()
 
-copy_test_resources(core)
+copy_test_resources(magickpp-demo)
 
-add_tap_test(validate-colorspace)
-add_tap_test(validate-compare)
-add_tap_test(validate-composite)
-add_tap_test(validate-convert)
-add_tap_test(validate-formats-disk)
-add_tap_test(validate-formats-map)
-add_tap_test(validate-formats-memory)
-add_tap_test(validate-identify)
-add_tap_test(validate-import)
-add_tap_test(validate-magick)
-add_tap_test(validate-montage)
-add_tap_test(validate-stream)
-add_tap_test(cli-colorspace)
-add_tap_test(cli-pipe)
-add_tap_test(drawtest)
-add_tap_test(wandtest)
+add_tap_test(demos magick++-demos)
 
 set_property(DIRECTORY PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_BINARY_DIR}/*_out.*")
