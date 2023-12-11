@@ -10,8 +10,8 @@
 /////////////////////////////////////////////////////////////////////////////
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION @MagickLibVersionNumber@
- PRODUCTVERSION @MagickLibVersionNumber@
+ FILEVERSION "@MagickLibVersionNumber@"
+ PRODUCTVERSION "@MagickLibVersionNumber@"
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -30,11 +30,11 @@ BEGIN
             VALUE "FileDescription", "ImageMagick Studio library and utility programs\0"
             VALUE "OriginalFilename", "ImageMagick\0"
             VALUE "InternalName", "ImageMagick\0"
-            VALUE "FileVersion", @MagickLibVersionText@ "\0"
-            VALUE "ProductVersion", @MagickLibVersionText@ "\0"
+            VALUE "FileVersion", "@MagickLibVersionText@" "\0"
+            VALUE "ProductVersion", "@MagickLibVersionText@" "\0"
             VALUE "CompanyName", "ImageMagick Studio\0"
-            VALUE "LegalCopyright", @MagickCopyright@ "\0"
-            VALUE "Comments", @MagickVersion@ "\0"
+            VALUE "LegalCopyright", "@MagickCopyright@" "\0"
+            VALUE "Comments", "@MagickVersion@" "\0"
         END
     END
     BLOCK "VarFileInfo"
