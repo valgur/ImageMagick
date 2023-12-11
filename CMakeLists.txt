@@ -112,6 +112,7 @@ if(BUILD_TESTS)
     add_subdirectory(Magick++/demo)
   endif()
 endif()
+add_subdirectory(config)
 
 install(FILES
   LICENSE
