@@ -102,6 +102,8 @@ class ImageMagicConan(ConanFile):
         "coders/**",
         "config/**",
         "filters/**",
+        "images/**",
+        "m4/**",
         "Magick++/**",
         "MagickCore/**",
         "MagickWand/**",
@@ -113,6 +115,10 @@ class ImageMagicConan(ConanFile):
             del self.options.fPIC
         if self.settings.os not in ["Linux", "FreeBSD"]:
             del self.options.with_x11
+        if is_msvc(self):
+            # TODO: fix MSVC compilation with these options
+            self.options.with_fftw = False
+            self.options.with_openmp = False
 
     def configure(self):
         if self.options.shared:
@@ -296,8 +302,8 @@ class ImageMagicConan(ConanFile):
     def _patch_sources(self):
         # PangoCairo is provided by Pango
         replace_in_file(self, os.path.join(self.source_folder, "cmake", "delegates.cmake"),
-                        "magick_find_delegate(DELEGATE PANGOCAIRO_DELEGATE NAME PangoCairo DEFAULT FALSE)\n",
-                        "magick_find_delegate(DELEGATE PANGOCAIRO_DELEGATE NAME Pango DEFAULT FALSE TARGETS Pango::Pango)\n")
+                        "magick_find_delegate(DELEGATE PANGOCAIRO_DELEGATE NAME PangoCairo DEFAULT FALSE)",
+                        "magick_find_delegate(DELEGATE PANGOCAIRO_DELEGATE NAME Pango DEFAULT FALSE TARGETS Pango::Pango)")
 
     def build(self):
         self._patch_sources()
