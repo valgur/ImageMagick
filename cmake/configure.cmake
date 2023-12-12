@@ -34,10 +34,6 @@ set(QUANTUM_DEPTH ${MAGICKCORE_QUANTUM_DEPTH})
 # TODO
 # set(MAGICK_DELEGATES)
 # set(MAGICK_FEATURES)
-# set(MAGICK_TARGET_CPU)
-# set(MAGICK_TARGET_OS)
-# set(MAGICK_TARGET_VENDOR)
-# set(host)
 
 # Set if pipe (|) is enabled on filenames
 # TODO Add linux and mac os X
