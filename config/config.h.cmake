@@ -168,7 +168,10 @@
 #cmakedefine HAVE_DLFCN_H 1
 
 /* Define to 1 if you have the `erf' function. */
+/* Add conditionally as <nt-base.h> already defines the macro */
+#ifndef HAVE_ERF
 #cmakedefine HAVE_ERF 1
+#endif
 
 /* Define to 1 if you have the <errno.h> header file. */
 #cmakedefine HAVE_ERRNO_H 1
