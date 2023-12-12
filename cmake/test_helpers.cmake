@@ -1,21 +1,21 @@
 function(add_tap_test TEST_FILE)
   set(TEST_ENV
-      "MAGICK=${CMAKE_BINARY_DIR}/utilities/magick"
-      "ANIMATE=${CMAKE_BINARY_DIR}/utilities/animate"
-      "COMPARE=${CMAKE_BINARY_DIR}/utilities/compare"
-      "COMPOSITE=${CMAKE_BINARY_DIR}/utilities/composite"
-      "CONJURE=${CMAKE_BINARY_DIR}/utilities/conjure"
-      "CONVERT=${CMAKE_BINARY_DIR}/utilities/convert"
-      "DISPLAY=${CMAKE_BINARY_DIR}/utilities/display"
-      "IDENTIFY=${CMAKE_BINARY_DIR}/utilities/identify"
-      "IMPORT=${CMAKE_BINARY_DIR}/utilities/import"
-      "MOGRIFY=${CMAKE_BINARY_DIR}/utilities/mogrify"
-      "MONTAGE=${CMAKE_BINARY_DIR}/utilities/montage"
-      "STREAM=${CMAKE_BINARY_DIR}/utilities/stream"
+      "MAGICK=$<TARGET_FILE:magick>"
+      "ANIMATE=$<TARGET_FILE:magick> animate"
+      "COMPARE=$<TARGET_FILE:magick> compare"
+      "COMPOSITE=$<TARGET_FILE:magick> composite"
+      "CONJURE=$<TARGET_FILE:magick> conjure"
+      "CONVERT=$<TARGET_FILE:magick> convert"
+      "DISPLAY=$<TARGET_FILE:magick> display"
+      "IDENTIFY=$<TARGET_FILE:magick> identify"
+      "IMPORT=$<TARGET_FILE:magick> import"
+      "MOGRIFY=$<TARGET_FILE:magick> mogrify"
+      "MONTAGE=$<TARGET_FILE:magick> montage"
+      "STREAM=$<TARGET_FILE:magick> stream"
 
-      "VALIDATE=${CMAKE_BINARY_DIR}/tests/validate"
-      "DRAWTEST=${CMAKE_BINARY_DIR}/tests/drawtest"
-      "WANDTEST=${CMAKE_BINARY_DIR}/tests/wandtest"
+      "VALIDATE=$<TARGET_FILE:validate>"
+      "DRAWTEST=$<TARGET_FILE:drawtest>"
+      "WANDTEST=$<TARGET_FILE:wandtest>"
 
       "SRCDIR=${CMAKE_CURRENT_BINARY_DIR}/"
       "srcdir=${CMAKE_CURRENT_BINARY_DIR}/"
@@ -24,15 +24,22 @@ function(add_tap_test TEST_FILE)
       "MAGICK_CONFIGURE_PATH=${CMAKE_BINARY_DIR}/config/"
       "MAGICK_FONT=${CMAKE_SOURCE_DIR}/PerlMagick/demo/Generic.ttf"
   )
+  if(BUILD_MAGICKPP)
+    set(TEST_ENV ${TEST_ENV}
+        "MAGICPP_TEST_BINARIES_DIR=$<TARGET_FILE_DIR:exceptions>"
+        "MAGICPP_DEMO_BINARIES_DIR=$<TARGET_FILE_DIR:zoom>"
+    )
+  endif()
 
   if(ARGC GREATER 1)
     set(TEST_NAME ${ARGV1})
   else()
     set(TEST_NAME ${TEST_FILE})
   endif()
+  set(log_path "tests/test_${TEST_NAME}.log")
   add_test(
       NAME ${TEST_NAME}
-      COMMAND sh -c "sh ${CMAKE_CURRENT_BINARY_DIR}/${TEST_FILE}.tap | tee /dev/fd/2 | grep -q 'not ok' && exit 1 || exit 0"
+      COMMAND sh -c "sh '${CMAKE_CURRENT_BINARY_DIR}/${TEST_FILE}.tap' | tee '${log_path}' && grep -q 'not ok' '${log_path}' && exit 1 || exit 0"
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   )
   set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENV}")
@@ -53,10 +60,9 @@ function(copy_test_resources suffix)
     add_custom_target(copy_${NAME} ALL DEPENDS ${SRC} ${DST})
     add_dependencies(copy_test_resources_${suffix} copy_${NAME})
   endforeach()
-
-  file(WRITE ${CMAKE_BINARY_DIR}/common.shi "")
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/common.shi "")
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/tests/common.shi "")
 endfunction()
 
-set_property(DIRECTORY PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_BINARY_DIR}/*_out.*")
+set_property(DIRECTORY PROPERTY ADDITIONAL_CLEAN_FILES
+    "${CMAKE_BINARY_DIR}/*_out.*"
+    "${CMAKE_BINARY_DIR}/tests/*.log"
+)

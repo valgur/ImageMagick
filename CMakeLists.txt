@@ -98,7 +98,7 @@ if(BUILD_UTILITIES)
   add_subdirectory(utilities)
 endif()
 if(BUILD_TESTS)
-  # Running ctest with CTEST_PARALLEL_LEVEL=15 env var is recommended.
+  # Running ctest with CTEST_PARALLEL_LEVEL=20 env var is recommended.
   enable_testing()
   add_subdirectory(tests)
   if(BUILD_MAGICKPP)
