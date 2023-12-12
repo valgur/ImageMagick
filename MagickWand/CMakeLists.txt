@@ -105,7 +105,7 @@ set_target_properties(MagickWand PROPERTIES
 )
 target_include_directories(MagickWand PUBLIC ${IMAGEMAGICK_BASE_PATH})
 target_include_directories(MagickWand PRIVATE ${IMAGEMAGICK_DELEGATES_INCLUDE_DIRS})
-target_compile_definitions(MagickWand PRIVATE -D_MAGICKLIB_)
+target_compile_definitions(MagickWand PRIVATE _MAGICKLIB_)
 target_link_libraries(MagickWand PUBLIC MagickCore)
 
 install(TARGETS MagickWand

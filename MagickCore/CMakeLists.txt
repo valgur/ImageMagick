@@ -712,7 +712,7 @@ target_link_libraries(MagickCore PUBLIC ${IMAGEMAGICK_DELEGATES_LIBRARIES})
 if(UNIX)
   target_link_libraries(MagickCore PUBLIC m)
 endif()
-target_compile_definitions(MagickCore PRIVATE -D_MAGICKLIB_)
+target_compile_definitions(MagickCore PRIVATE _MAGICKLIB_)
 
 install(TARGETS MagickCore
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

@@ -35,7 +35,7 @@ magick_find_delegate(DELEGATE XML_DELEGATE NAME LibXml2 DEFAULT TRUE)
 
 magick_find_delegate(DELEGATE OPENMP_SUPPORT NAME OpenMP DEFAULT TRUE TARGETS OpenMP::OpenMP_C)
 if(OPENMP_SUPPORT)
-  add_compile_definitions(-D_OPENMP=${OpenMP_C_SPEC_DATE})
+  add_compile_definitions(_OPENMP=${OpenMP_C_SPEC_DATE})
 endif()
 
 magick_find_delegate(DELEGATE THREADS_SUPPORT NAME Threads DEFAULT TRUE TARGETS)

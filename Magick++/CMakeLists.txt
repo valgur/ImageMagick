@@ -84,7 +84,7 @@ set_target_properties(Magick++ PROPERTIES
     PUBLIC_HEADER "${MAGICKXX_PUBLIC_HEADERS}"
 )
 target_include_directories(Magick++ PUBLIC ${IMAGEMAGICK_BASE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/lib)
-target_compile_definitions(Magick++ PRIVATE -D_MAGICKLIB_)
+target_compile_definitions(Magick++ PRIVATE _MAGICKLIB_)
 target_link_libraries(Magick++ PUBLIC MagickWand)
 
 install(TARGETS Magick++
