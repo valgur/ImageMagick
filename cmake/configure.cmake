@@ -147,7 +147,7 @@ if(WIN32)
   endif()
 
   # Read the version.h file so we can get some needed values using regex
-  file(READ ${CMAKE_BINARY_DIR}/MagickCore/version.h CONTENT_VERSION_H)
+  file(READ ${CMAKE_SOURCE_DIR}/MagickCore/version.h.in CONTENT_VERSION_H)
 
   # Try to find `MagickCopyright'
   string(REGEX MATCH "\n#define +MagickCopyright +\"([^\"]+)\"\n" FOUND_MAGICK_COPYRIGHT ${CONTENT_VERSION_H})
