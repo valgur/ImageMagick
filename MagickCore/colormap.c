@@ -119,7 +119,7 @@ MagickExport MagickBooleanType AcquireImageColormap(Image *image,
     {
       image->colors=0;
       image->storage_class=DirectClass;
-      ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
+      ThrowBinaryException(ResourceLimitError,"UnableToCreateColormap",
         image->filename);
     }
   image->colors=MagickMax(colors,1);
@@ -142,7 +142,7 @@ MagickExport MagickBooleanType AcquireImageColormap(Image *image,
       pixel;
 
     GetPixelInfo(image,image->colormap+i);
-    pixel=(double) (i*(QuantumRange/MagickMax(colors-1,1)));
+    pixel=((double) i*(QuantumRange/MagickMax(colors-1,1)));
     image->colormap[i].red=pixel;
     image->colormap[i].green=pixel;
     image->colormap[i].blue=pixel;
@@ -230,7 +230,8 @@ MagickExport MagickBooleanType CycleColormapImage(Image *image,
       }
     for (x=0; x < (ssize_t) image->columns; x++)
     {
-      index=(ssize_t) (GetPixelIndex(image,q)+displace) % image->colors;
+      index=(ssize_t) (GetPixelIndex(image,q)+displace) % (ssize_t)
+        image->colors;
       if (index < 0)
         index+=(ssize_t) image->colors;
       SetPixelIndex(image,(Quantum) index,q);

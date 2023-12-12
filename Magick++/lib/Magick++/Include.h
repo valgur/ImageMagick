@@ -110,6 +110,7 @@ namespace MagickCore
 #          pragma comment(lib, "CORE_DB_cairo_.lib")
 #        endif
 #        if defined(MAGICKCORE_OPENEXR_DELEGATE)
+#          pragma comment(lib, "CORE_DB_deflate_.lib")
 #          pragma comment(lib, "CORE_DB_exr_.lib")
 #        endif
 #        if defined(MAGICKCORE_FLIF_DELEGATE)
@@ -122,7 +123,7 @@ namespace MagickCore
 #          pragma comment(lib, "CORE_DB_jbig_.lib")
 #        endif
 #        if defined(MAGICKCORE_JP2_DELEGATE)
-#          pragma comment(lib, "CORE_DB_jp2_.lib")
+#          pragma comment(lib, "CORE_DB_jasper_.lib")
 #        endif
 #        if defined(MAGICKCORE_JPEG_DELEGATE)
 #          pragma comment(lib, "CORE_DB_jpeg-turbo_.lib")
@@ -199,6 +200,7 @@ namespace MagickCore
 #          pragma comment(lib, "CORE_RL_cairo_.lib")
 #        endif
 #        if defined(MAGICKCORE_OPENEXR_DELEGATE)
+#          pragma comment(lib, "CORE_RL_deflate_.lib")
 #          pragma comment(lib, "CORE_RL_exr_.lib")
 #        endif
 #        if defined(MAGICKCORE_FLIF_DELEGATE)
@@ -211,7 +213,7 @@ namespace MagickCore
 #          pragma comment(lib, "CORE_RL_jbig_.lib")
 #        endif
 #        if defined(MAGICKCORE_JP2_DELEGATE)
-#          pragma comment(lib, "CORE_RL_jp2_.lib")
+#          pragma comment(lib, "CORE_RL_jasper_.lib")
 #        endif
 #        if defined(MAGICKCORE_JPEG_DELEGATE)
 #          pragma comment(lib, "CORE_RL_jpeg-turbo_.lib")

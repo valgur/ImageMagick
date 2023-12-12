@@ -242,9 +242,6 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
   Quantum
     *q;
 
-  unsigned char
-    *p;
-
   size_t
     bits_per_line,
     bytes_per_line;
@@ -254,6 +251,7 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
     y;
 
   unsigned char
+    *p,
     *row_data;
 
   unsigned int
@@ -271,7 +269,7 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
   /*
    * Image data
    */
-  bits_per_line=image->columns*bits_per_pixel;
+  bits_per_line=image->columns*(size_t) bits_per_pixel;
   bytes_per_line=bits_per_line/8 + ((bits_per_line%8==0) ? 0 : 1);
   row_data=(unsigned char*) AcquireQuantumMemory(1,bytes_per_line);
   if (row_data == (unsigned char *) NULL)
@@ -508,6 +506,9 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
     CSM
       csm;
 
+    size_t
+      clut_size;
+
     ssize_t
       i;
 
@@ -517,12 +518,16 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
     /*
       * ### Read CLUT Data ###
       */
-    clut_data=(unsigned char *) AcquireQuantumMemory(1,header->clut_size);
+    clut_size=MagickMax(header->clut_size,(size_t) (clut_depth/8)*
+      image->colors);
+    clut_data=(unsigned char *) AcquireQuantumMemory(clut_size,
+      sizeof(*clut_data));
     if (clut_data == (unsigned char *) NULL)
       ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
         image_info->filename);
-    count=ReadBlob(image,header->clut_size,clut_data);
-    if (count != (ssize_t) (header->clut_size))
+    (void) memset(clut_data,0,clut_size);
+    count=ReadBlob(image,clut_size,clut_data);
+    if (count != (ssize_t) clut_size)
       {
         clut_data=(unsigned char *) RelinquishMagickMemory(clut_data);
         ThrowBinaryException(CorruptImageError,"InsufficientImageDataInFile",
@@ -538,8 +543,8 @@ static MagickBooleanType ReadTIM2ImageData(const ImageInfo *image_info,
       {
         for (i=0; i < (ssize_t) image->colors; i++)
         {
-          word = ((unsigned short)* p   )<<0*8 |
-                  ((unsigned short)*(p+1))<<1*8;
+          word = (unsigned int) (((unsigned short)* p   )<<0*8 |
+                  ((unsigned short)*(p+1))<<1*8);
 
           image->colormap[i].red=GetChannelValue(word,0,RGBA16);
           image->colormap[i].green=GetChannelValue(word,1,RGBA16);
@@ -691,7 +696,8 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
             break;
           }
         image=SyncNextImageInList(image);
-        status=SetImageProgress(image,LoadImagesTag,image->scene-1,image->scene);
+        status=SetImageProgress(image,LoadImagesTag,(MagickOffsetType)
+          image->scene-1,image->scene);
         if (status == MagickFalse)
           break;
       }
@@ -746,7 +752,7 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
         ThrowReaderException(CorruptImageError,"ImproperImageHeader");
         break;
     }
-    image->depth=(clut_depth != 0) ? clut_depth : bits_per_pixel;
+    image->depth=(size_t) ((clut_depth != 0) ? clut_depth : bits_per_pixel);
     if ((image->depth == 16) || (image->depth == 32))
       image->alpha_trait=BlendPixelTrait;
     if (image->ping == MagickFalse)
@@ -766,7 +772,8 @@ static Image *ReadTIM2Image(const ImageInfo *image_info,
         break;
       }
   }
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   if (status == MagickFalse)
     return(DestroyImageList(image));
   return(GetFirstImageInList(image));

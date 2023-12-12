@@ -329,9 +329,9 @@ static Image *ReadVICARImage(const ImageInfo *image_info,
         if (LocaleCompare(keyword,"FORMAT") == 0)
           (void) CopyMagickString(format,value,MagickPathExtent);
         if (LocaleCompare(keyword,"LABEL_RECORDS") == 0)
-          length*=(ssize_t) StringToLong(value);
+          length*=(size_t) StringToLong(value);
         if (LocaleCompare(keyword,"LBLSIZE") == 0)
-          length=(ssize_t) StringToLong(value)+offset;
+          length=(size_t) (StringToLong(value)+offset);
         if (LocaleCompare(keyword,"LINES") == 0)
           image->rows=StringToUnsignedLong(value);
         if (LocaleCompare(keyword,"NL") == 0)
@@ -420,7 +420,10 @@ static Image *ReadVICARImage(const ImageInfo *image_info,
   if (EOFBlob(image) != MagickFalse)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -596,6 +599,7 @@ static MagickBooleanType WriteVICARImage(const ImageInfo *image_info,
       break;
   }
   quantum_info=DestroyQuantumInfo(quantum_info);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

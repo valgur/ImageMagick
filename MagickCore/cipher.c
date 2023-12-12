@@ -16,7 +16,7 @@
 %                               March  2003                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2003 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -59,6 +59,7 @@
 #include "MagickCore/splay-tree.h"
 #include "MagickCore/statistic.h"
 #include "MagickCore/string_.h"
+#include "MagickCore/timer-private.h"
 
 #if defined(MAGICKCORE_CIPHER_SUPPORT)
 /*
@@ -80,7 +81,9 @@ typedef struct _AESInfo
     *decipher_key;
 
   ssize_t
-    rounds,
+    rounds;
+
+  time_t
     timestamp;
 
   size_t
@@ -203,7 +206,7 @@ static AESInfo *AcquireAESInfo(void)
       (aes_info->encipher_key == (unsigned int *) NULL) ||
       (aes_info->decipher_key == (unsigned int *) NULL))
     ThrowFatalException(ResourceLimitFatalError,"MemoryAllocationFailed");
-  aes_info->timestamp=(ssize_t) time(0);
+  aes_info->timestamp=GetMagickTime();
   aes_info->signature=MagickCoreSignature;
   return(aes_info);
 }

@@ -43,12 +43,14 @@
 #include "MagickCore/studio.h"
 #include "MagickCore/exception.h"
 #include "MagickCore/exception-private.h"
+#include "MagickCore/image-private.h"
 #include "MagickCore/locale_.h"
 #include "MagickCore/log.h"
 #include "MagickCore/memory_.h"
 #include "MagickCore/memory-private.h"
 #include "MagickCore/nt-base-private.h"
 #include "MagickCore/registry.h"
+#include "MagickCore/resource_.h"
 #include "MagickCore/string-private.h"
 #include "MagickCore/timer.h"
 #include "MagickCore/timer-private.h"
@@ -340,7 +342,7 @@ MagickExport double GetElapsedTime(TimerInfo *time_info)
 %
 %  GetMagickTime() returns the time as the number of seconds since the Epoch.
 %
-%  The format of the GetElapsedTime method is:
+%  The format of the GetMagickTime method is:
 %
 %      time_t GetElapsedTime(void)
 %
@@ -348,7 +350,7 @@ MagickExport double GetElapsedTime(TimerInfo *time_info)
 MagickExport time_t GetMagickTime(void)
 {
   static time_t
-    constant_magick_time = 0;
+    magick_epoch = (time_t) 0;
 
   static MagickBooleanType
     epoch_initialized = MagickFalse;
@@ -364,14 +366,14 @@ MagickExport time_t GetMagickTime(void)
           time_t
             epoch;
 
-          epoch=(time_t) StringToDouble(source_date_epoch,(char **) NULL);
+          epoch=(time_t) StringToMagickOffsetType(source_date_epoch,100.0);
           if ((epoch > 0) && (epoch <= time((time_t *) NULL)))
-            constant_magick_time=epoch;
+            magick_epoch=epoch;
         }
       epoch_initialized=MagickTrue;
     }
-  if (constant_magick_time != 0)
-    return(constant_magick_time);
+  if (magick_epoch != 0)
+    return(magick_epoch);
   return(time((time_t *) NULL));
 }
 
@@ -499,7 +501,7 @@ MagickExport void ResetTimer(TimerInfo *time_info)
 */
 MagickPrivate void SetMagickDatePrecision(const unsigned long precision)
 {
-  date_precision=precision;
+  date_precision=(ssize_t) precision;
 }
 
 /*
@@ -615,7 +617,7 @@ static double UserTime(void)
   return((double) (timer.tms_utime+timer.tms_stime)/sysconf(_SC_CLK_TCK));
 #else
 #if defined(MAGICKCORE_WINDOWS_SUPPORT)
-  return(NTUserTime());
+  return(NTElapsedTime());
 #else
   return((double) clock()/CLOCKS_PER_SEC);
 #endif

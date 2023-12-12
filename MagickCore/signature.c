@@ -84,7 +84,7 @@ struct _SignatureInfo
   MagickBooleanType
     lsb_first;
 
-  ssize_t
+  time_t
     timestamp;
 
   size_t
@@ -139,7 +139,7 @@ MagickPrivate SignatureInfo *AcquireSignatureInfo(void)
   lsb_first=1;
   signature_info->lsb_first=(int) (*(char *) &lsb_first) == 1 ? MagickTrue :
     MagickFalse;
-  signature_info->timestamp=(ssize_t) GetMagickTime();
+  signature_info->timestamp=GetMagickTime();
   signature_info->signature=MagickCoreSignature;
   InitializeSignature(signature_info);
   return(signature_info);
@@ -545,7 +545,7 @@ MagickExport MagickBooleanType SignatureImage(Image *image,
         PixelTrait traits = GetPixelChannelTraits(image,channel);
         if ((traits & UpdatePixelTrait) == 0)
           continue;
-        pixel=(float) (QuantumScale*p[i]);
+        pixel=(float) (QuantumScale*(double) p[i]);
         if (signature_info->lsb_first == MagickFalse)
           for (j=(ssize_t) sizeof(pixel)-1; j >= 0; j--)
             *q++=(unsigned char) ((unsigned char *) &pixel)[j];
@@ -633,7 +633,7 @@ static void TransformSignature(SignatureInfo *signature_info)
     };  /* 32-bit fractional part of the cube root of the first 64 primes */
 
   unsigned int
-    A,
+    A = 0,
     B,
     C,
     D,

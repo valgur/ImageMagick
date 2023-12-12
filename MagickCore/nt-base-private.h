@@ -83,6 +83,7 @@ static inline void *NTAcquireQuantumMemory(const size_t count,
 }
 
 extern MagickPrivate char
+  *NTGetEnvironmentValue(const char *),
   *NTGetLastError(void);
 
 #if !defined(MAGICKCORE_LTDL_DELEGATE)
@@ -99,8 +100,7 @@ extern MagickPrivate DIR
 
 extern MagickPrivate double
   NTElapsedTime(void),
-  NTErf(double),
-  NTUserTime(void);
+  NTErf(double);
 
 extern MagickPrivate int
 #if !defined(__MINGW32__)
@@ -108,10 +108,7 @@ extern MagickPrivate int
 #endif
   NTCloseDirectory(DIR *),
   NTCloseLibrary(void *),
-  NTExitLibrary(void),
   NTTruncateFile(int,off_t),
-  NTInitializeLibrary(void),
-  NTSetSearchPath(const char *),
   NTUnmapMemory(void *,size_t),
   NTSystemCommand(const char *,char *);
 
@@ -126,7 +123,7 @@ extern MagickPrivate MagickBooleanType
   NTReportEvent(const char *,const MagickBooleanType);
 
 extern MagickExport MagickBooleanType
-  NTLongPathsEnabled();
+  NTLongPathsEnabled(void);
 
 extern MagickPrivate struct dirent
   *NTReadDirectory(DIR *);
@@ -138,7 +135,6 @@ extern MagickPrivate unsigned char
 extern MagickPrivate void
   *NTGetLibrarySymbol(void *,const char *),
   NTGhostscriptEXE(char *,int),
-  NTInitializeWinsock(MagickBooleanType),
   *NTMapMemory(char *,size_t,int,int,int,MagickOffsetType),
   *NTOpenLibrary(const char *),
   NTWindowsGenesis(void),

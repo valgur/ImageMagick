@@ -137,7 +137,7 @@ static Image *ReadMONOImage(const ImageInfo *image_info,
       image=DestroyImageList(image);
       return((Image *) NULL);
     }
-  if (DiscardBlobBytes(image,image->offset) == MagickFalse)
+  if (DiscardBlobBytes(image,(MagickSizeType) image->offset) == MagickFalse)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
   /*
@@ -189,7 +189,10 @@ static Image *ReadMONOImage(const ImageInfo *image_info,
   if (EOFBlob(image) != MagickFalse)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -333,11 +336,11 @@ static MagickBooleanType WriteMONOImage(const ImageInfo *image_info,
       byte>>=1;
       if (image->endian == LSBEndian)
         {
-          if (GetPixelLuma(image,p) < (QuantumRange/2.0))
+          if (GetPixelLuma(image,p) < ((double) QuantumRange/2.0))
             byte|=0x80;
         }
       else
-        if (GetPixelLuma(image,p) >= (QuantumRange/2.0))
+        if (GetPixelLuma(image,p) >= ((double) QuantumRange/2.0))
           byte|=0x80;
       bit++;
       if (bit == 8)
@@ -355,6 +358,7 @@ static MagickBooleanType WriteMONOImage(const ImageInfo *image_info,
     if (status == MagickFalse)
       break;
   }
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

@@ -23,7 +23,7 @@
 %                                 March 2003                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright 1999-2021 ImageMagick Studio LLC, a non-profit organization      %
+%  Copyright 1999 ImageMagick Studio LLC, a non-profit organization           %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -57,6 +57,7 @@
 #include <stdlib.h>
 #include <sys\types.h>
 #endif
+#include <locale.h>
 #include <time.h>
 #include <MagickWand/MagickWand.h>
 
@@ -5207,6 +5208,8 @@ int main(int argc,char **argv)
   (void) argc;
   (void) argv;
   MagickWandGenesis();
+  (void) setlocale(LC_ALL,"");
+  (void) setlocale(LC_NUMERIC,"C");
   magick_wand=NewMagickWand();
   (void) MagickSetSize(magick_wand,640,480);
   (void) MagickGetSize(magick_wand,&columns,&rows);
@@ -5295,8 +5298,8 @@ int main(int argc,char **argv)
   border=NewPixelWand();
   (void) PixelSetColor(background,"green");
   (void) PixelSetColor(border,"black");
-  status=MagickFloodfillPaintImage(magick_wand,background,0.01*QuantumRange,
-    border,0,0,MagickFalse);
+  status=MagickFloodfillPaintImage(magick_wand,background,0.01*(double)
+    QuantumRange,border,0,0,MagickFalse);
   if (status == MagickFalse)
     ThrowAPIException(magick_wand);
   background=DestroyPixelWand(background);

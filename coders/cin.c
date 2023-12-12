@@ -687,7 +687,7 @@ static Image *ReadCINImage(const ImageInfo *image_info,ExceptionInfo *exception)
       offset+=4;
       if (IsFloatDefined(cin.film.frame_rate) != MagickFalse)
         (void) FormatImageProperty(image,"dpx:film.frame_rate","%g",
-          cin.film.frame_rate);
+          (double) cin.film.frame_rate);
       offset+=ReadBlob(image,sizeof(cin.film.frame_id),(unsigned char *)
         cin.film.frame_id);
       (void) CopyMagickString(property,cin.film.frame_id,
@@ -790,7 +790,10 @@ static Image *ReadCINImage(const ImageInfo *image_info,ExceptionInfo *exception)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
   SetImageColorspace(image,LogColorspace,exception);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -1226,6 +1229,7 @@ static MagickBooleanType WriteCINImage(const ImageInfo *image_info,Image *image,
       break;
   }
   quantum_info=DestroyQuantumInfo(quantum_info);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   return(status);
 }

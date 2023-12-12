@@ -206,7 +206,10 @@ static Image *ReadOTBImage(const ImageInfo *image_info,ExceptionInfo *exception)
   if (EOFBlob(image) != MagickFalse)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -365,7 +368,7 @@ static MagickBooleanType WriteOTBImage(const ImageInfo *image_info,Image *image,
     byte=0;
     for (x=0; x < (ssize_t) image->columns; x++)
     {
-      if (GetPixelLuma(image,p) < (QuantumRange/2.0))
+      if (GetPixelLuma(image,p) < ((double) QuantumRange/2.0))
         byte|=0x1 << (7-bit);
       bit++;
       if (bit == 8)
@@ -386,6 +389,7 @@ static MagickBooleanType WriteOTBImage(const ImageInfo *image_info,Image *image,
           break;
       }
   }
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

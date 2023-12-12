@@ -159,7 +159,7 @@ static int XBMInteger(Image *image,short int *hex_digits)
         value*=16;
         c&=0xff;
         if (value <= (unsigned int) ((INT_MAX-1)-hex_digits[c]))
-          value+=hex_digits[c];
+          value+=(unsigned int) hex_digits[c];
       }
     c=ReadBlobByte(image);
     if (c == EOF)
@@ -187,24 +187,23 @@ static Image *ReadXBMImage(const ImageInfo *image_info,ExceptionInfo *exception)
   MagickBooleanType
     status;
 
-  ssize_t
-    i,
-    x;
+  MagickOffsetType
+    offset;
 
   Quantum
     *q;
-
-  unsigned char
-    *p;
 
   short int
     hex_digits[256];
 
   ssize_t
+    i,
+    x,
     y;
 
   unsigned char
-    *data;
+    *data,
+    *p;
 
   unsigned int
     bit,
@@ -258,6 +257,7 @@ static Image *ReadXBMImage(const ImageInfo *image_info,ExceptionInfo *exception)
     Scan until hex digits.
   */
   version=11;
+  offset=TellBlob(image);
   while (ReadBlobString(image,buffer) != (char *) NULL)
   {
     if (sscanf(buffer,"static short %1024s = {",name) == 1)
@@ -277,7 +277,10 @@ static Image *ReadXBMImage(const ImageInfo *image_info,ExceptionInfo *exception)
       p++;
     if (LocaleCompare("bits[]",(char *) p) == 0)
       break;
+    offset=TellBlob(image);
   }
+  if (strchr(buffer,'{') != (char *) NULL)
+    (void) SeekBlob(image,offset+(strchr(buffer,'{')-buffer)+1,SEEK_SET);
   /*
     Initialize image structure.
   */
@@ -407,7 +410,10 @@ static Image *ReadXBMImage(const ImageInfo *image_info,ExceptionInfo *exception)
   }
   data=(unsigned char *) RelinquishMagickMemory(data);
   (void) SyncImage(image,exception);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -444,6 +450,7 @@ ModuleExport size_t RegisterXBMImage(void)
   entry->decoder=(DecodeImageHandler *) ReadXBMImage;
   entry->encoder=(EncodeImageHandler *) WriteXBMImage;
   entry->magick=(IsImageFormatHandler *) IsXBM;
+  entry->flags|=CoderDecoderSeekableStreamFlag;
   entry->flags^=CoderAdjoinFlag;
   (void) RegisterMagickInfo(entry);
   return(MagickImageCoderSignature);
@@ -574,7 +581,7 @@ static MagickBooleanType WriteXBMImage(const ImageInfo *image_info,Image *image,
     for (x=0; x < (ssize_t) image->columns; x++)
     {
       byte>>=1;
-      if (GetPixelLuma(image,p) < (QuantumRange/2))
+      if (GetPixelLuma(image,p) < ((double) QuantumRange/2))
         byte|=0x80;
       bit++;
       if (bit == 8)
@@ -623,6 +630,7 @@ static MagickBooleanType WriteXBMImage(const ImageInfo *image_info,Image *image,
   }
   (void) CopyMagickString(buffer,"};\n",MagickPathExtent);
   (void) WriteBlob(image,strlen(buffer),(unsigned char *) buffer);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

@@ -62,6 +62,7 @@
 #include "MagickCore/static.h"
 #include "MagickCore/string_.h"
 #include "MagickCore/string-private.h"
+#include "MagickCore/timer-private.h"
 #include "MagickCore/token.h"
 #include "MagickCore/utility.h"
 #include "MagickCore/utility-private.h"
@@ -103,7 +104,7 @@ static const ModuleInfo
 
 static MagickBooleanType
   GetMagickModulePath(const char *,MagickModuleType,char *,ExceptionInfo *),
-  IsModuleTreeInstantiated(),
+  IsModuleTreeInstantiated(void),
   UnregisterModule(const ModuleInfo *,ExceptionInfo *);
 
 static void
@@ -147,7 +148,7 @@ MagickExport ModuleInfo *AcquireModuleInfo(const char *path,const char *tag)
     module_info->path=ConstantString(path);
   if (tag != (const char *) NULL)
     module_info->tag=ConstantString(tag);
-  module_info->timestamp=time(0);
+  module_info->timestamp=GetMagickTime();
   module_info->signature=MagickCoreSignature;
   return(module_info);
 }
@@ -867,7 +868,7 @@ static void *DestroyModuleNode(void *module_info)
   return(RelinquishMagickMemory(p));
 }
 
-static MagickBooleanType IsModuleTreeInstantiated()
+static MagickBooleanType IsModuleTreeInstantiated(void)
 {
   if (module_list == (SplayTreeInfo *) NULL)
     {
@@ -893,9 +894,11 @@ static MagickBooleanType IsModuleTreeInstantiated()
           if (status == MagickFalse)
             ThrowFatalException(ResourceLimitFatalError,
               "MemoryAllocationFailed");
+#if defined(MAGICKCORE_LTDL_DELEGATE)
           if (lt_dlinit() != 0)
             ThrowFatalException(ModuleFatalError,
               "UnableToInitializeModuleLoader");
+#endif
           module_list=splay_tree;
         }
       UnlockSemaphoreInfo(module_semaphore);
@@ -1257,6 +1260,7 @@ MagickPrivate MagickBooleanType OpenModule(const char *module,
   p=GetCoderInfo(module,exception);
   if (p != (CoderInfo *) NULL)
     (void) CopyMagickString(module_name,p->name,MagickPathExtent);
+  LocaleUpper(module_name);
   rights=(PolicyRights) (ReadPolicyRights | WritePolicyRights);
   if (IsRightsAuthorized(ModulePolicyDomain,rights,module_name) == MagickFalse)
     {

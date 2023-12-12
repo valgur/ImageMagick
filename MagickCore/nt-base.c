@@ -41,6 +41,7 @@
 #include "MagickCore/studio.h"
 #if defined(MAGICKCORE_WINDOWS_SUPPORT)
 #include "MagickCore/client.h"
+#include "MagickCore/distribute-cache-private.h"
 #include "MagickCore/exception-private.h"
 #include "MagickCore/image-private.h"
 #include "MagickCore/locale_.h"
@@ -72,6 +73,7 @@
 #if !defined(MAP_FAILED)
 #define MAP_FAILED      ((void *)(LONG_PTR)-1)
 #endif
+#define MaxWideByteExtent  100
 
 /*
   Typedef declarations.
@@ -82,8 +84,8 @@
   is why we wrap the new/delete instance methods.
 
   From: http://www.ghostscript.com/doc/current/API.htm
-  "The Win32 DLL gsdll32.dll can be used by multiple programs simultaneously,
-   but only once within each process"
+    "The Win32 DLL gsdll32.dll can be used by multiple programs simultaneously,
+     but only once within each process"
 */
 typedef struct _NTGhostInfo
 {
@@ -100,11 +102,6 @@ typedef struct _NTGhostInfo
 /*
   Static declarations.
 */
-#if !defined(MAGICKCORE_LTDL_DELEGATE)
-static char
-  *lt_slsearchpath = (char *) NULL;
-#endif
-
 static NTGhostInfo
   nt_ghost_info;
 
@@ -115,14 +112,7 @@ static void
   *ghost_handle = (void *) NULL;
 
 static SemaphoreInfo
-  *ghost_semaphore = (SemaphoreInfo *) NULL,
-  *winsock_semaphore = (SemaphoreInfo *) NULL;
-
-static WSADATA
-  *wsaData = (WSADATA*) NULL;
-
-static size_t
-  long_paths_enabled = 2;
+  *ghost_semaphore = (SemaphoreInfo *) NULL;
 
 struct
 {
@@ -209,13 +199,13 @@ static unsigned char *NTGetRegistryValue(HKEY root,const char *key,DWORD flags,
     status;
 
   wchar_t
-    wide_name[100];
+    wide_name[MaxWideByteExtent];
 
   value=(unsigned char *) NULL;
   status=RegOpenKeyExA(root,key,0,(KEY_READ | flags),&registry_key);
   if (status != ERROR_SUCCESS)
     return(value);
-  if (MultiByteToWideChar(CP_UTF8,0,name,-1,wide_name,100) == 0)
+  if (MultiByteToWideChar(CP_UTF8,0,name,-1,wide_name,MaxWideByteExtent) == 0)
     {
       RegCloseKey(registry_key);
       return(value);
@@ -640,10 +630,8 @@ MagickPrivate double NTErf(double x)
   a4=-1.453152027;
   a5=1.061405429;
   p=0.3275911;
-  sign=1;
-  if (x < 0)
-    sign=-1;
-  x=abs(x);
+  sign=x < 0 ? -1 : 1;
+  x=fabs(x);
   t=1.0/(1.0+p*x);
   y=1.0-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*exp(-x*x);
   return(sign*y);
@@ -718,29 +706,6 @@ MagickPrivate void NTErrorHandler(const ExceptionType severity,
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%   N T E x i t L i b r a r y                                                 %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  NTExitLibrary() exits the dynamic module loading subsystem.
-%
-%  The format of the NTExitLibrary method is:
-%
-%      int NTExitLibrary(void)
-%
-*/
-MagickPrivate int NTExitLibrary(void)
-{
-  return(0);
-}
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
 %   N T G a t h e r R a n d o m D a t a                                       %
 %                                                                             %
 %                                                                             %
@@ -793,6 +758,57 @@ MagickPrivate MagickBooleanType NTGatherRandomData(const size_t length,
   (void) length;
 #endif
   return(MagickTrue);
+}
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%   N T G e t E n v i r o n m e n t V a l u e                                 %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  NTGetEnvironmentValue() returns the environment string that matches the
+%  specified name.
+%
+%  The format of the NTGetEnvironmentValue method is:
+%
+%      char *GetEnvironmentValue(const char *name)
+%
+%  A description of each parameter follows:
+%
+%    o name: the environment name.
+%
+*/
+extern MagickPrivate char *NTGetEnvironmentValue(const char *name)
+{
+  char
+    *environment = (char *) NULL;
+
+  DWORD
+    size;
+
+  LPWSTR
+    wide;
+
+  wchar_t
+    wide_name[MaxWideByteExtent];
+
+  if (MultiByteToWideChar(CP_UTF8,0,name,-1,wide_name,MaxWideByteExtent) == 0)
+    return(environment);
+  size=GetEnvironmentVariableW(wide_name,(LPWSTR) NULL,0);
+  if (size == 0)
+    return(environment);
+  wide=(LPWSTR) NTAcquireQuantumMemory((const size_t) size,sizeof(*wide));
+  if (wide == (LPWSTR) NULL)
+    return(environment);
+  if (GetEnvironmentVariableW(wide_name,wide,size) != 0)
+    environment=create_utf8_string(wide);
+  wide=(LPWSTR) RelinquishMagickMemory(wide);
+  return(environment);
 }
 
 /*
@@ -858,7 +874,7 @@ char *NTGetLastError(void)
     status;
 
   LPVOID
-    buffer;
+    buffer = (LPVOID) NULL;
 
   status=FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
     FORMAT_MESSAGE_FROM_SYSTEM,NULL,GetLastError(),
@@ -1023,12 +1039,10 @@ static int NTLocateGhostscript(DWORD flags,int *root_index,
     status;
 
   static const char
-    *products[4] =
+    *products[2] =
     {
-      "GPL Ghostscript",
-      "GNU Ghostscript",
-      "AFPL Ghostscript",
-      "Aladdin Ghostscript"
+      "Artifex Ghostscript",
+      "GPL Ghostscript"
     };
 
   /*
@@ -1485,65 +1499,6 @@ MagickPrivate void NTGhostscriptUnLoadDLL(void)
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%   N T I n i t i a l i z e L i b r a r y                                     %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  NTInitializeLibrary() initializes the dynamic module loading subsystem.
-%
-%  The format of the NTInitializeLibrary method is:
-%
-%      int NTInitializeLibrary(void)
-%
-*/
-MagickPrivate int NTInitializeLibrary(void)
-{
-  return(0);
-}
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%   N T I n i t i a l i z e W i n s o c k                                     %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  NTInitializeWinsock() initializes Winsock.
-%
-%  The format of the NTInitializeWinsock method is:
-%
-%      void NTInitializeWinsock(void)
-%
-*/
-MagickPrivate void NTInitializeWinsock(MagickBooleanType use_lock)
-{
-  if (use_lock)
-    {
-      if (winsock_semaphore == (SemaphoreInfo *) NULL)
-        ActivateSemaphoreInfo(&winsock_semaphore);
-      LockSemaphoreInfo(winsock_semaphore);
-    }
-  if (wsaData == (WSADATA *) NULL)
-    {
-      wsaData=(WSADATA *) AcquireMagickMemory(sizeof(WSADATA));
-      if (WSAStartup(MAKEWORD(2,2),wsaData) != 0)
-        ThrowFatalException(CacheFatalError,"WSAStartup failed");
-    }
-  if (use_lock)
-    UnlockSemaphoreInfo(winsock_semaphore);
-}
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
 %   N T L o n g P a t h s E n a b l e d                                       %
 %                                                                             %
 %                                                                             %
@@ -1560,6 +1515,9 @@ $  enabled.
 */
 MagickExport MagickBooleanType NTLongPathsEnabled()
 {
+  static size_t
+    long_paths_enabled = 2;
+
   if (long_paths_enabled == 2)
     {
       DWORD
@@ -1765,15 +1723,6 @@ MagickPrivate DIR *NTOpenDirectory(const char *path)
 %
 */
 
-static inline const char *GetSearchPath(void)
-{
-#if defined(MAGICKCORE_LTDL_DELEGATE)
-  return(lt_dlgetsearchpath());
-#else
-  return(lt_slsearchpath);
-#endif
-}
-
 static UINT ChangeErrorMode(void)
 {
   typedef UINT
@@ -1821,13 +1770,6 @@ static inline void *NTLoadLibrary(const char *filename)
 
 MagickPrivate void *NTOpenLibrary(const char *filename)
 {
-  char
-    path[MagickPathExtent];
-
-  const char
-    *p,
-    *q;
-
   UINT
     mode;
 
@@ -1836,9 +1778,17 @@ MagickPrivate void *NTOpenLibrary(const char *filename)
 
   mode=ChangeErrorMode();
   handle=NTLoadLibrary(filename);
+#if defined(MAGICKCORE_LTDL_DELEGATE)
   if (handle == (void *) NULL)
     {
-      p=GetSearchPath();
+      char
+        path[MagickPathExtent];
+
+      const char
+        *p,
+        *q;
+
+      p=lt_dlgetsearchpath();
       while (p != (const char*) NULL)
       {
         q=strchr(p,DirectoryListSeparator);
@@ -1854,6 +1804,7 @@ MagickPrivate void *NTOpenLibrary(const char *filename)
         p=q+1;
       }
     }
+#endif
   SetErrorMode(mode);
   return(handle);
 }
@@ -2090,43 +2041,6 @@ MagickPrivate unsigned char *NTResourceToBlob(const char *id)
   UnlockResource(global);
   FreeResource(global);
   return(blob);
-}
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%   N T S e t S e a r c h P a t h                                             %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  NTSetSearchPath() sets the current locations that the subsystem should
-%  look at to find dynamically loadable modules.
-%
-%  The format of the NTSetSearchPath method is:
-%
-%      int NTSetSearchPath(const char *path)
-%
-%  A description of each parameter follows:
-%
-%    o path: Specifies a pointer to string representing the search path
-%      for DLL's that can be dynamically loaded.
-%
-*/
-MagickPrivate int NTSetSearchPath(const char *path)
-{
-#if defined(MAGICKCORE_LTDL_DELEGATE)
-  lt_dlsetsearchpath(path);
-#else
-  if (lt_slsearchpath != (char *) NULL)
-    lt_slsearchpath=DestroyString(lt_slsearchpath);
-  if (path != (char *) NULL)
-    lt_slsearchpath=AcquireString(path);
-#endif
-  return(0);
 }
 
 /*
@@ -2454,66 +2368,6 @@ MagickPrivate int NTUnmapMemory(void *map,size_t length)
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%   N T U s e r T i m e                                                       %
-%                                                                             %
-%                                                                             %
-%                                                                             %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  NTUserTime() returns the total time the process has been scheduled (e.g.
-%  seconds) since the last call to StartTimer().
-%
-%  The format of the UserTime method is:
-%
-%      double NTUserTime(void)
-%
-*/
-MagickPrivate double NTUserTime(void)
-{
-  DWORD
-    status;
-
-  FILETIME
-    create_time,
-    exit_time;
-
-  OSVERSIONINFO
-    OsVersionInfo;
-
-  union
-  {
-    FILETIME
-      filetime;
-
-    __int64
-      filetime64;
-  } kernel_time;
-
-  union
-  {
-    FILETIME
-      filetime;
-
-    __int64
-      filetime64;
-  } user_time;
-
-  OsVersionInfo.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
-  GetVersionEx(&OsVersionInfo);
-  if (OsVersionInfo.dwPlatformId != VER_PLATFORM_WIN32_NT)
-    return(NTElapsedTime());
-  status=GetProcessTimes(GetCurrentProcess(),&create_time,&exit_time,
-    &kernel_time.filetime,&user_time.filetime);
-  if (status != TRUE)
-    return(0.0);
-  return((double) 1.0e-7*(kernel_time.filetime64+user_time.filetime64));
-}
-
-/*
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                                                                             %
-%                                                                             %
-%                                                                             %
 %   N T W a r n i n g H a n d l e r                                           %
 %                                                                             %
 %                                                                             %
@@ -2625,7 +2479,8 @@ MagickPrivate void NTWindowsGenesis(void)
   }
 #endif
 }
-
+
+
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                             %
@@ -2647,15 +2502,6 @@ MagickPrivate void NTWindowsGenesis(void)
 MagickPrivate void NTWindowsTerminus(void)
 {
   NTGhostscriptUnLoadDLL();
-  if (winsock_semaphore == (SemaphoreInfo *) NULL)
-    ActivateSemaphoreInfo(&winsock_semaphore);
-  LockSemaphoreInfo(winsock_semaphore);
-  if (wsaData != (WSADATA *) NULL)
-    {
-      WSACleanup();
-      wsaData=(WSADATA *) RelinquishMagickMemory((void *) wsaData);
-    }
-  UnlockSemaphoreInfo(winsock_semaphore);
-  RelinquishSemaphoreInfo(&winsock_semaphore);
+  DistributeCacheTerminus();
 }
 #endif

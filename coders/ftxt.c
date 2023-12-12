@@ -277,7 +277,7 @@ static long double BufToFlt(char * buffer,char ** tail,ValueTypeT expectType,
       if (**tail=='%')
         {
           (*tail)++;
-          val*=QuantumRange/100.0;
+          val*=(double) QuantumRange/100.0;
           if ((expectType != vtAny) && (expectType != vtPercent))
             *err=MagickTrue;
         }
@@ -435,7 +435,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
     }
   if (numMeta)
     {
-      if (SetPixelMetaChannels (image, numMeta, exception) == MagickFalse)
+      if (SetPixelMetaChannels (image, (size_t) numMeta, exception) == MagickFalse)
         ThrowReaderException(OptionError,"SetPixelMetaChannelsFailure");
     }
   /* make image zero (if RGB channels, transparent black). */
@@ -467,7 +467,7 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
           case 'j':
             if (*(pf+1)=='\0')
               ThrowReaderException(DelegateFatalError,"EscapeJproblem");
-            /* Drop through... */
+            magick_fallthrough;
           default:
             if ((i+=2) >= MaxTextExtent)
               ThrowReaderException(DelegateFatalError,"ppf bust");
@@ -736,7 +736,10 @@ static Image *ReadFTXTImage(const ImageInfo *image_info,
            (maxY >= (ssize_t) image->rows))
     ThrowMagickException(exception,GetMagickModule(),CorruptImageWarning,
       "ImageBoundsExceeded","`%s'",image_info->filename);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -1058,6 +1061,7 @@ static MagickBooleanType WriteFTXTImage(const ImageInfo *image_info,Image *image
       break;
     scene++;
   } while (image_info->adjoin != MagickFalse);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

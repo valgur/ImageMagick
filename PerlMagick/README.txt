@@ -23,8 +23,8 @@ Installation
 
     Get the PerlMagick distribution and type the following: 
 
-        gunzip ImageMagick-7.1.0-61.tar.gz
-        tar xvf ImageMagick-7.1.61
+        gunzip ImageMagick-7.1.1-18.tar.gz
+        tar xvf ImageMagick-7.1.1
 
     Follow the ImageMagick installation instructions in INSTALL-unix.txt
 		then type
@@ -109,6 +109,10 @@ Testing PerlMagick
     to verify that PERL can load the PerlMagick extension ok.  Chances are
     some of the tests will fail if you do not have the proper delegates
     installed for formats like JPEG, TIFF, etc.
+
+    Use the 'prove' utility to execute a test from the build folder:
+
+        prove --blib blib -I `pwd` -bv ./t/read.t
 
     To see a number of PerlMagick demonstration scripts, type
     

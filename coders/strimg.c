@@ -165,7 +165,10 @@ static Image *ReadSTRIMGImage(const ImageInfo *image_info,
       (void) CloseBlob(image);
       return(DestroyImageList(image));
     }
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -328,6 +331,7 @@ static MagickBooleanType WriteSTRIMGImage(const ImageInfo *image_info,
   quantum_info=DestroyQuantumInfo(quantum_info);
   if (y < (ssize_t) image->rows)
     ThrowWriterException(CorruptImageError,"UnableToWriteImageData");
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   return(status);
 }

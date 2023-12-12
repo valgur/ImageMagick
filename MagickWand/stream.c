@@ -181,7 +181,7 @@ WandExport MagickBooleanType StreamImageCommand(ImageInfo *image_info,
     *format;
 
   Image
-    *image;
+    *image = (Image *) NULL;
 
   ImageStack
     image_stack[MaxImageStackDepth+1];
@@ -216,6 +216,9 @@ WandExport MagickBooleanType StreamImageCommand(ImageInfo *image_info,
   if (argc == 2)
     {
       option=argv[1];
+      if ((LocaleCompare("help",option+1) == 0) ||
+          (LocaleCompare("-help",option+1) == 0))
+        return(StreamUsage());
       if ((LocaleCompare("version",option+1) == 0) ||
           (LocaleCompare("-version",option+1) == 0))
         {
@@ -224,7 +227,12 @@ WandExport MagickBooleanType StreamImageCommand(ImageInfo *image_info,
         }
     }
   if (argc < 3)
-    return(StreamUsage());
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
+        "MissingArgument","%s","");
+      (void) StreamUsage();
+      return(MagickFalse);
+    }
   format="%w,%h,%m";
   (void) format;
   j=1;
@@ -282,7 +290,7 @@ WandExport MagickBooleanType StreamImageCommand(ImageInfo *image_info,
           filename=argv[++i];
         (void) CopyMagickString(image_info->filename,filename,MagickPathExtent);
         images=StreamImage(image_info,stream_info,exception);
-        status&=(images != (Image *) NULL) &&
+        status&=(MagickStatusType) (images != (Image *) NULL) &&
           (exception->severity < ErrorException);
         if (images == (Image *) NULL)
           continue;

@@ -269,6 +269,7 @@ static MagickBooleanType ConvertUsage(void)
       "  -region geometry     apply options to a portion of the image\n"
       "  -render              render vector graphics\n"
       "  -resample geometry   change the resolution of an image\n"
+      "  -reshape geometry    reshape the image\n"
       "  -resize geometry     resize the image\n"
       "  -roll geometry       roll an image vertically or horizontally\n"
       "  -rotate degrees      apply Paeth rotation to the image\n"
@@ -518,7 +519,7 @@ WandExport MagickBooleanType ConvertImageCommand(ImageInfo *image_info,
     *format;
 
   Image
-    *image;
+    *image = (Image *) NULL;
 
   ImageStack
     image_stack[MaxImageStackDepth+1];
@@ -549,6 +550,9 @@ WandExport MagickBooleanType ConvertImageCommand(ImageInfo *image_info,
   if (argc == 2)
     {
       option=argv[1];
+      if ((LocaleCompare("help",option+1) == 0) ||
+          (LocaleCompare("-help",option+1) == 0))
+        return(ConvertUsage());
       if ((LocaleCompare("version",option+1) == 0) ||
           (LocaleCompare("-version",option+1) == 0))
         {
@@ -557,7 +561,12 @@ WandExport MagickBooleanType ConvertImageCommand(ImageInfo *image_info,
         }
     }
   if (argc < 3)
-    return(ConvertUsage());
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
+        "MissingArgument","%s","");
+      (void) ConvertUsage();
+      return(MagickFalse);
+    }
   filename=(char *) NULL;
   format="%w,%h,%m";
   j=1;
@@ -613,7 +622,7 @@ WandExport MagickBooleanType ConvertImageCommand(ImageInfo *image_info,
           images=PingImages(image_info,filename,exception);
         else
           images=ReadImages(image_info,filename,exception);
-        status&=(images != (Image *) NULL) &&
+        status&=(MagickStatusType) (images != (Image *) NULL) &&
           (exception->severity < ErrorException);
         if (images == (Image *) NULL)
           continue;
@@ -2645,6 +2654,17 @@ WandExport MagickBooleanType ConvertImageCommand(ImageInfo *image_info,
               ThrowConvertInvalidArgumentException(option,argv[i]);
             break;
           }
+        if (LocaleCompare("reshape",option+1) == 0)
+          {
+            if (*option == '+')
+              break;
+            i++;
+            if (i == (ssize_t) argc)
+              ThrowConvertException(OptionError,"MissingArgument",option);
+            if (IsGeometry(argv[i]) == MagickFalse)
+              ThrowConvertInvalidArgumentException(option,argv[i]);
+            break;
+          }
         if (LocaleCompare("resize",option+1) == 0)
           {
             if (*option == '+')
@@ -3344,7 +3364,8 @@ WandExport MagickBooleanType ConvertImageCommand(ImageInfo *image_info,
     ThrowConvertException(OptionError,"MissingAnImageFilename",argv[argc-1]);
   if (LocaleCompare(" ",argv[argc-1]) == 0)  /* common line continuation error */
     ThrowConvertException(OptionError,"MissingAnImageFilename",argv[argc-1]);
-  status&=WriteImages(image_info,image,argv[argc-1],exception);
+  status&=(MagickStatusType) WriteImages(image_info,image,argv[argc-1],
+    exception);
   if (metadata != (char **) NULL)
     {
       char

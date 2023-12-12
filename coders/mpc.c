@@ -17,7 +17,7 @@
 %                                 March 2000                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2000 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -398,7 +398,7 @@ static Image *ReadMPCImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 if (LocaleCompare(keyword,"channel-mask") == 0)
                   {
                     image->channel_mask=(ChannelType)
-                      StringToUnsignedLong(options);
+                      strtol(options,(char **) NULL,16);
                     break;
                   }
                 if (LocaleCompare(keyword,"class") == 0)
@@ -1035,7 +1035,8 @@ static Image *ReadMPCImage(const ImageInfo *image_info,ExceptionInfo *exception)
           break;
       }
   } while ((c != EOF) && ((c == 'i') || (c == 'I')));
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   if (status == MagickFalse)
     return(DestroyImageList(image));
   return(GetFirstImageInList(image));
@@ -1204,10 +1205,10 @@ static MagickBooleanType WriteMPCImage(const ImageInfo *image_info,Image *image,
       CommandOptionToMnemonic(MagickPixelTraitOptions,(ssize_t)
       image->alpha_trait));
     (void) WriteBlobString(image,buffer);
-    (void) FormatLocaleString(buffer,MagickPathExtent,
-      "number-channels=%.20g number-meta-channels=%.20g channel-mask=%.20g\n",
+    (void) FormatLocaleString(buffer,MagickPathExtent,"number-channels=%.20g "
+      "number-meta-channels=%.20g channel-mask=0x%016llx\n",
       (double) image->number_channels,(double) image->number_meta_channels,
-      (double) image->channel_mask);
+      (MagickOffsetType) image->channel_mask);
     (void) WriteBlobString(image,buffer);
     (void) FormatLocaleString(buffer,MagickPathExtent,
       "columns=%.20g rows=%.20g depth=%.20g\n",(double) image->columns,
@@ -1566,6 +1567,7 @@ static MagickBooleanType WriteMPCImage(const ImageInfo *image_info,Image *image,
       }
     scene++;
   } while (image_info->adjoin != MagickFalse);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   return(status);
 }

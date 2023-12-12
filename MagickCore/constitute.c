@@ -583,12 +583,12 @@ static void SyncResolutionFromProperties(Image *image,
       if (strchr(resolution_y,',') != (char *) NULL)
         image->resolution.y=geometry_info.rho+geometry_info.sigma/1000.0;
       if (resolution_units != (char *) NULL)
-          {
-            option_type=ParseCommandOption(MagickResolutionOptions,MagickFalse,
-              resolution_units);
-            if (option_type >= 0)
-              image->units=(ResolutionType) option_type;
-          }
+        {
+          option_type=ParseCommandOption(MagickResolutionOptions,MagickFalse,
+            resolution_units);
+          if (option_type >= 0)
+            image->units=(ResolutionType) option_type;
+        }
       if (used_tiff == MagickFalse)
         {
           (void) DeleteImageProperty(image,"exif:XResolution");
@@ -1282,7 +1282,7 @@ MagickExport MagickBooleanType WriteImage(const ImageInfo *image_info,
             image->endian=(*(char *) &lsb_first) == 1 ? LSBEndian : MSBEndian;
          }
     }
-  (void) SyncImageProfiles(image);
+  SyncImageProfiles(image);
   DisassociateImageStream(image);
   option=GetImageOption(image_info,"delegate:bimodal");
   if ((IsStringTrue(option) != MagickFalse) &&
@@ -1332,7 +1332,8 @@ MagickExport MagickBooleanType WriteImage(const ImageInfo *image_info,
               (void) AcquireUniqueFilename(image->filename);
               temporary=MagickTrue;
             }
-          (void) CloseBlob(image);
+          if (CloseBlob(image) == MagickFalse)
+            status=MagickFalse;
         }
     }
   encoder=GetImageEncoder(magick_info);
@@ -1396,6 +1397,9 @@ MagickExport MagickBooleanType WriteImage(const ImageInfo *image_info,
               (void) CopyMagickString(image->filename,filename,
                 MagickPathExtent);
               encoder=GetImageEncoder(magick_info);
+              (void) ThrowMagickException(exception,GetMagickModule(),
+                MissingDelegateWarning,"NoEncodeDelegateForThisImageFormat",
+                "`%s'",write_info->magick);
             }
           if (encoder == (EncodeImageHandler *) NULL)
             {
@@ -1433,7 +1437,8 @@ MagickExport MagickBooleanType WriteImage(const ImageInfo *image_info,
           (void) RelinquishUniqueFileResource(write_info->filename);
           status=ImageToFile(image,write_info->filename,exception);
         }
-      (void) CloseBlob(image);
+      if (CloseBlob(image) == MagickFalse)
+        status=MagickFalse;
       (void) RelinquishUniqueFileResource(image->filename);
       (void) CopyMagickString(image->filename,write_info->filename,
         MagickPathExtent);
@@ -1570,7 +1575,7 @@ MagickExport MagickBooleanType WriteImages(const ImageInfo *image_info,
     if (number_images != 1)
       progress_monitor=SetImageProgressMonitor(p,(MagickProgressMonitor) NULL,
         p->client_data);
-    status&=WriteImage(write_info,p,exception);
+    status&=(MagickStatusType) WriteImage(write_info,p,exception);
     if (number_images != 1)
       (void) SetImageProgressMonitor(p,progress_monitor,p->client_data);
     if (write_info->adjoin != MagickFalse)

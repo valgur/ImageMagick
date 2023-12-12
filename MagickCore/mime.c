@@ -366,7 +366,7 @@ MagickExport const MimeInfo *GetMimeInfo(const char *filename,
       {
         for (i=0; i <= (ssize_t) q->extent; i++)
         {
-          if ((size_t) (q->offset+i+q->length) > length)
+          if ((size_t) (q->offset+i+(ssize_t) q->length) > length)
             break;
           if (memcmp(magic+q->offset+i,q->magic,q->length) == 0)
             {
@@ -854,7 +854,8 @@ static MagickBooleanType LoadMimeCache(LinkedListInfo *cache,const char *xml,
             file_xml=FileToXML(path,~0UL);
             if (file_xml != (char *) NULL)
               {
-                status&=LoadMimeCache(cache,file_xml,path,depth+1,exception);
+                status&=(MagickStatusType) LoadMimeCache(cache,file_xml,path,
+                  depth+1,exception);
                 file_xml=DestroyString(file_xml);
               }
           }

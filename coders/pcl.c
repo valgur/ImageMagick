@@ -168,6 +168,9 @@ static Image *ReadPCLImage(const ImageInfo *image_info,ExceptionInfo *exception)
   ImageInfo
     *read_info;
 
+  int
+    exit_code; 
+
   MagickBooleanType
     cmyk,
     status;
@@ -295,8 +298,8 @@ static Image *ReadPCLImage(const ImageInfo *image_info,ExceptionInfo *exception)
     /*
       Set PCL render geometry.
     */
-    width=(size_t)CastDoubleToLong(floor(bounds.x2-bounds.x1+0.5));
-    height=(size_t)CastDoubleToLong(floor(bounds.y2-bounds.y1+0.5));
+    width=(size_t) CastDoubleToLong(floor(bounds.x2-bounds.x1+0.5));
+    height=(size_t) CastDoubleToLong(floor(bounds.y2-bounds.y1+0.5));
     if (width > page.width)
       page.width=width;
     if (height > page.height)
@@ -334,8 +337,8 @@ static Image *ReadPCLImage(const ImageInfo *image_info,ExceptionInfo *exception)
     image->resolution.x,image->resolution.y);
   if (image_info->ping != MagickFalse)
     (void) FormatLocaleString(density,MagickPathExtent,"2.0x2.0");
-  page.width=(size_t) floor(page.width*image->resolution.x/delta.x+0.5);
-  page.height=(size_t) floor(page.height*image->resolution.y/delta.y+0.5);
+  page.width=CastDoubleToUnsigned(page.width*image->resolution.x/delta.x+0.5);
+  page.height=CastDoubleToUnsigned(page.height*image->resolution.y/delta.y+0.5);
   (void) FormatLocaleString(options,MagickPathExtent,"-g%.20gx%.20g ",(double)
     page.width,(double) page.height);
   image=DestroyImage(image);
@@ -363,8 +366,13 @@ static Image *ReadPCLImage(const ImageInfo *image_info,ExceptionInfo *exception)
     read_info->filename,input_filename);
   options=DestroyString(options);
   density=DestroyString(density);
-  status=ExternalDelegateCommand(MagickFalse,read_info->verbose,command,
-    (char *) NULL,exception) != 0 ? MagickTrue : MagickFalse;
+  exit_code=ExternalDelegateCommand(MagickFalse,read_info->verbose,command,
+    (char *) NULL,exception);
+  if (exit_code != 0)
+    {
+      read_info=DestroyImageInfo(read_info);
+      ThrowReaderException(DelegateError,"PCLDelegateFailed");
+    }
   image=ReadImage(read_info,exception);
   (void) RelinquishUniqueFileResource(read_info->filename);
   (void) RelinquishUniqueFileResource(input_filename);
@@ -886,7 +894,7 @@ static MagickBooleanType WritePCLImage(const ImageInfo *image_info,Image *image,
           for (x=0; x < (ssize_t) image->columns; x++)
           {
             byte<<=1;
-            if (GetPixelLuma(image,p) < (QuantumRange/2.0))
+            if (GetPixelLuma(image,p) < ((double) QuantumRange/2.0))
               byte|=0x01;
             bit++;
             if (bit == 8)
@@ -994,6 +1002,7 @@ static MagickBooleanType WritePCLImage(const ImageInfo *image_info,Image *image,
       break;
   } while (image_info->adjoin != MagickFalse);
   (void) WriteBlobString(image,"\033E");
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

@@ -108,7 +108,7 @@ static Image *ReadGRAYImage(const ImageInfo *image_info,
     *image;
 
   MagickBooleanType
-    status;
+    status = MagickTrue;
 
   MagickOffsetType
     scene;
@@ -588,7 +588,8 @@ static Image *ReadGRAYImage(const ImageInfo *image_info,
         (void) CloseBlob(image);
         if (image->alpha_trait != UndefinedPixelTrait)
           {
-            (void) CloseBlob(image);
+            if (CloseBlob(image) == MagickFalse)
+              break;
             AppendImageFormat("A",image->filename);
             status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
             if (status == MagickFalse)
@@ -699,7 +700,8 @@ static Image *ReadGRAYImage(const ImageInfo *image_info,
   } while (count == (ssize_t) length);
   quantum_info=DestroyQuantumInfo(quantum_info);
   canvas_image=DestroyImage(canvas_image);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   if (status == MagickFalse)
     return(DestroyImageList(image));
   return(GetFirstImageInList(image));
@@ -805,7 +807,7 @@ static MagickBooleanType WriteGRAYImage(const ImageInfo *image_info,
   Image *image,ExceptionInfo *exception)
 {
   MagickBooleanType
-    status;
+    status = MagickTrue;
 
   MagickOffsetType
     scene;
@@ -857,7 +859,7 @@ static MagickBooleanType WriteGRAYImage(const ImageInfo *image_info,
     */
     (void) TransformImageColorspace(image,GRAYColorspace,exception);
     if ((LocaleCompare(image_info->magick,"GRAYA") == 0) &&
-        (image->alpha_trait == UndefinedPixelTrait))
+        ((image->alpha_trait & BlendPixelTrait) == 0))
       (void) SetImageAlphaChannel(image,OpaqueAlphaChannel,exception);
     quantum_info=AcquireQuantumInfo(image_info,image);
     if (quantum_info == (QuantumInfo *) NULL)
@@ -1022,7 +1024,8 @@ static MagickBooleanType WriteGRAYImage(const ImageInfo *image_info,
         (void) CloseBlob(image);
         if (quantum_type == GrayAlphaQuantum)
           {
-            (void) CloseBlob(image);
+            if (CloseBlob(image) == MagickFalse)
+              break;
             AppendImageFormat("A",image->filename);
             status=OpenBlob(image_info,image,scene == 0 ? WriteBinaryBlobMode :
               AppendBinaryBlobMode,exception);
@@ -1069,6 +1072,7 @@ static MagickBooleanType WriteGRAYImage(const ImageInfo *image_info,
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

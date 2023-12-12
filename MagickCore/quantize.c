@@ -216,9 +216,9 @@
 #endif
 #define ErrorQueueLength  16
 #define ErrorRelativeWeight  PerceptibleReciprocal(16)
-#define MaxNodes  266817
+#define MaxQNodes  266817
 #define MaxTreeDepth  8
-#define NodesInAList  1920
+#define QNodesInAList  1920
 
 /*
   Typedef declarations.
@@ -232,9 +232,9 @@ typedef struct _DoublePixelPacket
     alpha;
 } DoublePixelPacket;
 
-typedef struct _NodeInfo
+typedef struct _QNodeInfo
 {
-  struct _NodeInfo
+  struct _QNodeInfo
     *parent,
     *child[16];
 
@@ -251,20 +251,20 @@ typedef struct _NodeInfo
     color_number,
     id,
     level;
-} NodeInfo;
+} QNodeInfo;
 
-typedef struct _Nodes
+typedef struct _QNodes
 {
-  NodeInfo
+  QNodeInfo
     *nodes;
 
-  struct _Nodes
+  struct _QNodes
     *next;
-} Nodes;
+} QNodes;
 
-typedef struct _CubeInfo
+typedef struct _QCubeInfo
 {
-  NodeInfo
+  QNodeInfo
     *root;
 
   size_t
@@ -290,10 +290,10 @@ typedef struct _CubeInfo
     free_nodes,
     color_number;
 
-  NodeInfo
+  QNodeInfo
     *next_node;
 
-  Nodes
+  QNodes
     *node_queue;
 
   MemoryInfo
@@ -327,31 +327,31 @@ typedef struct _CubeInfo
 
   MagickSizeType
     span;
-} CubeInfo;
+} QCubeInfo;
 
 /*
   Method prototypes.
 */
-static CubeInfo
-  *GetCubeInfo(const QuantizeInfo *,const size_t,const size_t);
+static QCubeInfo
+  *GetQCubeInfo(const QuantizeInfo *,const size_t,const size_t);
 
-static NodeInfo
-  *GetNodeInfo(CubeInfo *,const size_t,const size_t,NodeInfo *);
+static QNodeInfo
+  *GetQNodeInfo(QCubeInfo *,const size_t,const size_t,QNodeInfo *);
 
 static MagickBooleanType
-  AssignImageColors(Image *,CubeInfo *,ExceptionInfo *),
-  ClassifyImageColors(CubeInfo *,const Image *,ExceptionInfo *),
-  DitherImage(Image *,CubeInfo *,ExceptionInfo *),
+  AssignImageColors(Image *,QCubeInfo *,ExceptionInfo *),
+  ClassifyImageColors(QCubeInfo *,const Image *,ExceptionInfo *),
+  DitherImage(Image *,QCubeInfo *,ExceptionInfo *),
   SetGrayscaleImage(Image *,ExceptionInfo *),
-  SetImageColormap(Image *,CubeInfo *,ExceptionInfo *);
+  SetImageColormap(Image *,QCubeInfo *,ExceptionInfo *);
 
 static void
-  ClosestColor(const Image *,CubeInfo *,const NodeInfo *),
-  DefineImageColormap(Image *,CubeInfo *,NodeInfo *),
-  DestroyCubeInfo(CubeInfo *),
-  PruneLevel(CubeInfo *,const NodeInfo *),
-  PruneToCubeDepth(CubeInfo *,const NodeInfo *),
-  ReduceImageColors(const Image *,CubeInfo *);
+  ClosestColor(const Image *,QCubeInfo *,const QNodeInfo *),
+  DefineImageColormap(Image *,QCubeInfo *,QNodeInfo *),
+  DestroyQCubeInfo(QCubeInfo *),
+  PruneLevel(QCubeInfo *,const QNodeInfo *),
+  PruneToCubeDepth(QCubeInfo *,const QNodeInfo *),
+  ReduceImageColors(const Image *,QCubeInfo *);
 
 /*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -428,7 +428,7 @@ MagickExport QuantizeInfo *AcquireQuantizeInfo(const ImageInfo *image_info)
 %
 %  The format of the AssignImageColors() method is:
 %
-%      MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info)
+%      MagickBooleanType AssignImageColors(Image *image,QCubeInfo *cube_info)
 %
 %  A description of each parameter follows.
 %
@@ -439,7 +439,8 @@ MagickExport QuantizeInfo *AcquireQuantizeInfo(const ImageInfo *image_info)
 */
 
 static inline void AssociateAlphaPixel(const Image *image,
-  const CubeInfo *cube_info,const Quantum *pixel,DoublePixelPacket *alpha_pixel)
+  const QCubeInfo *cube_info,const Quantum *pixel,
+  DoublePixelPacket *alpha_pixel)
 {
   double
     alpha;
@@ -453,21 +454,21 @@ static inline void AssociateAlphaPixel(const Image *image,
       alpha_pixel->alpha=(double) GetPixelAlpha(image,pixel);
       return;
     }
-  alpha=(double) (QuantumScale*GetPixelAlpha(image,pixel));
-  alpha_pixel->red=alpha*GetPixelRed(image,pixel);
-  alpha_pixel->green=alpha*GetPixelGreen(image,pixel);
-  alpha_pixel->blue=alpha*GetPixelBlue(image,pixel);
+  alpha=QuantumScale*(double) GetPixelAlpha(image,pixel);
+  alpha_pixel->red=alpha*(double) GetPixelRed(image,pixel);
+  alpha_pixel->green=alpha*(double) GetPixelGreen(image,pixel);
+  alpha_pixel->blue=alpha*(double) GetPixelBlue(image,pixel);
   alpha_pixel->alpha=(double) GetPixelAlpha(image,pixel);
 }
 
-static inline void AssociateAlphaPixelInfo(const CubeInfo *cube_info,
+static inline void AssociateAlphaPixelInfo(const QCubeInfo *cube_info,
   const PixelInfo *pixel,DoublePixelPacket *alpha_pixel)
 {
   double
     alpha;
 
   if ((cube_info->associate_alpha == MagickFalse) ||
-      (pixel->alpha == OpaqueAlpha))
+      (pixel->alpha == (double) OpaqueAlpha))
     {
       alpha_pixel->red=(double) pixel->red;
       alpha_pixel->green=(double) pixel->green;
@@ -482,7 +483,7 @@ static inline void AssociateAlphaPixelInfo(const CubeInfo *cube_info,
   alpha_pixel->alpha=(double) pixel->alpha;
 }
 
-static inline size_t ColorToNodeId(const CubeInfo *cube_info,
+static inline size_t ColorToQNodeId(const QCubeInfo *cube_info,
   const DoublePixelPacket *pixel,size_t index)
 {
   size_t
@@ -492,11 +493,12 @@ static inline size_t ColorToNodeId(const CubeInfo *cube_info,
     ((ScaleQuantumToChar(ClampPixel(pixel->green)) >> index) & 0x01) << 1 |
     ((ScaleQuantumToChar(ClampPixel(pixel->blue)) >> index) & 0x01) << 2);
   if (cube_info->associate_alpha != MagickFalse)
-    id|=((ScaleQuantumToChar(ClampPixel(pixel->alpha)) >> index) & 0x1) << 3;
+    id|=((((size_t) ScaleQuantumToChar(ClampPixel(pixel->alpha)) >> index) &
+      0x1) << 3);
   return(id);
 }
 
-static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
+static MagickBooleanType AssignImageColors(Image *image,QCubeInfo *cube_info,
   ExceptionInfo *exception)
 {
 #define AssignImageTag  "Assign/Image"
@@ -539,7 +541,7 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
 #endif
       for (y=0; y < (ssize_t) image->rows; y++)
       {
-        CubeInfo
+        QCubeInfo
           cube;
 
         Quantum
@@ -564,7 +566,7 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
           DoublePixelPacket
             pixel;
 
-          const NodeInfo
+          const QNodeInfo
             *node_info;
 
           ssize_t
@@ -582,7 +584,8 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
             PixelInfo
               packet;
 
-            GetPixelInfoPixel(image,q+count*GetPixelChannels(image),&packet);
+            GetPixelInfoPixel(image,q+count*(ssize_t) GetPixelChannels(image),
+              &packet);
             if (IsPixelEquivalent(image,q,&packet) == MagickFalse)
               break;
           }
@@ -590,8 +593,8 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
           node_info=cube.root;
           for (index=MaxTreeDepth-1; (ssize_t) index > 0; index--)
           {
-            id=ColorToNodeId(&cube,&pixel,index);
-            if (node_info->child[id] == (NodeInfo *) NULL)
+            id=ColorToQNodeId(&cube,&pixel,index);
+            if (node_info->child[id] == (QNodeInfo *) NULL)
               break;
             node_info=node_info->child[id];
           }
@@ -599,8 +602,8 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
             Find closest color among siblings and their children.
           */
           cube.target=pixel;
-          cube.distance=(double) (4.0*(QuantumRange+1.0)*(QuantumRange+1.0)+
-            1.0);
+          cube.distance=(double) (4.0*((double) QuantumRange+1.0)*
+            ((double) QuantumRange+1.0)+1.0);
           ClosestColor(image,&cube,node_info->parent);
           index=cube.color_number;
           for (i=0; i < (ssize_t) count; i++)
@@ -648,8 +651,8 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
       /*
         Monochrome image.
       */
-      intensity=GetPixelInfoLuma(image->colormap+0) < QuantumRange/2.0 ? 0.0 :
-        QuantumRange;
+      intensity=GetPixelInfoLuma(image->colormap+0) < (double)
+        QuantumRange/2.0 ? 0.0 : (double) QuantumRange;
       if (image->colors > 1)
         {
           intensity=0.0;
@@ -724,7 +727,7 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
 %
 %  The format of the ClassifyImageColors() method is:
 %
-%      MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
+%      MagickBooleanType ClassifyImageColors(QCubeInfo *cube_info,
 %        const Image *image,ExceptionInfo *exception)
 %
 %  A description of each parameter follows.
@@ -735,7 +738,7 @@ static MagickBooleanType AssignImageColors(Image *image,CubeInfo *cube_info,
 %
 */
 
-static inline void SetAssociatedAlpha(const Image *image,CubeInfo *cube_info)
+static inline void SetAssociatedAlpha(const Image *image,QCubeInfo *cube_info)
 {
   MagickBooleanType
     associate_alpha;
@@ -749,7 +752,7 @@ static inline void SetAssociatedAlpha(const Image *image,CubeInfo *cube_info)
   cube_info->associate_alpha=associate_alpha;
 }
 
-static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
+static MagickBooleanType ClassifyImageColors(QCubeInfo *cube_info,
   const Image *image,ExceptionInfo *exception)
 {
 #define ClassifyImageTag  "Classify/Image"
@@ -769,16 +772,16 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
   MagickBooleanType
     proceed;
 
-  NodeInfo
+  QNodeInfo
     *node_info;
 
   size_t
-    count,
     id,
     index,
     level;
 
   ssize_t
+    count,
     y;
 
   /*
@@ -813,7 +816,7 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
     p=GetCacheViewVirtualPixels(image_view,0,y,image->columns,1,exception);
     if (p == (const Quantum *) NULL)
       break;
-    if (cube_info->nodes > MaxNodes)
+    if (cube_info->nodes > MaxQNodes)
       {
         /*
           Prune one level if the color tree is too large.
@@ -831,7 +834,8 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
         PixelInfo
           packet;
 
-        GetPixelInfoPixel(image,p+count*GetPixelChannels(image),&packet);
+        GetPixelInfoPixel(image,p+count*(ssize_t) GetPixelChannels(image),
+          &packet);
         if (IsPixelEquivalent(image,p,&packet) == MagickFalse)
           break;
       }
@@ -846,18 +850,18 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
           distance;
 
         bisect*=0.5;
-        id=ColorToNodeId(cube_info,&pixel,index);
+        id=ColorToQNodeId(cube_info,&pixel,index);
         mid.red+=(id & 1) != 0 ? bisect : -bisect;
         mid.green+=(id & 2) != 0 ? bisect : -bisect;
         mid.blue+=(id & 4) != 0 ? bisect : -bisect;
         mid.alpha+=(id & 8) != 0 ? bisect : -bisect;
-        if (node_info->child[id] == (NodeInfo *) NULL)
+        if (node_info->child[id] == (QNodeInfo *) NULL)
           {
             /*
               Set colors of new node to contain pixel.
             */
-            node_info->child[id]=GetNodeInfo(cube_info,id,level,node_info);
-            if (node_info->child[id] == (NodeInfo *) NULL)
+            node_info->child[id]=GetQNodeInfo(cube_info,id,level,node_info);
+            if (node_info->child[id] == (QNodeInfo *) NULL)
               {
                 (void) ThrowMagickException(exception,GetMagickModule(),
                   ResourceLimitError,"MemoryAllocationFailed","`%s'",
@@ -887,17 +891,21 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
       /*
         Sum RGB for this leaf for later derivation of the mean cube color.
       */
-      node_info->number_unique+=count;
-      node_info->total_color.red+=count*QuantumScale*ClampPixel(pixel.red);
-      node_info->total_color.green+=count*QuantumScale*ClampPixel(pixel.green);
-      node_info->total_color.blue+=count*QuantumScale*ClampPixel(pixel.blue);
+      node_info->number_unique=(size_t) ((ssize_t) node_info->number_unique+
+        count);
+      node_info->total_color.red+=count*QuantumScale*(double)
+        ClampPixel(pixel.red);
+      node_info->total_color.green+=count*QuantumScale*(double)
+        ClampPixel(pixel.green);
+      node_info->total_color.blue+=count*QuantumScale*(double)
+        ClampPixel(pixel.blue);
       if (cube_info->associate_alpha != MagickFalse)
-        node_info->total_color.alpha+=count*QuantumScale*
+        node_info->total_color.alpha+=count*QuantumScale*(double)
           ClampPixel(pixel.alpha);
       else
-        node_info->total_color.alpha+=count*QuantumScale*
-          ClampPixel((MagickRealType) OpaqueAlpha);
-      p+=count*GetPixelChannels(image);
+        node_info->total_color.alpha+=count*QuantumScale*(double)
+          ClampPixel((double) OpaqueAlpha);
+      p+=count*(ssize_t) GetPixelChannels(image);
     }
     if (cube_info->colors > cube_info->maximum_colors)
       {
@@ -920,7 +928,7 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
     p=GetCacheViewVirtualPixels(image_view,0,y,image->columns,1,exception);
     if (p == (const Quantum *) NULL)
       break;
-    if (cube_info->nodes > MaxNodes)
+    if (cube_info->nodes > MaxQNodes)
       {
         /*
           Prune one level if the color tree is too large.
@@ -938,7 +946,8 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
         PixelInfo
           packet;
 
-        GetPixelInfoPixel(image,p+count*GetPixelChannels(image),&packet);
+        GetPixelInfoPixel(image,p+count*(ssize_t) GetPixelChannels(image),
+          &packet);
         if (IsPixelEquivalent(image,p,&packet) == MagickFalse)
           break;
       }
@@ -953,18 +962,18 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
           distance;
 
         bisect*=0.5;
-        id=ColorToNodeId(cube_info,&pixel,index);
+        id=ColorToQNodeId(cube_info,&pixel,index);
         mid.red+=(id & 1) != 0 ? bisect : -bisect;
         mid.green+=(id & 2) != 0 ? bisect : -bisect;
         mid.blue+=(id & 4) != 0 ? bisect : -bisect;
         mid.alpha+=(id & 8) != 0 ? bisect : -bisect;
-        if (node_info->child[id] == (NodeInfo *) NULL)
+        if (node_info->child[id] == (QNodeInfo *) NULL)
           {
             /*
               Set colors of new node to contain pixel.
             */
-            node_info->child[id]=GetNodeInfo(cube_info,id,level,node_info);
-            if (node_info->child[id] == (NodeInfo *) NULL)
+            node_info->child[id]=GetQNodeInfo(cube_info,id,level,node_info);
+            if (node_info->child[id] == (QNodeInfo *) NULL)
               {
                 (void) ThrowMagickException(exception,GetMagickModule(),
                   ResourceLimitError,"MemoryAllocationFailed","%s",
@@ -994,17 +1003,21 @@ static MagickBooleanType ClassifyImageColors(CubeInfo *cube_info,
       /*
         Sum RGB for this leaf for later derivation of the mean cube color.
       */
-      node_info->number_unique+=count;
-      node_info->total_color.red+=count*QuantumScale*ClampPixel(pixel.red);
-      node_info->total_color.green+=count*QuantumScale*ClampPixel(pixel.green);
-      node_info->total_color.blue+=count*QuantumScale*ClampPixel(pixel.blue);
+      node_info->number_unique=(size_t) ((ssize_t) node_info->number_unique+
+        count);
+      node_info->total_color.red+=count*QuantumScale*(double)
+        ClampPixel(pixel.red);
+      node_info->total_color.green+=count*QuantumScale*(double)
+        ClampPixel(pixel.green);
+      node_info->total_color.blue+=count*QuantumScale*(double)
+        ClampPixel(pixel.blue);
       if (cube_info->associate_alpha != MagickFalse)
-        node_info->total_color.alpha+=count*QuantumScale*
+        node_info->total_color.alpha+=count*QuantumScale*(double)
           ClampPixel(pixel.alpha);
       else
-        node_info->total_color.alpha+=count*QuantumScale*
+        node_info->total_color.alpha+=count*QuantumScale*(double)
           ClampPixel((MagickRealType) OpaqueAlpha);
-      p+=count*GetPixelChannels(image);
+      p+=count*(ssize_t) GetPixelChannels(image);
     }
     proceed=SetImageProgress(image,ClassifyImageTag,(MagickOffsetType) y,
       image->rows);
@@ -1078,8 +1091,8 @@ MagickExport QuantizeInfo *CloneQuantizeInfo(const QuantizeInfo *quantize_info)
 %
 %  The format of the ClosestColor method is:
 %
-%      void ClosestColor(const Image *image,CubeInfo *cube_info,
-%        const NodeInfo *node_info)
+%      void ClosestColor(const Image *image,QCubeInfo *cube_info,
+%        const QNodeInfo *node_info)
 %
 %  A description of each parameter follows.
 %
@@ -1087,12 +1100,12 @@ MagickExport QuantizeInfo *CloneQuantizeInfo(const QuantizeInfo *quantize_info)
 %
 %    o cube_info: A pointer to the Cube structure.
 %
-%    o node_info: the address of a structure of type NodeInfo which points to a
+%    o node_info: the address of a structure of type QNodeInfo which points to a
 %      node in the color cube tree that is to be pruned.
 %
 */
-static void ClosestColor(const Image *image,CubeInfo *cube_info,
-  const NodeInfo *node_info)
+static void ClosestColor(const Image *image,QCubeInfo *cube_info,
+  const QNodeInfo *node_info)
 {
   size_t
     number_children;
@@ -1105,7 +1118,7 @@ static void ClosestColor(const Image *image,CubeInfo *cube_info,
   */
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
+    if (node_info->child[i] != (QNodeInfo *) NULL)
       ClosestColor(image,cube_info,node_info->child[i]);
   if (node_info->number_unique != 0)
     {
@@ -1222,8 +1235,8 @@ MagickExport MagickBooleanType CompressImageColormap(Image *image,
 %
 %  The format of the DefineImageColormap method is:
 %
-%      void DefineImageColormap(Image *image,CubeInfo *cube_info,
-%        NodeInfo *node_info)
+%      void DefineImageColormap(Image *image,QCubeInfo *cube_info,
+%        QNodeInfo *node_info)
 %
 %  A description of each parameter follows.
 %
@@ -1231,12 +1244,12 @@ MagickExport MagickBooleanType CompressImageColormap(Image *image,
 %
 %    o cube_info: A pointer to the Cube structure.
 %
-%    o node_info: the address of a structure of type NodeInfo which points to a
+%    o node_info: the address of a structure of type QNodeInfo which points to a
 %      node in the color cube tree that is to be pruned.
 %
 */
-static void DefineImageColormap(Image *image,CubeInfo *cube_info,
-  NodeInfo *node_info)
+static void DefineImageColormap(Image *image,QCubeInfo *cube_info,
+  QNodeInfo *node_info)
 {
   size_t
     number_children;
@@ -1249,7 +1262,7 @@ static void DefineImageColormap(Image *image,CubeInfo *cube_info,
   */
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
+    if (node_info->child[i] != (QNodeInfo *) NULL)
       DefineImageColormap(image,cube_info,node_info->child[i]);
   if (node_info->number_unique != 0)
     {
@@ -1267,11 +1280,11 @@ static void DefineImageColormap(Image *image,CubeInfo *cube_info,
       alpha=PerceptibleReciprocal(alpha);
       if (cube_info->associate_alpha == MagickFalse)
         {
-          q->red=(double) ClampToQuantum(alpha*QuantumRange*
+          q->red=(double) ClampToQuantum(alpha*(double) QuantumRange*
             node_info->total_color.red);
-          q->green=(double) ClampToQuantum(alpha*QuantumRange*
+          q->green=(double) ClampToQuantum(alpha*(double) QuantumRange*
             node_info->total_color.green);
-          q->blue=(double) ClampToQuantum(alpha*QuantumRange*
+          q->blue=(double) ClampToQuantum(alpha*(double) QuantumRange*
             node_info->total_color.blue);
           q->alpha=(double) OpaqueAlpha;
         }
@@ -1280,15 +1293,16 @@ static void DefineImageColormap(Image *image,CubeInfo *cube_info,
           double
             opacity;
 
-          opacity=(double) (alpha*QuantumRange*node_info->total_color.alpha);
+          opacity=(double) (alpha*(double) QuantumRange*
+            node_info->total_color.alpha);
           q->alpha=(double) ClampToQuantum(opacity);
-          if (q->alpha == OpaqueAlpha)
+          if (q->alpha == (double) OpaqueAlpha)
             {
-              q->red=(double) ClampToQuantum(alpha*QuantumRange*
+              q->red=(double) ClampToQuantum(alpha*(double) QuantumRange*
                 node_info->total_color.red);
-              q->green=(double) ClampToQuantum(alpha*QuantumRange*
+              q->green=(double) ClampToQuantum(alpha*(double) QuantumRange*
                 node_info->total_color.green);
-              q->blue=(double) ClampToQuantum(alpha*QuantumRange*
+              q->blue=(double) ClampToQuantum(alpha*(double) QuantumRange*
                 node_info->total_color.blue);
             }
           else
@@ -1298,11 +1312,11 @@ static void DefineImageColormap(Image *image,CubeInfo *cube_info,
 
               gamma=(double) (QuantumScale*q->alpha);
               gamma=PerceptibleReciprocal(gamma);
-              q->red=(double) ClampToQuantum(alpha*gamma*QuantumRange*
+              q->red=(double) ClampToQuantum(alpha*gamma*(double) QuantumRange*
                 node_info->total_color.red);
-              q->green=(double) ClampToQuantum(alpha*gamma*QuantumRange*
-                node_info->total_color.green);
-              q->blue=(double) ClampToQuantum(alpha*gamma*QuantumRange*
+              q->green=(double) ClampToQuantum(alpha*gamma*(double)
+                QuantumRange*node_info->total_color.green);
+              q->blue=(double) ClampToQuantum(alpha*gamma*(double) QuantumRange*
                 node_info->total_color.blue);
               if (node_info->number_unique > cube_info->transparent_pixels)
                 {
@@ -1320,26 +1334,26 @@ static void DefineImageColormap(Image *image,CubeInfo *cube_info,
 %                                                                             %
 %                                                                             %
 %                                                                             %
-+   D e s t r o y C u b e I n f o                                             %
++   D e s t r o y Q C u b e I n f o                                           %
 %                                                                             %
 %                                                                             %
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  DestroyCubeInfo() deallocates memory associated with an image.
+%  DestroyQCubeInfo() deallocates memory associated with an image.
 %
-%  The format of the DestroyCubeInfo method is:
+%  The format of the DestroyQCubeInfo method is:
 %
-%      DestroyCubeInfo(CubeInfo *cube_info)
+%      DestroyQCubeInfo(QCubeInfo *cube_info)
 %
 %  A description of each parameter follows:
 %
-%    o cube_info: the address of a structure of type CubeInfo.
+%    o cube_info: the address of a structure of type QCubeInfo.
 %
 */
-static void DestroyCubeInfo(CubeInfo *cube_info)
+static void DestroyQCubeInfo(QCubeInfo *cube_info)
 {
-  Nodes
+  QNodes
     *nodes;
 
   /*
@@ -1348,16 +1362,16 @@ static void DestroyCubeInfo(CubeInfo *cube_info)
   do
   {
     nodes=cube_info->node_queue->next;
-    cube_info->node_queue->nodes=(NodeInfo *) RelinquishMagickMemory(
+    cube_info->node_queue->nodes=(QNodeInfo *) RelinquishMagickMemory(
       cube_info->node_queue->nodes);
-    cube_info->node_queue=(Nodes *) RelinquishMagickMemory(
+    cube_info->node_queue=(QNodes *) RelinquishMagickMemory(
       cube_info->node_queue);
     cube_info->node_queue=nodes;
-  } while (cube_info->node_queue != (Nodes *) NULL);
+  } while (cube_info->node_queue != (QNodes *) NULL);
   if (cube_info->memory_info != (MemoryInfo *) NULL)
     cube_info->memory_info=RelinquishVirtualMemory(cube_info->memory_info);
   cube_info->quantize_info=DestroyQuantizeInfo(cube_info->quantize_info);
-  cube_info=(CubeInfo *) RelinquishMagickMemory(cube_info);
+  cube_info=(QCubeInfo *) RelinquishMagickMemory(cube_info);
 }
 
 /*
@@ -1412,7 +1426,7 @@ MagickExport QuantizeInfo *DestroyQuantizeInfo(QuantizeInfo *quantize_info)
 %
 %  The format of the DitherImage method is:
 %
-%      MagickBooleanType DitherImage(Image *image,CubeInfo *cube_info,
+%      MagickBooleanType DitherImage(Image *image,QCubeInfo *cube_info,
 %        ExceptionInfo *exception)
 %
 %  A description of each parameter follows.
@@ -1465,7 +1479,7 @@ static DoublePixelPacket **AcquirePixelTLS(const size_t count)
   return(pixels);
 }
 
-static inline ssize_t CacheOffset(CubeInfo *cube_info,
+static inline ssize_t CacheOffset(QCubeInfo *cube_info,
   const DoublePixelPacket *pixel)
 {
 #define RedShift(pixel) (((pixel) >> CacheShift) << (0*(8-CacheShift)))
@@ -1484,7 +1498,7 @@ static inline ssize_t CacheOffset(CubeInfo *cube_info,
   return(offset);
 }
 
-static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
+static MagickBooleanType FloydSteinbergDither(Image *image,QCubeInfo *cube_info,
   ExceptionInfo *exception)
 {
 #define DitherImageTag  "Dither/Image"
@@ -1514,12 +1528,12 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
     const int
       id = GetOpenMPThreadId();
 
-    CubeInfo
-      cube;
-
     DoublePixelPacket
       *current,
       *previous;
+
+    QCubeInfo
+      cube;
 
     Quantum
       *magick_restrict q;
@@ -1556,7 +1570,8 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
         u;
 
       u=(y & 0x01) != 0 ? (ssize_t) image->columns-1-x : x;
-      AssociateAlphaPixel(image,&cube,q+u*GetPixelChannels(image),&pixel);
+      AssociateAlphaPixel(image,&cube,q+u*(ssize_t) GetPixelChannels(image),
+        &pixel);
       if (x > 0)
         {
           pixel.red+=7.0*cube_info->diffusion*current[u-v].red/16;
@@ -1597,7 +1612,7 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
       i=CacheOffset(&cube,&pixel);
       if (cube.cache[i] < 0)
         {
-          NodeInfo
+          QNodeInfo
             *node_info;
 
           size_t
@@ -1609,8 +1624,8 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
           node_info=cube.root;
           for (index=MaxTreeDepth-1; (ssize_t) index > 0; index--)
           {
-            node_id=ColorToNodeId(&cube,&pixel,index);
-            if (node_info->child[node_id] == (NodeInfo *) NULL)
+            node_id=ColorToQNodeId(&cube,&pixel,index);
+            if (node_info->child[node_id] == (QNodeInfo *) NULL)
               break;
             node_info=node_info->child[node_id];
           }
@@ -1618,8 +1633,8 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
             Find closest color among siblings and their children.
           */
           cube.target=pixel;
-          cube.distance=(double) (4.0*(QuantumRange+1.0)*(QuantumRange+1.0)+
-            1.0);
+          cube.distance=(double) (4.0*((double) QuantumRange+1.0)*((double)
+            QuantumRange+1.0)+1.0);
           ClosestColor(image,&cube,node_info->parent);
           cube.cache[i]=(ssize_t) cube.color_number;
         }
@@ -1628,18 +1643,19 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
       */
       index=(size_t) cube.cache[i];
       if (image->storage_class == PseudoClass)
-        SetPixelIndex(image,(Quantum) index,q+u*GetPixelChannels(image));
+        SetPixelIndex(image,(Quantum) index,q+u*(ssize_t)
+          GetPixelChannels(image));
       if (cube.quantize_info->measure_error == MagickFalse)
         {
           SetPixelRed(image,ClampToQuantum(image->colormap[index].red),
-            q+u*GetPixelChannels(image));
+            q+u*(ssize_t) GetPixelChannels(image));
           SetPixelGreen(image,ClampToQuantum(image->colormap[index].green),
-            q+u*GetPixelChannels(image));
+            q+u*(ssize_t) GetPixelChannels(image));
           SetPixelBlue(image,ClampToQuantum(image->colormap[index].blue),
-            q+u*GetPixelChannels(image));
+            q+u*(ssize_t) GetPixelChannels(image));
           if (cube.associate_alpha != MagickFalse)
             SetPixelAlpha(image,ClampToQuantum(image->colormap[index].alpha),
-              q+u*GetPixelChannels(image));
+              q+u*(ssize_t) GetPixelChannels(image));
         }
       if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
         status=MagickFalse;
@@ -1670,11 +1686,11 @@ static MagickBooleanType FloydSteinbergDither(Image *image,CubeInfo *cube_info,
 }
 
 static MagickBooleanType RiemersmaDither(Image *image,CacheView *image_view,
-  CubeInfo *cube_info,const unsigned int direction,ExceptionInfo *exception)
+  QCubeInfo *cube_info,const unsigned int direction,ExceptionInfo *exception)
 {
 #define DitherImageTag  "Dither/Image"
 
-  CubeInfo
+  QCubeInfo
     *p;
 
   DoublePixelPacket
@@ -1724,7 +1740,7 @@ static MagickBooleanType RiemersmaDither(Image *image,CacheView *image_view,
       i=CacheOffset(cube_info,&pixel);
       if (p->cache[i] < 0)
         {
-          NodeInfo
+          QNodeInfo
             *node_info;
 
           size_t
@@ -1736,8 +1752,8 @@ static MagickBooleanType RiemersmaDither(Image *image,CacheView *image_view,
           node_info=p->root;
           for (index=MaxTreeDepth-1; (ssize_t) index > 0; index--)
           {
-            id=ColorToNodeId(cube_info,&pixel,index);
-            if (node_info->child[id] == (NodeInfo *) NULL)
+            id=ColorToQNodeId(cube_info,&pixel,index);
+            if (node_info->child[id] == (QNodeInfo *) NULL)
               break;
             node_info=node_info->child[id];
           }
@@ -1745,7 +1761,7 @@ static MagickBooleanType RiemersmaDither(Image *image,CacheView *image_view,
             Find closest color among siblings and their children.
           */
           p->target=pixel;
-          p->distance=(double) (4.0*(QuantumRange+1.0)*((double)
+          p->distance=(double) (4.0*((double) QuantumRange+1.0)*((double)
             QuantumRange+1.0)+1.0);
           ClosestColor(image,p,node_info->parent);
           p->cache[i]=(ssize_t) p->color_number;
@@ -1793,7 +1809,7 @@ static MagickBooleanType RiemersmaDither(Image *image,CacheView *image_view,
 }
 
 static MagickBooleanType Riemersma(Image *image,CacheView *image_view,
-  CubeInfo *cube_info,const size_t level,const unsigned int direction,
+  QCubeInfo *cube_info,const size_t level,const unsigned int direction,
   ExceptionInfo *exception)
 {
   MagickBooleanType
@@ -1959,7 +1975,7 @@ static MagickBooleanType Riemersma(Image *image,CacheView *image_view,
   return(status);
 }
 
-static MagickBooleanType DitherImage(Image *image,CubeInfo *cube_info,
+static MagickBooleanType DitherImage(Image *image,QCubeInfo *cube_info,
   ExceptionInfo *exception)
 {
   CacheView
@@ -2007,17 +2023,17 @@ static MagickBooleanType DitherImage(Image *image,CubeInfo *cube_info,
 %                                                                             %
 %                                                                             %
 %                                                                             %
-+   G e t C u b e I n f o                                                     %
++   G e t Q C u b e I n f o                                                   %
 %                                                                             %
 %                                                                             %
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  GetCubeInfo() initialize the Cube data structure.
+%  GetQCubeInfo() initialize the Cube data structure.
 %
-%  The format of the GetCubeInfo method is:
+%  The format of the GetQCubeInfo method is:
 %
-%      CubeInfo GetCubeInfo(const QuantizeInfo *quantize_info,
+%      QCubeInfo GetQCubeInfo(const QuantizeInfo *quantize_info,
 %        const size_t depth,const size_t maximum_colors)
 %
 %  A description of each parameter follows.
@@ -2036,14 +2052,14 @@ static MagickBooleanType DitherImage(Image *image,CubeInfo *cube_info,
 %    o maximum_colors: maximum colors.
 %
 */
-static CubeInfo *GetCubeInfo(const QuantizeInfo *quantize_info,
+static QCubeInfo *GetQCubeInfo(const QuantizeInfo *quantize_info,
   const size_t depth,const size_t maximum_colors)
 {
-  CubeInfo
-    *cube_info;
-
   double
     weight;
+
+  QCubeInfo
+    *cube_info;
 
   size_t
     length;
@@ -2054,9 +2070,9 @@ static CubeInfo *GetCubeInfo(const QuantizeInfo *quantize_info,
   /*
     Initialize tree to describe color cube_info.
   */
-  cube_info=(CubeInfo *) AcquireMagickMemory(sizeof(*cube_info));
-  if (cube_info == (CubeInfo *) NULL)
-    return((CubeInfo *) NULL);
+  cube_info=(QCubeInfo *) AcquireMagickMemory(sizeof(*cube_info));
+  if (cube_info == (QCubeInfo *) NULL)
+    return((QCubeInfo *) NULL);
   (void) memset(cube_info,0,sizeof(*cube_info));
   cube_info->depth=depth;
   if (cube_info->depth > MaxTreeDepth)
@@ -2067,9 +2083,9 @@ static CubeInfo *GetCubeInfo(const QuantizeInfo *quantize_info,
   /*
     Initialize root node.
   */
-  cube_info->root=GetNodeInfo(cube_info,0,0,(NodeInfo *) NULL);
-  if (cube_info->root == (NodeInfo *) NULL)
-    return((CubeInfo *) NULL);
+  cube_info->root=GetQNodeInfo(cube_info,0,0,(QNodeInfo *) NULL);
+  if (cube_info->root == (QNodeInfo *) NULL)
+    return((QCubeInfo *) NULL);
   cube_info->root->parent=cube_info->root;
   cube_info->quantize_info=CloneQuantizeInfo(quantize_info);
   if (cube_info->quantize_info->dither_method == NoDitherMethod)
@@ -2080,7 +2096,7 @@ static CubeInfo *GetCubeInfo(const QuantizeInfo *quantize_info,
   length=(size_t) (1UL << (4*(8-CacheShift)));
   cube_info->memory_info=AcquireVirtualMemory(length,sizeof(*cube_info->cache));
   if (cube_info->memory_info == (MemoryInfo *) NULL)
-    return((CubeInfo *) NULL);
+    return((QCubeInfo *) NULL);
   cube_info->cache=(ssize_t *) GetVirtualMemoryBlob(cube_info->memory_info);
   /*
     Initialize color cache.
@@ -2110,48 +2126,48 @@ static CubeInfo *GetCubeInfo(const QuantizeInfo *quantize_info,
 %                                                                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  GetNodeInfo() allocates memory for a new node in the color cube tree and
+%  GetQNodeInfo() allocates memory for a new node in the color cube tree and
 %  presets all fields to zero.
 %
-%  The format of the GetNodeInfo method is:
+%  The format of the GetQNodeInfo method is:
 %
-%      NodeInfo *GetNodeInfo(CubeInfo *cube_info,const size_t id,
-%        const size_t level,NodeInfo *parent)
+%      QNodeInfo *GetQNodeInfo(QCubeInfo *cube_info,const size_t id,
+%        const size_t level,QNodeInfo *parent)
 %
 %  A description of each parameter follows.
 %
-%    o node: The GetNodeInfo method returns a pointer to a queue of nodes.
+%    o node: The GetQNodeInfo method returns a pointer to a queue of nodes.
 %
 %    o id: Specifies the child number of the node.
 %
 %    o level: Specifies the level in the storage_class the node resides.
 %
 */
-static NodeInfo *GetNodeInfo(CubeInfo *cube_info,const size_t id,
-  const size_t level,NodeInfo *parent)
+static QNodeInfo *GetQNodeInfo(QCubeInfo *cube_info,const size_t id,
+  const size_t level,QNodeInfo *parent)
 {
-  NodeInfo
+  QNodeInfo
     *node_info;
 
   if (cube_info->free_nodes == 0)
     {
-      Nodes
+      QNodes
         *nodes;
 
       /*
         Allocate a new queue of nodes.
       */
-      nodes=(Nodes *) AcquireMagickMemory(sizeof(*nodes));
-      if (nodes == (Nodes *) NULL)
-        return((NodeInfo *) NULL);
-      nodes->nodes=(NodeInfo *) AcquireQuantumMemory(NodesInAList,
+      nodes=(QNodes *) AcquireMagickMemory(sizeof(*nodes));
+      if (nodes == (QNodes *) NULL)
+        return((QNodeInfo *) NULL);
+      nodes->nodes=(QNodeInfo *) AcquireQuantumMemory(QNodesInAList,
         sizeof(*nodes->nodes));
-      if (nodes->nodes == (NodeInfo *) NULL)
-        return((NodeInfo *) NULL);
+      if (nodes->nodes == (QNodeInfo *) NULL)
+        return((QNodeInfo *) NULL);
       nodes->next=cube_info->node_queue;
       cube_info->node_queue=nodes;
       cube_info->next_node=nodes->nodes;
-      cube_info->free_nodes=NodesInAList;
+      cube_info->free_nodes=QNodesInAList;
     }
   cube_info->nodes++;
   cube_info->free_nodes--;
@@ -2255,22 +2271,22 @@ MagickExport MagickBooleanType GetImageQuantizeError(Image *image,
       index=(ssize_t) GetPixelIndex(image,p);
       if (image->alpha_trait != UndefinedPixelTrait)
         {
-          alpha=(double) (QuantumScale*GetPixelAlpha(image,p));
+          alpha=(double) (QuantumScale*(double) GetPixelAlpha(image,p));
           beta=(double) (QuantumScale*image->colormap[index].alpha);
         }
-      distance=fabs((double) (alpha*GetPixelRed(image,p)-beta*
+      distance=fabs((double) (alpha*(double) GetPixelRed(image,p)-beta*
         image->colormap[index].red));
       mean_error_per_pixel+=distance;
       mean_error+=distance*distance;
       if (distance > maximum_error)
         maximum_error=distance;
-      distance=fabs((double) (alpha*GetPixelGreen(image,p)-beta*
+      distance=fabs((double) (alpha*(double) GetPixelGreen(image,p)-beta*
         image->colormap[index].green));
       mean_error_per_pixel+=distance;
       mean_error+=distance*distance;
       if (distance > maximum_error)
         maximum_error=distance;
-      distance=fabs((double) (alpha*GetPixelBlue(image,p)-beta*
+      distance=fabs((double) (alpha*(double) GetPixelBlue(image,p)-beta*
         image->colormap[index].blue));
       mean_error_per_pixel+=distance;
       mean_error+=distance*distance;
@@ -2432,23 +2448,24 @@ static inline double KmeansMetric(const Image *magick_restrict image,
   if ((image->alpha_trait != UndefinedPixelTrait) ||
       (q->alpha_trait != UndefinedPixelTrait))
     {
-      pixel=GetPixelAlpha(image,p)-(q->alpha_trait != UndefinedPixelTrait ?
-        q->alpha : OpaqueAlpha);
+      pixel=(double) GetPixelAlpha(image,p)-(q->alpha_trait !=
+        UndefinedPixelTrait ? q->alpha : (double) OpaqueAlpha);
       metric+=pixel*pixel;
       if (image->alpha_trait != UndefinedPixelTrait)
-        gamma*=QuantumScale*GetPixelAlpha(image,p);
+        gamma*=QuantumScale*(double) GetPixelAlpha(image,p);
       if (q->alpha_trait != UndefinedPixelTrait)
         gamma*=QuantumScale*q->alpha;
     }
   if (image->colorspace == CMYKColorspace)
     {
-      pixel=QuantumScale*(GetPixelBlack(image,p)-q->black);
+      pixel=QuantumScale*((double) GetPixelBlack(image,p)-q->black);
       metric+=gamma*pixel*pixel;
-      gamma*=QuantumScale*(QuantumRange-GetPixelBlack(image,p));
-      gamma*=QuantumScale*(QuantumRange-q->black);
+      gamma*=QuantumScale*((double) QuantumRange-(double)
+        GetPixelBlack(image,p));
+      gamma*=QuantumScale*((double) QuantumRange-q->black);
     }
   metric*=3.0;
-  pixel=QuantumScale*(GetPixelRed(image,p)-q->red);
+  pixel=QuantumScale*((double) GetPixelRed(image,p)-q->red);
   if (IsHueCompatibleColorspace(image->colorspace) != MagickFalse)
     {
       if (fabs((double) pixel) > 0.5)
@@ -2456,9 +2473,9 @@ static inline double KmeansMetric(const Image *magick_restrict image,
       pixel*=2.0;
     }
   metric+=gamma*pixel*pixel;
-  pixel=QuantumScale*(GetPixelGreen(image,p)-q->green);
+  pixel=QuantumScale*((double) GetPixelGreen(image,p)-q->green);
   metric+=gamma*pixel*pixel;
-  pixel=QuantumScale*(GetPixelBlue(image,p)-q->blue);
+  pixel=QuantumScale*((double) GetPixelBlue(image,p)-q->blue);
   metric+=gamma*pixel*pixel;
   return(metric);
 }
@@ -2468,7 +2485,8 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
   ExceptionInfo *exception)
 {
 #define KmeansImageTag  "Kmeans/Image"
-#define RandomColorComponent(info)  (QuantumRange*GetPseudoRandomValue(info))
+#define RandomColorComponent(info)  \
+  ((double) QuantumRange*GetPseudoRandomValue(info))
 
   CacheView
     *image_view;
@@ -2509,7 +2527,7 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
   colors=GetImageArtifact(image,"kmeans:seed-colors");
   if (colors == (const char *) NULL)
     {
-      CubeInfo
+      QCubeInfo
         *cube_info;
 
       QuantizeInfo
@@ -2528,8 +2546,8 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
       n=(ssize_t) number_colors;
       for (depth=1; n != 0; depth++)
         n>>=2;
-      cube_info=GetCubeInfo(quantize_info,depth,number_colors);
-      if (cube_info == (CubeInfo *) NULL)
+      cube_info=GetQCubeInfo(quantize_info,depth,number_colors);
+      if (cube_info == (QCubeInfo *) NULL)
         {
           quantize_info=DestroyQuantizeInfo(quantize_info);
           ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
@@ -2542,7 +2560,7 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
             ReduceImageColors(image,cube_info);
           status=SetImageColormap(image,cube_info,exception);
         }
-      DestroyCubeInfo(cube_info);
+      DestroyQCubeInfo(cube_info);
       quantize_info=DestroyQuantizeInfo(quantize_info);
       if (status == MagickFalse)
         return(status);
@@ -2677,13 +2695,16 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
               k=i;
             }
         }
-        kmeans_pixels[id][k].red+=QuantumScale*GetPixelRed(image,q);
-        kmeans_pixels[id][k].green+=QuantumScale*GetPixelGreen(image,q);
-        kmeans_pixels[id][k].blue+=QuantumScale*GetPixelBlue(image,q);
+        kmeans_pixels[id][k].red+=QuantumScale*(double) GetPixelRed(image,q);
+        kmeans_pixels[id][k].green+=QuantumScale*(double)
+          GetPixelGreen(image,q);
+        kmeans_pixels[id][k].blue+=QuantumScale*(double) GetPixelBlue(image,q);
         if (image->alpha_trait != UndefinedPixelTrait)
-          kmeans_pixels[id][k].alpha+=QuantumScale*GetPixelAlpha(image,q);
+          kmeans_pixels[id][k].alpha+=QuantumScale*(double)
+            GetPixelAlpha(image,q);
         if (image->colorspace == CMYKColorspace)
-          kmeans_pixels[id][k].black+=QuantumScale*GetPixelBlack(image,q);
+          kmeans_pixels[id][k].black+=QuantumScale*(double)
+            GetPixelBlack(image,q);
         kmeans_pixels[id][k].count++;
         kmeans_pixels[id][k].distortion+=min_distance;
         SetPixelIndex(image,(Quantum) k,q);
@@ -2725,13 +2746,18 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
         gamma;
 
       gamma=PerceptibleReciprocal((double) kmeans_pixels[0][j].count);
-      image->colormap[j].red=gamma*QuantumRange*kmeans_pixels[0][j].red;
-      image->colormap[j].green=gamma*QuantumRange*kmeans_pixels[0][j].green;
-      image->colormap[j].blue=gamma*QuantumRange*kmeans_pixels[0][j].blue;
+      image->colormap[j].red=gamma*(double) QuantumRange*
+        kmeans_pixels[0][j].red;
+      image->colormap[j].green=gamma*(double) QuantumRange*
+        kmeans_pixels[0][j].green;
+      image->colormap[j].blue=gamma*(double) QuantumRange*
+        kmeans_pixels[0][j].blue;
       if (image->alpha_trait != UndefinedPixelTrait)
-        image->colormap[j].alpha=gamma*QuantumRange*kmeans_pixels[0][j].alpha;
+        image->colormap[j].alpha=gamma*(double) QuantumRange*
+        kmeans_pixels[0][j].alpha;
       if (image->colorspace == CMYKColorspace)
-        image->colormap[j].black=gamma*QuantumRange*kmeans_pixels[0][j].black;
+        image->colormap[j].black=gamma*(double) QuantumRange*
+        kmeans_pixels[0][j].black;
       image->colormap[j].count=(MagickSizeType) kmeans_pixels[0][j].count;
       distortion+=kmeans_pixels[0][j].distortion;
     }
@@ -2830,7 +2856,8 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
 {
 #define PosterizeImageTag  "Posterize/Image"
 #define PosterizePixel(pixel) ClampToQuantum((MagickRealType) QuantumRange*( \
-  MagickRound(QuantumScale*pixel*(levels-1)))/MagickMax((ssize_t) levels-1,1))
+  MagickRound(QuantumScale*(double) pixel*(levels-1)))/ \
+  MagickMax((ssize_t) levels-1,1))
 
   CacheView
     *image_view;
@@ -2939,8 +2966,8 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
   }
   image_view=DestroyCacheView(image_view);
   quantize_info=AcquireQuantizeInfo((ImageInfo *) NULL);
-  quantize_info->number_colors=(size_t) MagickMin((ssize_t) levels*levels*
-    levels,MaxColormapSize+1);
+  quantize_info->number_colors=(size_t) MagickMin(levels*levels*levels,
+    MaxColormapSize+1);
   quantize_info->dither_method=dither_method;
   quantize_info->tree_depth=MaxTreeDepth;
   status=QuantizeImage(quantize_info,image,exception);
@@ -2964,7 +2991,7 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
 %
 %  The format of the PruneSubtree method is:
 %
-%      PruneChild(CubeInfo *cube_info,const NodeInfo *node_info)
+%      PruneChild(QCubeInfo *cube_info,const QNodeInfo *node_info)
 %
 %  A description of each parameter follows.
 %
@@ -2973,9 +3000,9 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
 %    o node_info: pointer to node in color cube tree that is to be pruned.
 %
 */
-static void PruneChild(CubeInfo *cube_info,const NodeInfo *node_info)
+static void PruneChild(QCubeInfo *cube_info,const QNodeInfo *node_info)
 {
-  NodeInfo
+  QNodeInfo
     *parent;
 
   size_t
@@ -2989,7 +3016,7 @@ static void PruneChild(CubeInfo *cube_info,const NodeInfo *node_info)
   */
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
+    if (node_info->child[i] != (QNodeInfo *) NULL)
       PruneChild(cube_info,node_info->child[i]);
   if (cube_info->nodes > cube_info->maximum_colors)
     {
@@ -3002,7 +3029,7 @@ static void PruneChild(CubeInfo *cube_info,const NodeInfo *node_info)
       parent->total_color.green+=node_info->total_color.green;
       parent->total_color.blue+=node_info->total_color.blue;
       parent->total_color.alpha+=node_info->total_color.alpha;
-      parent->child[node_info->id]=(NodeInfo *) NULL;
+      parent->child[node_info->id]=(QNodeInfo *) NULL;
       cube_info->nodes--;
     }
 }
@@ -3023,7 +3050,7 @@ static void PruneChild(CubeInfo *cube_info,const NodeInfo *node_info)
 %
 %  The format of the PruneLevel method is:
 %
-%      PruneLevel(CubeInfo *cube_info,const NodeInfo *node_info)
+%      PruneLevel(QCubeInfo *cube_info,const QNodeInfo *node_info)
 %
 %  A description of each parameter follows.
 %
@@ -3032,7 +3059,7 @@ static void PruneChild(CubeInfo *cube_info,const NodeInfo *node_info)
 %    o node_info: pointer to node in color cube tree that is to be pruned.
 %
 */
-static void PruneLevel(CubeInfo *cube_info,const NodeInfo *node_info)
+static void PruneLevel(QCubeInfo *cube_info,const QNodeInfo *node_info)
 {
   size_t
     number_children;
@@ -3045,7 +3072,7 @@ static void PruneLevel(CubeInfo *cube_info,const NodeInfo *node_info)
   */
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
+    if (node_info->child[i] != (QNodeInfo *) NULL)
       PruneLevel(cube_info,node_info->child[i]);
   if (node_info->level == cube_info->depth)
     PruneChild(cube_info,node_info);
@@ -3068,7 +3095,7 @@ static void PruneLevel(CubeInfo *cube_info,const NodeInfo *node_info)
 %
 %  The format of the PruneToCubeDepth method is:
 %
-%      PruneToCubeDepth(CubeInfo *cube_info,const NodeInfo *node_info)
+%      PruneToCubeDepth(QCubeInfo *cube_info,const QNodeInfo *node_info)
 %
 %  A description of each parameter follows.
 %
@@ -3077,7 +3104,7 @@ static void PruneLevel(CubeInfo *cube_info,const NodeInfo *node_info)
 %    o node_info: pointer to node in color cube tree that is to be pruned.
 %
 */
-static void PruneToCubeDepth(CubeInfo *cube_info,const NodeInfo *node_info)
+static void PruneToCubeDepth(QCubeInfo *cube_info,const QNodeInfo *node_info)
 {
   size_t
     number_children;
@@ -3090,7 +3117,7 @@ static void PruneToCubeDepth(CubeInfo *cube_info,const NodeInfo *node_info)
   */
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
+    if (node_info->child[i] != (QNodeInfo *) NULL)
       PruneToCubeDepth(cube_info,node_info->child[i]);
   if (node_info->level > cube_info->depth)
     PruneChild(cube_info,node_info);
@@ -3129,7 +3156,7 @@ static void PruneToCubeDepth(CubeInfo *cube_info,const NodeInfo *node_info)
 MagickExport MagickBooleanType QuantizeImage(const QuantizeInfo *quantize_info,
   Image *image,ExceptionInfo *exception)
 {
-  CubeInfo
+  QCubeInfo
     *cube_info;
 
   ImageType
@@ -3180,8 +3207,8 @@ MagickExport MagickBooleanType QuantizeImage(const QuantizeInfo *quantize_info,
   /*
     Initialize color cube.
   */
-  cube_info=GetCubeInfo(quantize_info,depth,maximum_colors);
-  if (cube_info == (CubeInfo *) NULL)
+  cube_info=GetQCubeInfo(quantize_info,depth,maximum_colors);
+  if (cube_info == (QCubeInfo *) NULL)
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
   status=ClassifyImageColors(cube_info,image,exception);
@@ -3194,7 +3221,7 @@ MagickExport MagickBooleanType QuantizeImage(const QuantizeInfo *quantize_info,
         ReduceImageColors(image,cube_info);
       status=AssignImageColors(image,cube_info,exception);
     }
-  DestroyCubeInfo(cube_info);
+  DestroyQCubeInfo(cube_info);
   return(status);
 }
 
@@ -3231,9 +3258,6 @@ MagickExport MagickBooleanType QuantizeImage(const QuantizeInfo *quantize_info,
 MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
   Image *images,ExceptionInfo *exception)
 {
-  CubeInfo
-    *cube_info;
-
   Image
     *image;
 
@@ -3243,6 +3267,9 @@ MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
 
   MagickProgressMonitor
     progress_monitor;
+
+  QCubeInfo
+    *cube_info;
 
   size_t
     depth,
@@ -3292,8 +3319,8 @@ MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
   /*
     Initialize color cube.
   */
-  cube_info=GetCubeInfo(quantize_info,depth,maximum_colors);
-  if (cube_info == (CubeInfo *) NULL)
+  cube_info=GetQCubeInfo(quantize_info,depth,maximum_colors);
+  if (cube_info == (QCubeInfo *) NULL)
     {
       (void) ThrowMagickException(exception,GetMagickModule(),
         ResourceLimitError,"MemoryAllocationFailed","`%s'",images->filename);
@@ -3338,7 +3365,7 @@ MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
         image=GetNextImageInList(image);
       }
     }
-  DestroyCubeInfo(cube_info);
+  DestroyQCubeInfo(cube_info);
   return(status);
 }
 
@@ -3360,8 +3387,8 @@ MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
 %
 %  The format of the QuantizeErrorFlatten method is:
 %
-%      size_t QuantizeErrorFlatten(const CubeInfo *cube_info,
-%        const NodeInfo *node_info,const ssize_t offset,
+%      size_t QuantizeErrorFlatten(const QCubeInfo *cube_info,
+%        const QNodeInfo *node_info,const ssize_t offset,
 %        double *quantize_error)
 %
 %  A description of each parameter follows.
@@ -3375,8 +3402,8 @@ MagickExport MagickBooleanType QuantizeImages(const QuantizeInfo *quantize_info,
 %    o quantize_error: the quantization error vector.
 %
 */
-static size_t QuantizeErrorFlatten(const CubeInfo *cube_info,
-  const NodeInfo *node_info,const ssize_t offset,double *quantize_error)
+static size_t QuantizeErrorFlatten(const QCubeInfo *cube_info,
+  const QNodeInfo *node_info,const ssize_t offset,double *quantize_error)
 {
   size_t
     n,
@@ -3391,8 +3418,8 @@ static size_t QuantizeErrorFlatten(const CubeInfo *cube_info,
   n=1;
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children ; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
-      n+=QuantizeErrorFlatten(cube_info,node_info->child[i],offset+n,
+    if (node_info->child[i] != (QNodeInfo *) NULL)
+      n+=QuantizeErrorFlatten(cube_info,node_info->child[i],offset+(ssize_t) n,
         quantize_error);
   return(n);
 }
@@ -3413,7 +3440,7 @@ static size_t QuantizeErrorFlatten(const CubeInfo *cube_info,
 %
 %  The format of the Reduce method is:
 %
-%      Reduce(CubeInfo *cube_info,const NodeInfo *node_info)
+%      Reduce(QCubeInfo *cube_info,const QNodeInfo *node_info)
 %
 %  A description of each parameter follows.
 %
@@ -3422,7 +3449,7 @@ static size_t QuantizeErrorFlatten(const CubeInfo *cube_info,
 %    o node_info: pointer to node in color cube tree that is to be pruned.
 %
 */
-static void Reduce(CubeInfo *cube_info,const NodeInfo *node_info)
+static void Reduce(QCubeInfo *cube_info,const QNodeInfo *node_info)
 {
   size_t
     number_children;
@@ -3435,7 +3462,7 @@ static void Reduce(CubeInfo *cube_info,const NodeInfo *node_info)
   */
   number_children=cube_info->associate_alpha == MagickFalse ? 8UL : 16UL;
   for (i=0; i < (ssize_t) number_children; i++)
-    if (node_info->child[i] != (NodeInfo *) NULL)
+    if (node_info->child[i] != (QNodeInfo *) NULL)
       Reduce(cube_info,node_info->child[i]);
   if (node_info->quantize_error <= cube_info->pruning_threshold)
     PruneChild(cube_info,node_info);
@@ -3496,7 +3523,7 @@ static void Reduce(CubeInfo *cube_info,const NodeInfo *node_info)
 %
 %  The format of the ReduceImageColors method is:
 %
-%      ReduceImageColors(const Image *image,CubeInfo *cube_info)
+%      ReduceImageColors(const Image *image,QCubeInfo *cube_info)
 %
 %  A description of each parameter follows.
 %
@@ -3521,7 +3548,7 @@ static int QuantizeErrorCompare(const void *error_p,const void *error_q)
   return(-1);
 }
 
-static void ReduceImageColors(const Image *image,CubeInfo *cube_info)
+static void ReduceImageColors(const Image *image,QCubeInfo *cube_info)
 {
 #define ReduceImageTag  "Reduce/Image"
 
@@ -3563,7 +3590,7 @@ static void ReduceImageColors(const Image *image,CubeInfo *cube_info)
     cube_info->next_threshold=cube_info->root->quantize_error-1;
     cube_info->colors=0;
     Reduce(cube_info,cube_info->root);
-    offset=(MagickOffsetType) span-cube_info->colors;
+    offset=(MagickOffsetType) span-(MagickOffsetType) cube_info->colors;
     proceed=SetImageProgress(image,ReduceImageTag,offset,span-
       cube_info->maximum_colors+1);
     if (proceed == MagickFalse)
@@ -3604,7 +3631,7 @@ static void ReduceImageColors(const Image *image,CubeInfo *cube_info)
 MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
   Image *image,const Image *remap_image,ExceptionInfo *exception)
 {
-  CubeInfo
+  QCubeInfo
     *cube_info;
 
   MagickBooleanType
@@ -3621,9 +3648,9 @@ MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
   assert(exception->signature == MagickCoreSignature);
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-  cube_info=GetCubeInfo(quantize_info,MaxTreeDepth,
+  cube_info=GetQCubeInfo(quantize_info,MaxTreeDepth,
     quantize_info->number_colors);
-  if (cube_info == (CubeInfo *) NULL)
+  if (cube_info == (QCubeInfo *) NULL)
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
   cube_info->quantize_info->colorspace=remap_image->colorspace;
@@ -3636,7 +3663,7 @@ MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
       cube_info->quantize_info->number_colors=cube_info->colors;
       status=AssignImageColors(image,cube_info,exception);
     }
-  DestroyCubeInfo(cube_info);
+  DestroyQCubeInfo(cube_info);
   return(status);
 }
 
@@ -3673,14 +3700,14 @@ MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
 MagickExport MagickBooleanType RemapImages(const QuantizeInfo *quantize_info,
   Image *images,const Image *remap_image,ExceptionInfo *exception)
 {
-  CubeInfo
-    *cube_info;
-
   Image
     *image;
 
   MagickBooleanType
     status;
+
+  QCubeInfo
+    *cube_info;
 
   assert(images != (Image *) NULL);
   assert(images->signature == MagickCoreSignature);
@@ -3700,9 +3727,9 @@ MagickExport MagickBooleanType RemapImages(const QuantizeInfo *quantize_info,
   /*
     Classify image colors from the reference image.
   */
-  cube_info=GetCubeInfo(quantize_info,MaxTreeDepth,
+  cube_info=GetQCubeInfo(quantize_info,MaxTreeDepth,
     quantize_info->number_colors);
-  if (cube_info == (CubeInfo *) NULL)
+  if (cube_info == (QCubeInfo *) NULL)
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
   status=ClassifyImageColors(cube_info,remap_image,exception);
@@ -3720,7 +3747,7 @@ MagickExport MagickBooleanType RemapImages(const QuantizeInfo *quantize_info,
           break;
       }
     }
-  DestroyCubeInfo(cube_info);
+  DestroyQCubeInfo(cube_info);
   return(status);
 }
 
@@ -3955,7 +3982,7 @@ static MagickBooleanType SetGrayscaleImage(Image *image,
 %
 %  The format of the SetImageColormap method is:
 %
-%      MagickBooleanType SetImageColormap(Image *image,CubeInfo *cube_info,
+%      MagickBooleanType SetImageColormap(Image *image,QCubeInfo *cube_info,
 %        ExceptionInfo *node_info)
 %
 %  A description of each parameter follows.
@@ -3968,7 +3995,7 @@ static MagickBooleanType SetGrayscaleImage(Image *image,
 %
 */
 
-MagickBooleanType SetImageColormap(Image *image,CubeInfo *cube_info,
+MagickBooleanType SetImageColormap(Image *image,QCubeInfo *cube_info,
   ExceptionInfo *exception)
 {
   size_t

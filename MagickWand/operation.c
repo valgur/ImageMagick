@@ -424,7 +424,7 @@ static Image *SparseColorOption(const Image *image,
 %        arg2 is currently only used by "-limit"
 %
 */
-WandPrivate void CLISettingOptionInfo(MagickCLI *cli_wand,
+static void CLISettingOptionInfo(MagickCLI *cli_wand,
      const char *option,const char *arg1n, const char *arg2n)
 {
   ssize_t
@@ -1073,10 +1073,12 @@ WandPrivate void CLISettingOptionInfo(MagickCLI *cli_wand,
           parse= ParseCommandOption(MagickResourceOptions,MagickFalse,arg1);
           if ( parse < 0 )
             CLIWandExceptArgBreak(OptionError,"UnrecognizedResourceType",
-                option,arg1);
+              option,arg1);
           if (LocaleCompare("unlimited",arg2) != 0)
             limit=(MagickSizeType) SiPrefixToDoubleInterval(arg2,100.0);
-          (void) SetMagickResourceLimit((ResourceType)parse,limit);
+          if ((ResourceType) parse == TimeResource)
+            limit=(MagickSizeType) ParseMagickTimeToLive(arg2);
+          (void) SetMagickResourceLimit((ResourceType) parse,limit);
           break;
         }
       if (LocaleCompare("log",option+1) == 0)
@@ -2234,7 +2236,7 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
             threshold=StringToDoubleInterval(arg1,(double) QuantumRange+1.0);
           }
           else
-            threshold=40.0*QuantumRange/100.0;
+            threshold=40.0*(double) QuantumRange/100.0;
           new_image=DeskewImage(_image,threshold,_exception);
           break;
         }
@@ -2371,7 +2373,7 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
     {
       if (LocaleCompare("features",option+1) == 0)
         {
-          CLIWandWarnReplaced("-version -define identify:features=");
+          CLIWandWarnReplaced("-verbose -define identify:features=");
           if (*option == '+')
             {
               (void) DeleteImageArtifact(_image,"identify:features");
@@ -2678,8 +2680,8 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
             gamma=geometry_info.xi;
           if ((flags & PercentValue) != 0)
             {
-              black_point*=(double) (QuantumRange/100.0);
-              white_point*=(double) (QuantumRange/100.0);
+              black_point*=(double) QuantumRange/100.0;
+              white_point*=(double) QuantumRange/100.0;
             }
           if ((flags & SigmaValue) == 0)
             white_point=(double) QuantumRange-black_point;
@@ -2789,7 +2791,7 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
       if (LocaleCompare("map",option+1) == 0)
         {
           CLIWandWarnReplaced("-remap");
-          (void) CLISimpleOperatorImage(cli_wand,"-remap",NULL,NULL,exception);
+          (void) CLISimpleOperatorImage(cli_wand,"-remap",arg1,NULL,exception);
           break;
         }
       if (LocaleCompare("mask",option+1) == 0)
@@ -2831,7 +2833,7 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
           if ((flags & SigmaValue) == 0)
             geometry_info.sigma=1.0;
           if ((flags & XiValue) == 0)
-            geometry_info.xi=0.10*QuantumRange;
+            geometry_info.xi=0.10*(double) QuantumRange;
           if ((flags & PercentValue) != 0)
             geometry_info.xi=(double) QuantumRange*geometry_info.xi/100.0;
           new_image=MeanShiftImage(_image,(size_t) geometry_info.rho,
@@ -2848,7 +2850,8 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
         {
           /* FUTURE: note this is also a special "montage" option */
           CLIWandWarnReplaced("-statistic Mode");
-          (void) CLISimpleOperatorImage(cli_wand,"-statistic","Mode",arg1,exception);
+          (void) CLISimpleOperatorImage(cli_wand,"-statistic","Mode",arg1,
+            exception);
           break;
         }
       if (LocaleCompare("modulate",option+1) == 0)
@@ -2861,7 +2864,19 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
       if (LocaleCompare("monitor",option+1) == 0)
         {
           (void) SetImageProgressMonitor(_image, IfNormalOp ? MonitorProgress :
-                (MagickProgressMonitor) NULL,(void *) NULL);
+            (MagickProgressMonitor) NULL,(void *) NULL);
+          break;
+        }
+      if (LocaleCompare("moments",option+1) == 0)
+        {
+          CLIWandWarnReplaced("-verbose -define identify:moments=");
+          if (*option == '+')
+            {
+              (void) DeleteImageArtifact(_image,"identify:moments");
+              break;
+            }
+          (void) SetImageArtifact(_image,"identify:moments","true");
+          (void) SetImageArtifact(_image,"verbose","true");
           break;
         }
       if (LocaleCompare("monochrome",option+1) == 0)
@@ -3134,8 +3149,8 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
             break;
           if (strchr(arg1,'%') != (char *) NULL)
             {
-              max_threshold*=(double) (0.01*QuantumRange);
-              min_threshold*=(double) (0.01*QuantumRange);
+              max_threshold*=(0.01*(double) QuantumRange);
+              min_threshold*=(0.01*(double) QuantumRange);
             }
           (void) RandomThresholdImage(_image,min_threshold,max_threshold,
             _exception);
@@ -3157,10 +3172,10 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
             geometry_info.psi=geometry_info.xi;
           if (strchr(arg1,'%') != (char *) NULL)
             {
-              geometry_info.rho*=(double) (0.01*QuantumRange);
-              geometry_info.sigma*=(double) (0.01*QuantumRange);
-              geometry_info.xi*=(double) (0.01*QuantumRange);
-              geometry_info.psi*=(double) (0.01*QuantumRange);
+              geometry_info.rho*=(0.01*(double) QuantumRange);
+              geometry_info.sigma*=(0.01*(double) QuantumRange);
+              geometry_info.xi*=(0.01*(double) QuantumRange);
+              geometry_info.psi*=(0.01*(double) QuantumRange);
             }
           (void) RangeThresholdImage(_image,geometry_info.rho,
             geometry_info.sigma,geometry_info.xi,geometry_info.psi,exception);
@@ -3242,6 +3257,15 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
             geometry_info.sigma=geometry_info.rho;
           new_image=ResampleImage(_image,geometry_info.rho,
             geometry_info.sigma,_image->filter,_exception);
+          break;
+        }
+      if (LocaleCompare("reshape",option+1) == 0)
+        {
+          if (IsGeometry(arg1) == MagickFalse)
+            CLIWandExceptArgBreak(OptionError,"InvalidArgument",option,arg1);
+          (void) ParseRegionGeometry(_image,arg1,&geometry,_exception);
+          (void) ReshapePixelCache(_image,geometry.width,geometry.height,
+            _exception);
           break;
         }
       if (LocaleCompare("resize",option+1) == 0)
@@ -3668,8 +3692,9 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
             CLIWandExceptArgBreak(OptionError,"InvalidArgument",option,arg1);
           if ((flags & PercentValue) != 0)
             {
-              geometry_info.rho=QuantumRange*geometry_info.rho/100.0;
-              geometry_info.sigma=QuantumRange*geometry_info.sigma/100.0;
+              geometry_info.rho=(double) QuantumRange*geometry_info.rho/100.0;
+              geometry_info.sigma=(double) QuantumRange*geometry_info.sigma/
+                100.0;
             }
           if ((flags & SigmaValue) == 0)
             geometry_info.sigma=0.0;
@@ -3737,7 +3762,7 @@ static MagickBooleanType CLISimpleOperatorImage(MagickCLI *cli_wand,
 #undef IsPlusOp
 }
 
-WandPrivate MagickBooleanType CLISimpleOperatorImages(MagickCLI *cli_wand,
+static MagickBooleanType CLISimpleOperatorImages(MagickCLI *cli_wand,
   const char *option,const char *arg1,const char *arg2,ExceptionInfo *exception)
 {
 #if !USE_WAND_METHODS
@@ -3809,7 +3834,7 @@ WandPrivate MagickBooleanType CLISimpleOperatorImages(MagickCLI *cli_wand,
 %        arg2 is currently not used
 %
 */
-WandPrivate MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
+static MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
   const char *option,const char *arg1n,const char *arg2n)
 {
   const char    /* percent escaped versions of the args */
@@ -4067,8 +4092,8 @@ WandPrivate MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
             new_images->gravity, &geometry);
           mask_image=RemoveFirstImageFromList(&_images);
           if (mask_image == (Image *) NULL)
-            status&=CompositeImage(new_images,source_image,compose,clip_to_self,
-              geometry.x,geometry.y,_exception);
+            status&=(MagickStatusType) CompositeImage(new_images,source_image,
+              compose,clip_to_self,geometry.x,geometry.y,_exception);
           else
             {
               Image
@@ -4081,30 +4106,33 @@ WandPrivate MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
               {
                 case BlendCompositeOp:
                 {
-                  status&=CompositeImage(new_images,source_image,compose,
-                    clip_to_self,geometry.x,geometry.y,_exception);
-                  status&=CompositeImage(new_images,mask_image,
-                    CopyAlphaCompositeOp,MagickTrue,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(new_images,
+                    source_image,compose,clip_to_self,geometry.x,geometry.y,
+                    _exception);
+                  status&=(MagickStatusType) CompositeImage(new_images,
+                    mask_image,CopyAlphaCompositeOp,MagickTrue,0,0,_exception);
                   break;
                 }
                 case DisplaceCompositeOp:
                 case DistortCompositeOp:
                 {
-                  status&=CompositeImage(source_image,mask_image,
-                    CopyGreenCompositeOp,MagickTrue,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(source_image,
+                    mask_image,CopyGreenCompositeOp,MagickTrue,0,0,_exception);
                   (void) SetImageColorspace(source_image,sRGBColorspace,
                     _exception);
-                  status&=CompositeImage(new_images,source_image,compose,
-                    clip_to_self,geometry.x,geometry.y,_exception);
+                  status&=(MagickStatusType) CompositeImage(new_images,
+                    source_image,compose,clip_to_self,geometry.x,geometry.y,
+                    _exception);
                   break;
                 }
                 case SaliencyBlendCompositeOp:
                 case SeamlessBlendCompositeOp:
                 {
-                  status&=CompositeImage(source_image,mask_image,
-                    CopyAlphaCompositeOp,MagickTrue,0,0,_exception);
-                  status&=CompositeImage(new_images,source_image,compose,
-                    clip_to_self,geometry.x,geometry.y,_exception);
+                  status&=(MagickStatusType) CompositeImage(source_image,
+                    mask_image,CopyAlphaCompositeOp,MagickTrue,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(new_images,
+                    source_image,compose,clip_to_self,geometry.x,geometry.y,
+                    _exception);
                   break;
                 }
                 default:
@@ -4115,12 +4143,13 @@ WandPrivate MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
                   clone_image=CloneImage(new_images,0,0,MagickTrue,_exception);
                   if (clone_image == (Image *) NULL)
                     break;
-                  status&=CompositeImage(new_images,source_image,compose,
-                    clip_to_self,geometry.x,geometry.y,_exception);
-                  status&=CompositeImage(new_images,mask_image,
-                    CopyAlphaCompositeOp,MagickTrue,0,0,_exception);
-                  status&=CompositeImage(clone_image,new_images,OverCompositeOp,
-                    clip_to_self,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(new_images,
+                    source_image,compose,clip_to_self,geometry.x,geometry.y,
+                    _exception);
+                  status&=(MagickStatusType) CompositeImage(new_images,
+                    mask_image,CopyAlphaCompositeOp,MagickTrue,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(clone_image,
+                    new_images,OverCompositeOp,clip_to_self,0,0,_exception);
                   new_images=DestroyImageList(new_images);
                   new_images=clone_image;
                   break;
@@ -4131,14 +4160,14 @@ WandPrivate MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
                 case DisplaceCompositeOp:
                 case DistortCompositeOp:
                 { 
-                  status&=CompositeImage(canvas_image,new_images,
-                    CopyCompositeOp,clip_to_self,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(canvas_image,
+                    new_images,CopyCompositeOp,clip_to_self,0,0,_exception);
                   break;
                 }
                 default:
                 {
-                  status&=CompositeImage(canvas_image,new_images,
-                    OverCompositeOp,clip_to_self,0,0,_exception);
+                  status&=(MagickStatusType) CompositeImage(canvas_image,
+                    new_images,OverCompositeOp,clip_to_self,0,0,_exception);
                   break;
                 }
               }
@@ -4816,7 +4845,7 @@ WandPrivate MagickBooleanType CLIListOperatorImages(MagickCLI *cli_wand,
 %                   Currently arg2 is not used.
 %
 */
-WandPrivate void CLINoImageOperator(MagickCLI *cli_wand,
+static void CLINoImageOperator(MagickCLI *cli_wand,
   const char *option,const char *arg1n,const char *arg2n)
 {
   const char    /* percent escaped versions of the args */
@@ -5146,7 +5175,9 @@ WandPrivate void CLINoImageOperator(MagickCLI *cli_wand,
           }
         if (LocaleCompare(arg1,"profile") == 0)
           {
-            (void) CopyMagickString(_image_info->filename,arg2,MagickPathExtent);
+            if (arg2 != (char *) NULL)
+              (void) CopyMagickString(_image_info->filename,arg2,
+                MagickPathExtent);
             (void) SetImageInfo(_image_info,1,_exception);
             if (LocaleCompare(_image_info->filename,"-") != 0)
               profile=FileToStringInfo(_image_info->filename,~0UL,_exception);

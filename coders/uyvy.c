@@ -137,7 +137,7 @@ static Image *ReadUYVYImage(const ImageInfo *image_info,
   status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
   if (status == MagickFalse)
     return(DestroyImage(image));
-  if (DiscardBlobBytes(image,image->offset) == MagickFalse)
+  if (DiscardBlobBytes(image,(MagickSizeType) image->offset) == MagickFalse)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
   image->depth=8;
@@ -183,7 +183,10 @@ static Image *ReadUYVYImage(const ImageInfo *image_info,
   if (EOFBlob(image) != MagickFalse)
     ThrowFileException(exception,CorruptImageError,"UnexpectedEndOfFile",
       image->filename);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -342,8 +345,8 @@ static MagickBooleanType WriteUYVYImage(const ImageInfo *image_info,
     {
       if (full != MagickFalse)
         {
-          pixel.green=(pixel.green+GetPixelGreen(uyvy_image,p))/2;
-          pixel.blue=(pixel.blue+GetPixelBlue(uyvy_image,p))/2;
+          pixel.green=(pixel.green+(double) GetPixelGreen(uyvy_image,p))/2;
+          pixel.blue=(pixel.blue+(double) GetPixelBlue(uyvy_image,p))/2;
           (void) WriteBlobByte(image,ScaleQuantumToChar((Quantum) pixel.green));
           (void) WriteBlobByte(image,ScaleQuantumToChar((Quantum) pixel.red));
           (void) WriteBlobByte(image,ScaleQuantumToChar((Quantum) pixel.blue));
@@ -362,6 +365,7 @@ static MagickBooleanType WriteUYVYImage(const ImageInfo *image_info,
       break;
   }
   uyvy_image=DestroyImage(uyvy_image);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

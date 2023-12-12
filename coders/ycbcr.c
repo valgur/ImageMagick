@@ -701,7 +701,8 @@ static Image *ReadYCBCRImage(const ImageInfo *image_info,
             if (status == MagickFalse)
               break;
           }
-        (void) CloseBlob(image);
+        if (CloseBlob(image) == MagickFalse)
+          break;
         AppendImageFormat("Cb",image->filename);
         status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
         if (status == MagickFalse)
@@ -771,7 +772,8 @@ static Image *ReadYCBCRImage(const ImageInfo *image_info,
             if (status == MagickFalse)
               break;
           }
-        (void) CloseBlob(image);
+        if (CloseBlob(image) == MagickFalse)
+          break;
         AppendImageFormat("Cr",image->filename);
         status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
         if (status == MagickFalse)
@@ -844,6 +846,8 @@ static Image *ReadYCBCRImage(const ImageInfo *image_info,
         if (image->alpha_trait != UndefinedPixelTrait)
           {
             (void) CloseBlob(image);
+            if (CloseBlob(image) == MagickFalse)
+              break;
             AppendImageFormat("A",image->filename);
             status=OpenBlob(image_info,image,ReadBinaryBlobMode,exception);
             if (status == MagickFalse)
@@ -953,7 +957,8 @@ static Image *ReadYCBCRImage(const ImageInfo *image_info,
   } while (count == (ssize_t) length);
   quantum_info=DestroyQuantumInfo(quantum_info);
   canvas_image=DestroyImage(canvas_image);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   if (status == MagickFalse)
     return(DestroyImageList(image));
   return(GetFirstImageInList(image));
@@ -1062,7 +1067,7 @@ static MagickBooleanType WriteYCBCRImage(const ImageInfo *image_info,
     *p;
 
   MagickBooleanType
-    status;
+    status = MagickTrue;
 
   MagickOffsetType
     scene;
@@ -1117,7 +1122,7 @@ static MagickBooleanType WriteYCBCRImage(const ImageInfo *image_info,
     if (image->colorspace != YCbCrColorspace)
       (void) TransformImageColorspace(image,YCbCrColorspace,exception);
     if ((LocaleCompare(image_info->magick,"YCbCrA") == 0) &&
-        (image->alpha_trait == UndefinedPixelTrait))
+        ((image->alpha_trait & BlendPixelTrait) == 0))
       (void) SetImageAlphaChannel(image,OpaqueAlphaChannel,exception);
     quantum_info=AcquireQuantumInfo(image_info,image);
     if (quantum_info == (QuantumInfo *) NULL)
@@ -1302,7 +1307,8 @@ static MagickBooleanType WriteYCBCRImage(const ImageInfo *image_info,
             if (status == MagickFalse)
               break;
           }
-        (void) CloseBlob(image);
+        if (CloseBlob(image) == MagickFalse)
+          break;
         AppendImageFormat("Cb",image->filename);
         status=OpenBlob(image_info,image,scene == 0 ? WriteBinaryBlobMode :
           AppendBinaryBlobMode,exception);
@@ -1325,7 +1331,8 @@ static MagickBooleanType WriteYCBCRImage(const ImageInfo *image_info,
             if (status == MagickFalse)
               break;
           }
-        (void) CloseBlob(image);
+        if (CloseBlob(image) == MagickFalse)
+          break;
         AppendImageFormat("Cr",image->filename);
         status=OpenBlob(image_info,image,scene == 0 ? WriteBinaryBlobMode :
           AppendBinaryBlobMode,exception);
@@ -1350,7 +1357,8 @@ static MagickBooleanType WriteYCBCRImage(const ImageInfo *image_info,
           }
         if (quantum_type == RGBAQuantum)
           {
-            (void) CloseBlob(image);
+            if (CloseBlob(image) == MagickFalse)
+              break;
             AppendImageFormat("A",image->filename);
             status=OpenBlob(image_info,image,scene == 0 ? WriteBinaryBlobMode :
               AppendBinaryBlobMode,exception);
@@ -1394,6 +1402,7 @@ static MagickBooleanType WriteYCBCRImage(const ImageInfo *image_info,
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }

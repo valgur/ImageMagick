@@ -221,6 +221,9 @@
         <message name="IncludeElementNestedTooDeeply">
           trop de niveau d'inclusion d'éléments
         </message>
+        <message name="PolicyValidationException">
+          security policy failed to validate
+        </message>
       </error>
       <warning>
         <message name="UnableToOpenConfigureFile">
@@ -701,6 +704,9 @@
         <message name="MustSpecifyAnImageName">
           Il faut spécifier un nom d'image
         </message>
+        <message name="MustSpecifyImageDepth">
+          Il faut spécifier la profondeur d'image
+        </message>
         <message name="MustSpecifyImageSize">
           Il faut spécifier une taille d'image
         </message>
@@ -1036,6 +1042,9 @@
           <message name="PixelCacheAllocationFailed">
             Échec allocation du cache pixel
           </message>
+          <message name="TimeLimitExceeded">
+            time limit exceeded
+          </message>
           <message name="TooManyExceptions">
             too many exceptions
           </message>
@@ -1065,9 +1074,6 @@
           </message>
         </error>
         <fatalerror>
-          <message name="TimeLimitExceeded">
-            time limit exceeded
-          </message>
           <message name="UnableToAllocateDashPattern">
             impossible d'allouer le motif de traits
           </message>

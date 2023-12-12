@@ -40,6 +40,7 @@
   Include declarations.
 */
 #include "MagickCore/studio.h"
+#include "MagickCore/artifact.h"
 #include "MagickCore/attribute.h"
 #include "MagickCore/blob.h"
 #include "MagickCore/blob-private.h"
@@ -712,7 +713,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                 if (LocaleCompare(keyword,"channel-mask") == 0)
                   {
                     image->channel_mask=(ChannelType)
-                      StringToUnsignedLong(options);
+                      strtol(options,(char **) NULL,16);
                     break;
                   }
                 if (LocaleCompare(keyword,"class") == 0)
@@ -1431,7 +1432,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
         allocator.opaque=(void *) image;
         lzma_info=initialize_lzma;
         lzma_info.allocator=(&allocator);
-        code=lzma_auto_decoder(&lzma_info,(uint64_t) -1,0);
+        code=(int) lzma_auto_decoder(&lzma_info,(uint64_t) -1,0);
         if (code != LZMA_OK)
           status=MagickFalse;
         break;
@@ -1542,7 +1543,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
                       "UnableToReadImageData");
                   }
               }
-            code=lzma_code(&lzma_info,LZMA_RUN);
+            code=(int) lzma_code(&lzma_info,LZMA_RUN);
             if ((code != LZMA_OK) && (code != LZMA_STREAM_END))
               {
                 status=MagickFalse;
@@ -1679,7 +1680,7 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
         int
           code;
 
-        code=lzma_code(&lzma_info,LZMA_FINISH);
+        code=(int) lzma_code(&lzma_info,LZMA_FINISH);
         if ((code != LZMA_STREAM_END) && (code != LZMA_OK))
           status=MagickFalse;
         lzma_end(&lzma_info);
@@ -1756,7 +1757,8 @@ static Image *ReadMIFFImage(const ImageInfo *image_info,
           break;
       }
   } while (c != EOF && ((c == 'i') || (c == 'I')));
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   if (status == MagickFalse)
     return(DestroyImageList(image));
   return(GetFirstImageInList(image));
@@ -1884,9 +1886,13 @@ static unsigned char *PopRunlengthPacket(Image *image,unsigned char *pixels,
         {
           *pixels++=(unsigned char) (value >> 24);
           *pixels++=(unsigned char) (value >> 16);
+          magick_fallthrough;
         }
         case 16:
+        {
           *pixels++=(unsigned char) (value >> 8);
+          magick_fallthrough;
+        }
         case 8:
         {
           *pixels++=(unsigned char) value;
@@ -2128,8 +2134,12 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
           }
       }
     else
-      if (image->depth < 16)
-        (void) DeleteImageProperty(image,"quantum:format");
+      if ((quantum_info->format == FloatingPointQuantumFormat) &&
+          (image->depth < 16))
+        {
+          status=SetQuantumFormat(image,quantum_info,UnsignedQuantumFormat);
+          status=SetQuantumDepth(image,quantum_info,image->depth);
+        }
     compression=UndefinedCompression;
     if (image_info->compression != UndefinedCompression)
       compression=image_info->compression;
@@ -2187,10 +2197,10 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
       CommandOptionToMnemonic(MagickPixelTraitOptions,(ssize_t)
       image->alpha_trait));
     (void) WriteBlobString(image,buffer);
-    (void) FormatLocaleString(buffer,MagickPathExtent,
-      "number-channels=%.20g number-meta-channels=%.20g channel-mask=%.20g\n",
+    (void) FormatLocaleString(buffer,MagickPathExtent, "number-channels=%.20g "
+      "number-meta-channels=%.20g channel-mask=0x%016llx\n",
       (double) image->number_channels,(double) image->number_meta_channels,
-      (double) image->channel_mask);
+      (MagickOffsetType) image->channel_mask);
     (void) WriteBlobString(image,buffer);
     if (image->alpha_trait != UndefinedPixelTrait)
       (void) WriteBlobString(image,"matte=True\n");
@@ -2567,7 +2577,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
         allocator.opaque=(void *) NULL;
         lzma_info=initialize_lzma;
         lzma_info.allocator=&allocator;
-        code=lzma_easy_encoder(&lzma_info,(uint32_t) (image->quality/10),
+        code=(int) lzma_easy_encoder(&lzma_info,(uint32_t) (image->quality/10),
           LZMA_CHECK_SHA256);
         if (code != LZMA_OK)
           status=MagickTrue;
@@ -2657,7 +2667,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
 
             lzma_info.next_out=compress_pixels;
             lzma_info.avail_out=LZMAMaxExtent(packet_size*image->columns);
-            code=lzma_code(&lzma_info,LZMA_RUN);
+            code=(int) lzma_code(&lzma_info,LZMA_RUN);
             if (code != LZMA_OK)
               status=MagickFalse;
             length=(size_t) (lzma_info.next_out-compress_pixels);
@@ -2789,7 +2799,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
             break;
           lzma_info.next_out=compress_pixels;
           lzma_info.avail_out=packet_size*image->columns;
-          code=lzma_code(&lzma_info,LZMA_FINISH);
+          code=(int) lzma_code(&lzma_info,LZMA_FINISH);
           length=(size_t) (lzma_info.next_out-compress_pixels);
           if (length > 6)
             {
@@ -2844,6 +2854,7 @@ static MagickBooleanType WriteMIFFImage(const ImageInfo *image_info,
     if (status == MagickFalse)
       break;
   } while (image_info->adjoin != MagickFalse);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   return(status);
 }

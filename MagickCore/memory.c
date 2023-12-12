@@ -771,7 +771,7 @@ MagickExport MemoryInfo *AcquireVirtualMemory(const size_t count,
               MagickOffsetType
                 offset;
 
-              offset=(MagickOffsetType) lseek(file,size-1,SEEK_SET);
+              offset=(MagickOffsetType) lseek(file,(off_t) (size-1),SEEK_SET);
               if ((offset == (MagickOffsetType) (size-1)) &&
                   (write(file,"",1) == 1))
                 {
@@ -851,14 +851,14 @@ MagickExport void *CopyMagickMemory(void *magick_restrict destination,
     switch (size)
     {
       default: return(memcpy(destination,source,size));
-      case 8: *q++=(*p++);
-      case 7: *q++=(*p++);
-      case 6: *q++=(*p++);
-      case 5: *q++=(*p++);
-      case 4: *q++=(*p++);
-      case 3: *q++=(*p++);
-      case 2: *q++=(*p++);
-      case 1: *q++=(*p++);
+      case 8: *q++=(*p++); magick_fallthrough;
+      case 7: *q++=(*p++); magick_fallthrough;
+      case 6: *q++=(*p++); magick_fallthrough;
+      case 5: *q++=(*p++); magick_fallthrough;
+      case 4: *q++=(*p++); magick_fallthrough;
+      case 3: *q++=(*p++); magick_fallthrough;
+      case 2: *q++=(*p++); magick_fallthrough;
+      case 1: *q++=(*p++); magick_fallthrough;
       case 0: return(destination);
     }
   return(memmove(destination,source,size));
@@ -1552,6 +1552,33 @@ MagickExport void SetMagickMemoryMethods(
     memory_methods.resize_memory_handler=resize_memory_handler;
   if (destroy_memory_handler != (DestroyMemoryHandler) NULL)
     memory_methods.destroy_memory_handler=destroy_memory_handler;
+}
+
+/*
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                             %
+%                                                                             %
+%                                                                             %
++   S e t M a x M e m o r y R e q u e s t                                     %
+%                                                                             %
+%                                                                             %
+%                                                                             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  SetMaxMemoryRequest() sets the max_memory_request value.
+%
+%  The format of the ResetMaxMemoryRequest method is:
+%
+%      void SetMaxMemoryRequest(const MagickSizeType limit)
+%
+%  A description of each parameter follows:
+%
+%    o limit: the maximum memory request limit.
+%
+*/
+MagickPrivate void SetMaxMemoryRequest(const MagickSizeType limit)
+{
+  max_memory_request=MagickMin(limit,GetMaxMemoryRequest());
 }
 
 /*

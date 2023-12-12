@@ -120,7 +120,7 @@ static const char
     "  <delegate decode=\"html\" command=\"&quot;html2ps&quot; -U -o &quot;%o&quot; &quot;%i&quot;\"/>"
     "  <delegate decode=\"ilbm\" command=\"&quot;ilbmtoppm&quot; &quot;%i&quot; &gt; &quot;%o&quot;\"/>"
     "  <delegate decode=\"jpg\" encode=\"lep\" mode=\"encode\" command=\"&quot;lepton&quot; &quot;%i&quot; &quot;%o&quot;\"/>"
-    "  <delegate decode=\"jxr\" command=\"mv &quot;%i&quot; &quot;%i.jxr&quot;; &quot;JxrDecApp&quot; -i &quot;%i.jxr&quot; -o &quot;%o.pnm&quot;; mv &quot;%i.jxr&quot; &quot;%i&quot;; mv &quot;%o.pnm&quot; &quot;%o&quot;\"/>"
+    "  <delegate decode=\"jxr\" command=\"mv &quot;%i&quot; &quot;%i.jxr&quot;; &quot;JxrDecApp&quot; -i &quot;%i.jxr&quot; -o &quot;%o.tiff&quot;; mv &quot;%i.jxr&quot; &quot;%i&quot;; mv &quot;%o.tiff&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"lep\" mode=\"decode\" command=\"&quot;lepton&quot; &quot;%i&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"odt\" command=\"&quot;soffice&quot; --convert-to pdf -outdir `dirname &quot;%i&quot;` &quot;%i&quot; 2&gt; &quot;%u&quot;; mv &quot;%i.pdf&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"pcl:cmyk\" stealth=\"True\" command=\"&quot;pcl6&quot; -dQUIET -dSAFER -dBATCH -dNOPAUSE -dNOPROMPT -dMaxBitmap=500000000 -dAlignToPixels=0 -dGridFitTT=2 &quot;-sDEVICE=pamcmyk32&quot; -dTextAlphaBits=%u -dGraphicsAlphaBits=%u &quot;-r%s&quot; %s &quot;-sOutputFile=%s&quot; &quot;%s&quot;\"/>"
@@ -130,8 +130,8 @@ static const char
     "  <delegate decode=\"pdf\" encode=\"ps\" mode=\"bi\" command=\"&quot;gs&quot; -sstdout=%%stderr -dQUIET -dSAFER -dBATCH -dNOPAUSE -dNOPROMPT -dMaxBitmap=500000000 -dAlignToPixels=0 -dGridFitTT=2 &quot;-sDEVICE=ps2write&quot; -sPDFPassword=&quot;%a&quot; &quot;-sOutputFile=%o&quot; &quot;-f%i&quot;\"/>"
     "  <delegate decode=\"png\" encode=\"webp\" command=\"&quot;cwebp&quot; -quiet -q %Q &quot;%i&quot; -o &quot;%o&quot;\"/>"
     "  <delegate decode=\"pnm\" encode=\"ilbm\" mode=\"encode\" command=\"&quot;ppmtoilbm&quot; -24if &quot;%i&quot; &gt; &quot;%o&quot;\"/>"
-    "  <delegate decode=\"bmp\" encode=\"jxr\" command=\"mv &quot;%i&quot; &quot;%i.bmp&quot;; &quot;JxrEncApp&quot; -i &quot;%i.bmp&quot; -o &quot;%o.jxr&quot;; mv &quot;%i.bmp&quot; &quot;%i&quot;; mv &quot;%o.jxr&quot; &quot;%o&quot;\"/>"
-    "  <delegate decode=\"bmp\" encode=\"wdp\" command=\"mv &quot;%i&quot; &quot;%i.bmp&quot;; &quot;JxrEncApp&quot; -i &quot;%i.bmp&quot; -o &quot;%o.jxr&quot;; mv &quot;%i.bmp&quot; &quot;%i&quot;; mv &quot;%o.jxr&quot; &quot;%o&quot;\"/>"
+    "  <delegate decode=\"tiff\" encode=\"jxr\" command=\"mv &quot;%i&quot; &quot;%i.tiff&quot;; &quot;JxrEncApp&quot; -i &quot;%i.tiff&quot; -o &quot;%o.jxr&quot;; mv &quot;%i.tiff&quot; &quot;%i&quot;; mv &quot;%o.jxr&quot; &quot;%o&quot;\"/>"
+    "  <delegate decode=\"tiff\" encode=\"wdp\" command=\"mv &quot;%i&quot; &quot;%i.tiff&quot;; &quot;JxrEncApp&quot; -i &quot;%i.tiff&quot; -o &quot;%o.jxr&quot;; mv &quot;%i.tiff&quot; &quot;%i&quot;; mv &quot;%o.jxr&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"ppt\" command=\"&quot;soffice&quot; --convert-to pdf -outdir `dirname &quot;%i&quot;` &quot;%i&quot; 2&gt; &quot;%u&quot;; mv &quot;%i.pdf&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"pptx\" command=\"&quot;soffice&quot; --convert-to pdf -outdir `dirname &quot;%i&quot;` &quot;%i&quot; 2&gt; &quot;%u&quot;; mv &quot;%i.pdf&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"ps\" encode=\"prt\" command=\"&quot;lpr&quot; &quot;%i&quot;\"/>"
@@ -144,10 +144,12 @@ static const char
     "  <delegate decode=\"ps:mono\" stealth=\"True\" command=\"&quot;gs&quot; -sstdout=%%stderr -dQUIET -dSAFER -dBATCH -dNOPAUSE -dNOPROMPT -dMaxBitmap=500000000 -dAlignToPixels=0 -dGridFitTT=2 &quot;-sDEVICE=pbmraw&quot; -dTextAlphaBits=%u -dGraphicsAlphaBits=%u &quot;-r%s&quot; %s &quot;-sOutputFile=%s&quot; &quot;-f%s&quot; &quot;-f%s&quot;\"/>"
     "  <delegate decode=\"shtml\" command=\"&quot;html2ps&quot; -U -o &quot;%o&quot; &quot;%i&quot;\"/>"
     "  <delegate decode=\"sid\" command=\"&quot;mrsidgeodecode&quot; -if sid -i &quot;%i&quot; -of tif -o &quot;%o&quot; &gt; &quot;%u&quot;\"/>"
-    "  <delegate decode=\"svg\" command=\"&quot;rsvg-convert&quot; -o &quot;%o&quot; &quot;%i&quot;\"/>"
+    "  <delegate decode=\"svg\" command=\"&quot;rsvg-convert&quot; --dpi-x %x --dpi-y %y -o &quot;%o&quot; &quot;%i&quot;\"/>"
+#ifndef MAGICKCORE_RSVG_DELEGATE
     "  <delegate decode=\"svg:decode\" stealth=\"True\" command=\"&quot;inkscape&quot; &quot;%s&quot; --export-png=&quot;%s&quot; --export-dpi=&quot;%s&quot; --export-background=&quot;%s&quot; --export-background-opacity=&quot;%s&quot; &gt; &quot;%s&quot; 2&gt;&amp;1\"/>"
+#endif
     "  <delegate decode=\"tiff\" encode=\"launch\" mode=\"encode\" command=\"&quot;gimp&quot; &quot;%i&quot;\"/>"
-    "  <delegate decode=\"wdp\" command=\"mv &quot;%i&quot; &quot;%i.jxr&quot;; &quot;JxrDecApp&quot; -i &quot;%i.jxr&quot; -o &quot;%o.bmp&quot;; mv &quot;%i.jxr&quot; &quot;%i&quot;; mv &quot;%o.bmp&quot; &quot;%o&quot;\"/>"
+    "  <delegate decode=\"wdp\" command=\"mv &quot;%i&quot; &quot;%i.jxr&quot;; &quot;JxrDecApp&quot; -i &quot;%i.jxr&quot; -o &quot;%o.tiff&quot;; mv &quot;%i.jxr&quot; &quot;%i&quot;; mv &quot;%o.tiff&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"webp\" command=\"&quot;dwebp&quot; -pam &quot;%i&quot; -o &quot;%o&quot;\"/>"
     "  <delegate decode=\"xls\" command=\"&quot;soffice&quot; --convert-to pdf -outdir `dirname &quot;%i&quot;` &quot;%i&quot; 2&gt; &quot;%u&quot;; mv &quot;%i.pdf&quot; &quot;%o&quot;\"/>"
     "  <delegate decode=\"xlsx\" command=\"&quot;soffice&quot; --convert-to pdf -outdir `dirname &quot;%i&quot;` &quot;%i&quot; 2&gt; &quot;%u&quot;; mv &quot;%i.pdf&quot; &quot;%o&quot;\"/>"
@@ -919,7 +921,7 @@ static char *InterpretDelegateProperties(ImageInfo *image_info,
 #define ExtendInterpretText(string_length) \
 { \
   size_t length=(string_length); \
-  if ((size_t) (q-interpret_text+length+1) >= extent) \
+  if ((size_t) (q-interpret_text+(ssize_t) length+1) >= extent) \
     { \
       extent+=length; \
       interpret_text=(char *) ResizeQuantumMemory(interpret_text,extent+ \
@@ -948,7 +950,7 @@ static char *InterpretDelegateProperties(ImageInfo *image_info,
 #define AppendString2Text(string) \
 { \
   size_t length=strlen((string)); \
-  if ((size_t) (q-interpret_text+length+1) >= extent) \
+  if ((size_t) (q-interpret_text+(ssize_t) length+1) >= extent) \
     { \
       extent+=length; \
       interpret_text=(char *) ResizeQuantumMemory(interpret_text,extent+ \
@@ -1635,15 +1637,13 @@ static MagickBooleanType CopyDelegateFile(const char *source,
   MagickBooleanType
     status;
 
-  size_t
+  ssize_t
+    count,
     i;
 
   size_t
     length,
     quantum;
-
-  ssize_t
-    count;
 
   struct stat
     attributes;
@@ -1682,7 +1682,7 @@ static MagickBooleanType CopyDelegateFile(const char *source,
       return(MagickFalse);
     }
   length=0;
-  for (i=0; ; i+=count)
+  for (i=0; ; i+=(ssize_t) count)
   {
     count=(ssize_t) read(source_file,buffer,quantum);
     if (count <= 0)
@@ -2160,8 +2160,8 @@ static MagickBooleanType LoadDelegateCache(LinkedListInfo *cache,
                   file_xml=FileToXML(path,~0UL);
                   if (file_xml != (char *) NULL)
                     {
-                      status&=LoadDelegateCache(cache,file_xml,path,
-                        depth+1,exception);
+                      status&=(MagickStatusType) LoadDelegateCache(cache,
+                        file_xml,path,depth+1,exception);
                       file_xml=DestroyString(file_xml);
                     }
                 }

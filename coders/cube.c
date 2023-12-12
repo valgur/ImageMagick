@@ -255,9 +255,10 @@ static Image *ReadCUBEImage(const ImageInfo *image_info,
 
       if (status == MagickFalse)
         continue;
-      q=QueueAuthenticPixels(image,(g % hald_level)*(hald_level*hald_level),
-        (b*hald_level)+((g/hald_level) % (hald_level*hald_level)),hald_level*
-        hald_level,1,exception);
+      q=QueueAuthenticPixels(image,(g % (ssize_t) hald_level)*((ssize_t)
+        hald_level*(ssize_t) hald_level),(b*(ssize_t) hald_level)+((g/(ssize_t)
+        hald_level) % ((ssize_t) hald_level*(ssize_t) hald_level)),
+        hald_level*hald_level,1,exception);
       if (q == (Quantum *) NULL)
         {
           status=MagickFalse;
@@ -311,7 +312,8 @@ static Image *ReadCUBEImage(const ImageInfo *image_info,
     }
   }
   cube_info=RelinquishVirtualMemory(cube_info);
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
   if (status == MagickFalse)
     return(DestroyImageList(image));
   if (image_info->scene != 0)

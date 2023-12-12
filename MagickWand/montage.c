@@ -279,7 +279,7 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
     *format;
 
   Image
-    *image,
+    *image = (Image *) NULL,
     *montage_image;
 
   ImageStack
@@ -319,6 +319,9 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
   if (argc == 2)
     {
       option=argv[1];
+      if ((LocaleCompare("help",option+1) == 0) ||
+          (LocaleCompare("-help",option+1) == 0))
+        return(MontageUsage());
       if ((LocaleCompare("version",option+1) == 0) ||
           (LocaleCompare("-version",option+1) == 0))
         {
@@ -327,7 +330,12 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
         }
     }
   if (argc < 3)
-    return(MontageUsage());
+    {
+      (void) ThrowMagickException(exception,GetMagickModule(),OptionError,
+        "MissingArgument","%s","");
+      (void) MontageUsage();
+      return(MagickFalse);
+    }
   format="%w,%h,%m";
   first_scene=0;
   j=1;
@@ -405,7 +413,7 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
                   "%s.%.20g",image_info->filename,(double) scene);
               images=ReadImages(image_info,scene_filename,exception);
             }
-          status&=(images != (Image *) NULL) &&
+          status&=(MagickStatusType) (images != (Image *) NULL) &&
             (exception->severity < ErrorException);
           if (images == (Image *) NULL)
             continue;
@@ -1833,7 +1841,8 @@ WandExport MagickBooleanType MontageImageCommand(ImageInfo *image_info,
       if (*montage_image->magick == '\0')
         (void) CopyMagickString(montage_image->magick,image->magick,
           MagickPathExtent);
-      status&=WriteImages(image_info,montage_image,argv[argc-1],exception);
+      status&=(MagickStatusType) WriteImages(image_info,montage_image,
+        argv[argc-1],exception);
       if (metadata != (char **) NULL)
         {
           char

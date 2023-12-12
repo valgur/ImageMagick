@@ -88,10 +88,12 @@ typedef struct _PDBInfo
     attributes,
     version;
 
-  size_t
+  ssize_t
     create_time,
     modify_time,
-    archive_time,
+    archive_time;
+
+  size_t
     modify_number,
     application_info,
     sort_info;
@@ -628,7 +630,10 @@ static Image *ReadPDBImage(const ImageInfo *image_info,ExceptionInfo *exception)
       (void) SetImageProperty(image,"comment",comment,exception);
       comment=DestroyString(comment);
     }
-  (void) CloseBlob(image);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  if (status == MagickFalse)
+    return(DestroyImageList(image));
   return(GetFirstImageInList(image));
 }
 
@@ -913,8 +918,8 @@ static MagickBooleanType WritePDBImage(const ImageInfo *image_info,Image *image,
     for (x=0; x < (ssize_t) pdb_image.width; x++)
     {
       if (x < (ssize_t) image->columns)
-        buffer[literal+repeat]|=(0xff-scanline[x*packet_size]) >>
-          (8-bits_per_pixel) << bits*bits_per_pixel;
+        buffer[literal+repeat]|=(0xff-scanline[x*(ssize_t) packet_size]) >>
+          (8-bits_per_pixel) << bits*(ssize_t) bits_per_pixel;
       bits--;
       if (bits < 0)
         {
@@ -1007,6 +1012,7 @@ static MagickBooleanType WritePDBImage(const ImageInfo *image_info,Image *image,
   runlength=(unsigned char *) RelinquishMagickMemory(runlength);
   if (comment != (const char *) NULL)
     (void) WriteBlobString(image,comment);
-  (void) CloseBlob(image);
-  return(MagickTrue);
+  if (CloseBlob(image) == MagickFalse)
+    status=MagickFalse;
+  return(status);
 }
