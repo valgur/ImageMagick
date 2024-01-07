@@ -1,6 +1,7 @@
 import os
 
 from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.env import VirtualBuildEnv
 from conan.tools.files import replace_in_file
@@ -41,6 +42,7 @@ class ImageMagicConan(ConanFile):
         "with_jpeg": [None, "libjpeg", "libjpeg-turbo"],
         "with_jxl": [True, False],
         "with_lcms": [True, False],
+        "with_ltdl": [True, False],
         "with_lzma": [True, False],
         "with_opencl": [True, False],
         "with_openexr": [True, False],
@@ -77,6 +79,7 @@ class ImageMagicConan(ConanFile):
         "with_jpeg": "libjpeg",
         "with_jxl": False,  # FIXME: re-enable once migrated
         "with_lcms": True,
+        "with_ltdl": True,
         "with_lzma": True,
         "with_opencl": True,
         "with_openexr": True,
@@ -154,6 +157,8 @@ class ImageMagicConan(ConanFile):
             self.requires("libjxl/0.8.2")
         if self.options.with_lcms:
             self.requires("lcms/2.14")
+        if self.options.with_ltdl:
+            self.requires("libtool/2.4.7")
         if self.options.with_lzma:
             self.requires("xz_utils/5.4.5")
         if self.options.with_opencl:
@@ -185,6 +190,10 @@ class ImageMagicConan(ConanFile):
             self.output.warning("Conan package for djvu is not available, this package will be used from system.")
         if self.options.get_safe("with_x11"):
             self.requires("xorg/system")
+
+    def validate(self):
+        if self.options.with_opencl and not self.options.with_ltdl:
+            raise ConanInvalidConfiguration("OpenCL support requires with_ltdl=True")
 
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.19 <4]")
@@ -226,7 +235,7 @@ class ImageMagicConan(ConanFile):
         tc.variables["LCMS_DELEGATE"] = self.options.with_lcms
         tc.variables["LIBOPENJP2_DELEGATE"] = self.options.with_openjp2
         tc.variables["LQR"] = False
-        tc.variables["LTDL_DELEGATE"] = False
+        tc.variables["LTDL_DELEGATE"] = self.options.with_ltdl
         tc.variables["LZMA_DELEGATE"] = self.options.with_lzma
         tc.variables["OPENCLLIB_DELEGATE"] = self.options.with_opencl
         tc.variables["OPENEXR_DELEGATE"] = self.options.with_openexr
@@ -279,7 +288,7 @@ class ImageMagicConan(ConanFile):
             "libwebp": "WebP",
             "libxml2": "LibXml2",
             "lqr": "Lqr",
-            "ltdl": "LTDL",
+            "libtool": "LTDL",
             "opencl-headers": "OpenCL",
             "openexr": "OpenEXR",
             "openjpeg": "OpenJPEG",
@@ -351,6 +360,8 @@ class ImageMagicConan(ConanFile):
             core_requires.append("libjxl::libjxl")
         if self.options.with_lcms:
             core_requires.append("lcms::lcms")
+        if self.options.with_ltdl:
+            core_requires.append("libtool::libtool")
         if self.options.with_lzma:
             core_requires.append("xz_utils::xz_utils")
         if self.options.with_opencl:
