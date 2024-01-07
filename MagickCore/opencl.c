@@ -91,10 +91,6 @@
 
 #if defined(MAGICKCORE_OPENCL_SUPPORT)
 
-#ifndef MAGICKCORE_WINDOWS_SUPPORT
-#include <dlfcn.h>
-#endif
-
 /*
   Define declarations.
 */
@@ -2476,11 +2472,7 @@ void *OsLibraryGetFunctionAddress(void *library,const char *functionName)
 {
   if ((library == (void *) NULL) || (functionName == (const char *) NULL))
     return (void *) NULL;
-#ifdef MAGICKCORE_WINDOWS_SUPPORT
-    return (void *) GetProcAddress((HMODULE)library,functionName);
-#else
-    return (void *) dlsym(library,functionName);
-#endif
+  return lt_dlsym(library,functionName);
 }
 
 static MagickBooleanType BindOpenCLFunctions()
@@ -2490,9 +2482,9 @@ static MagickBooleanType BindOpenCLFunctions()
 #else
   (void) memset(openCL_library,0,sizeof(MagickLibrary));
 #ifdef MAGICKCORE_WINDOWS_SUPPORT
-  openCL_library->library=(void *)LoadLibraryA("OpenCL.dll");
+  openCL_library->library=(void *)lt_dlopen("OpenCL.dll");
 #else
-  openCL_library->library=(void *)dlopen("libOpenCL.so",RTLD_NOW);
+  openCL_library->library=(void *)lt_dlopen("libOpenCL.so");
 #endif
 #define BIND(X) \
   if ((openCL_library->X=(MAGICKpfn_##X)OsLibraryGetFunctionAddress(openCL_library->library,#X)) == NULL) \
